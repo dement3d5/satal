@@ -13,6 +13,7 @@ import {
   smallint,
   text,
   timestamp,
+  unique,
   uniqueIndex,
   uuid,
   varchar
@@ -309,7 +310,7 @@ export const attributeOption = pgTable(
   },
   (table) => [
     uniqueIndex('attribute_option_attribute_key_unique').on(table.attributeId, table.key),
-    uniqueIndex('attribute_option_attribute_id_unique').on(table.attributeId, table.id),
+    unique('attribute_option_attribute_id_unique').on(table.attributeId, table.id),
     index('attribute_option_order_idx').on(table.attributeId, table.sortOrder)
   ]
 );
