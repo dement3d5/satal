@@ -494,6 +494,6 @@ jobs:
           git config user.name 'Satal Automation'
           git config user.email 'actions@users.noreply.github.com'
           git am --3way /tmp/phase3.patch
-          git rm .github/workflows/phase3-publish.yml
+          git restore --source=HEAD^ --staged --worktree .github/workflows/ci.yml
           git commit --amend --no-edit
           git push origin HEAD:main
