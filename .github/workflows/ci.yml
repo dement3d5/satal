@@ -29,6 +29,7 @@ jobs:
     env:
       APP_ORIGIN: http://localhost:3000
       DATABASE_URL: postgresql://satal:satal@localhost:5432/satal
+      TEST_DATABASE_URL: postgresql://satal:satal@localhost:5432/satal
       AUTH_SECRET: ci-only-secret-with-at-least-32-characters
     steps:
       - uses: actions/checkout@v4
