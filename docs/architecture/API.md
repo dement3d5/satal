@@ -22,3 +22,7 @@ Backward-compatible additions remain in v1. Breaking contract changes require `/
 Sessions/auth, profile, locations, categories/attributes, listing drafts/listings/media, search/suggestions, favorites/saved searches, conversations/messages, notifications, reports and admin moderation.
 
 Rate limits are endpoint- and actor-specific. Login/OTP/recovery, uploads, search, chat, reports, listing creation and payment actions each receive distinct policies.
+
+## Phase 3 contracts
+
+No public marketplace routes are exposed yet. The next API slice will read categories, localized attribute schemas and geography from PostgreSQL and will mutate drafts through owner-authorized application services. Draft updates will require the last observed `version`; stale autosaves receive a conflict response instead of overwriting newer work. Category-change responses will report retained and removed attribute keys so the UI can explain recalculation without duplicating catalog rules.

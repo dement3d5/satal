@@ -28,7 +28,9 @@ Exit: lint, typecheck, tests and production build pass.
 
 ## Phase 3 — marketplace core
 
-Locations and taxonomy → dynamic attributes → drafts → listing creation/media → lifecycle and public listing page → Typesense indexing/search/filtering → favorites and saved searches.
+In progress. Milestone 3A implements locations/import contract, three-level localized taxonomy, typed dynamic attributes and owner-controlled listing draft foundations.
+
+Remaining sequence: draft API/UI and complete autosave transaction → listing creation/media → publication lifecycle and public listing page → Typesense indexing/search/filtering → favorites and saved searches.
 
 ## Phase 4 — trust and communication
 
