@@ -271,15 +271,14 @@ BEGIN
   IF parent_depth IS NULL OR NEW.depth <> parent_depth + 1 THEN
     RAISE EXCEPTION 'location depth must follow its parent';
   END IF;
-  IF NOT CASE parent_kind
-    WHEN 'country' THEN NEW.kind IN ('economic_region', 'city', 'district')
-    WHEN 'economic_region' THEN NEW.kind IN ('city', 'district', 'settlement')
-    WHEN 'city' THEN NEW.kind IN ('district', 'settlement', 'neighborhood', 'metro', 'street')
-    WHEN 'district' THEN NEW.kind IN ('settlement', 'neighborhood', 'metro', 'street')
-    WHEN 'settlement' THEN NEW.kind IN ('neighborhood', 'street')
-    WHEN 'neighborhood' THEN NEW.kind = 'street'
-    ELSE false
-  END THEN
+  IF NOT (
+    (parent_kind = 'country' AND NEW.kind IN ('economic_region', 'city', 'district')) OR
+    (parent_kind = 'economic_region' AND NEW.kind IN ('city', 'district', 'settlement')) OR
+    (parent_kind = 'city' AND NEW.kind IN ('district', 'settlement', 'neighborhood', 'metro', 'street')) OR
+    (parent_kind = 'district' AND NEW.kind IN ('settlement', 'neighborhood', 'metro', 'street')) OR
+    (parent_kind = 'settlement' AND NEW.kind IN ('neighborhood', 'street')) OR
+    (parent_kind = 'neighborhood' AND NEW.kind = 'street')
+  ) THEN
     RAISE EXCEPTION 'location kind is invalid beneath its parent';
   END IF;
   RETURN NEW;
