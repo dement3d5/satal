@@ -32,7 +32,8 @@ CREATE TABLE "attribute_option" (
 	"sort_order" integer DEFAULT 0 NOT NULL,
 	"enabled" boolean DEFAULT true NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
-	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "attribute_option_attribute_id_unique" UNIQUE("attribute_id","id")
 );
 --> statement-breakpoint
 CREATE TABLE "attribute_option_translation" (
@@ -213,7 +214,6 @@ ALTER TABLE "location_translation" ADD CONSTRAINT "location_translation_location
 ALTER TABLE "location_translation" ADD CONSTRAINT "location_translation_locale_supported_locale_code_fk" FOREIGN KEY ("locale") REFERENCES "public"."supported_locale"("code") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 CREATE UNIQUE INDEX "attribute_definition_key_unique" ON "attribute_definition" USING btree ("key");--> statement-breakpoint
 CREATE UNIQUE INDEX "attribute_option_attribute_key_unique" ON "attribute_option" USING btree ("attribute_id","key");--> statement-breakpoint
-CREATE UNIQUE INDEX "attribute_option_attribute_id_unique" ON "attribute_option" USING btree ("attribute_id","id");--> statement-breakpoint
 CREATE INDEX "attribute_option_order_idx" ON "attribute_option" USING btree ("attribute_id","sort_order");--> statement-breakpoint
 CREATE UNIQUE INDEX "category_slug_unique" ON "category" USING btree ("slug");--> statement-breakpoint
 CREATE INDEX "category_parent_order_idx" ON "category" USING btree ("parent_id","sort_order");--> statement-breakpoint

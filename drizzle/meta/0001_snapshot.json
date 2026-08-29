@@ -373,27 +373,6 @@
           "method": "btree",
           "with": {}
         },
-        "attribute_option_attribute_id_unique": {
-          "name": "attribute_option_attribute_id_unique",
-          "columns": [
-            {
-              "expression": "attribute_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
         "attribute_option_order_idx": {
           "name": "attribute_option_order_idx",
           "columns": [
@@ -428,7 +407,13 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "attribute_option_attribute_id_unique": {
+          "name": "attribute_option_attribute_id_unique",
+          "nullsNotDistinct": false,
+          "columns": ["attribute_id", "id"]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
