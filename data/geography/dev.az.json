@@ -1,0 +1,75 @@
+{
+  "dataset": {
+    "sourceName": "satal-dev-seed",
+    "verified": false,
+    "version": "2026-08-phase3-sample"
+  },
+  "locations": [
+    {
+      "id": "10000000-0000-4000-8000-000000000001",
+      "parentId": null,
+      "slug": "azerbaijan",
+      "kind": "country",
+      "depth": 0,
+      "sortOrder": 0,
+      "sourceId": "az",
+      "names": {"az": "Azərbaycan", "ru": "Азербайджан", "en": "Azerbaijan"},
+      "aliases": []
+    },
+    {
+      "id": "10000000-0000-4000-8000-000000000002",
+      "parentId": "10000000-0000-4000-8000-000000000001",
+      "slug": "baku",
+      "kind": "city",
+      "depth": 1,
+      "sortOrder": 10,
+      "sourceId": "baku-dev",
+      "names": {"az": "Bakı", "ru": "Баку", "en": "Baku"},
+      "aliases": [{"locale": "az", "value": "Baki"}]
+    },
+    {
+      "id": "10000000-0000-4000-8000-000000000003",
+      "parentId": "10000000-0000-4000-8000-000000000001",
+      "slug": "ganja",
+      "kind": "city",
+      "depth": 1,
+      "sortOrder": 20,
+      "sourceId": "ganja-dev",
+      "names": {"az": "Gəncə", "ru": "Гянджа", "en": "Ganja"},
+      "aliases": [{"locale": "az", "value": "Gence"}]
+    },
+    {
+      "id": "10000000-0000-4000-8000-000000000004",
+      "parentId": "10000000-0000-4000-8000-000000000002",
+      "slug": "baku-yasamal",
+      "kind": "district",
+      "depth": 2,
+      "sortOrder": 10,
+      "sourceId": "yasamal-dev",
+      "names": {"az": "Yasamal", "ru": "Ясамал", "en": "Yasamal"},
+      "aliases": []
+    },
+    {
+      "id": "10000000-0000-4000-8000-000000000005",
+      "parentId": "10000000-0000-4000-8000-000000000002",
+      "slug": "baku-icheri-sheher",
+      "kind": "neighborhood",
+      "depth": 2,
+      "sortOrder": 20,
+      "sourceId": "icheri-sheher-neighborhood-dev",
+      "names": {"az": "İçərişəhər", "ru": "Ичери-шехер", "en": "Icherisheher"},
+      "aliases": []
+    },
+    {
+      "id": "10000000-0000-4000-8000-000000000006",
+      "parentId": "10000000-0000-4000-8000-000000000002",
+      "slug": "metro-icheri-sheher",
+      "kind": "metro",
+      "depth": 2,
+      "sortOrder": 30,
+      "sourceId": "icheri-sheher-metro-dev",
+      "names": {"az": "İçərişəhər metrosu", "ru": "Метро Ичери-шехер", "en": "Icherisheher metro"},
+      "aliases": []
+    }
+  ]
+}

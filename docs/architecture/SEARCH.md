@@ -21,6 +21,8 @@ Synonyms and multilingual aliases are curated data with admin/version history. A
 
 Listing transactions write an outbox entry. The worker upserts/deletes search documents idempotently. Failed jobs retry with bounded backoff and dead-letter visibility. A versioned reindex command rebuilds a new collection from PostgreSQL and atomically switches an alias.
 
+Phase 3 stores future facet intent in `category_attribute.filterable/searchable/sortable` and keeps draft values typed. Typesense is deliberately not connected yet. Publication will build a locale-aware denormalized document from validated PostgreSQL rows; draft JSON or frontend category definitions will never feed the index directly.
+
 ## Migration path
 
 The gateway owns search request/result contracts so Typesense can be replaced. PostgreSQL full-text/trigram search may provide a degraded fallback for maintenance, but production search is not based on `LIKE`.

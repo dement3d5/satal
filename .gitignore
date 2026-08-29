@@ -18,6 +18,7 @@ test-results/
 Thumbs.db
 .idea/
 .vscode/
+.vs/
 
 # Local databases and object storage
 *.sqlite

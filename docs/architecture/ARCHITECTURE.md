@@ -44,3 +44,13 @@ A WebSocket/Socket.IO gateway lives beside the web process initially. Messages a
 ## Dependency direction
 
 `presentation/API → application → domain`; infrastructure implements ports owned by application/domain. Vendor SDKs never leak into domain types.
+
+## Phase 3 schema boundaries
+
+`geography` owns the import contract, hierarchy validation and localized canonical place records. The committed sample is not an authoritative Azerbaijan register; production import requires a verified source and review.
+
+`catalog` owns the three-level category tree, localized labels, typed attribute definitions/options and category applicability. Frontend code renders the schema returned by an application query; it must not contain category-specific forms or lists.
+
+`listings` owns draft authorization, lifecycle and category-change recalculation. A category change is one PostgreSQL transaction: lock/version-check the draft, authorize the owner, load the next schema, retain only compatible values, remove invalid values, update the captured schema version and increment the autosave version. Route handlers remain thin and will be added with the draft API/UI milestone.
+
+Media, Typesense, chat, shops and payments are not implemented in this milestone. Published-listing and search projections remain later boundaries driven from PostgreSQL/outbox state.

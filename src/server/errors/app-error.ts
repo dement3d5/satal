@@ -1,5 +1,10 @@
 export type ErrorCode =
-  'BAD_REQUEST' | 'FORBIDDEN' | 'NOT_FOUND' | 'SERVICE_UNAVAILABLE' | 'UNEXPECTED_ERROR';
+  | 'BAD_REQUEST'
+  | 'CONFLICT'
+  | 'FORBIDDEN'
+  | 'NOT_FOUND'
+  | 'SERVICE_UNAVAILABLE'
+  | 'UNEXPECTED_ERROR';
 
 export class AppError extends Error {
   constructor(
