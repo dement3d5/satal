@@ -57,4 +57,13 @@ Changing category is allowed only before submission. The application transaction
 - category attribute render/projection indexes and typed option projection indexes;
 - localized location name/alias indexes for future geography lookup.
 
-Future published listings remain a separate aggregate. Publication will copy validated draft state transactionally and emit an outbox event for derived search indexing; it will not query Typesense to decide business truth.
+### Published listings
+
+- `listing`: immutable publication snapshot identity plus seller, category/schema version, privacy-coarsened location, lifecycle, price and publication/expiry timestamps;
+- `listing_attribute_value` and `listing_attribute_option_value`: normalized typed attribute snapshot copied from the validated draft;
+- `listing_status_history`: actor-attributed public lifecycle audit;
+- `outbox_event`: transactional, versioned integration events for later search/media/notification workers.
+
+Publication locks the source draft, authorizes its owner, checks the optimistic version, validates required content and every category attribute, resolves the selected draft location to a safe public ancestor, copies the snapshot, advances the draft to `submitted`, and writes `listing.published` to the outbox in one transaction. `listing.source_draft_id` is unique, making a repeated publication request idempotent. Only `active` listings are public. Typesense is never queried to decide publication or visibility.
+
+The public lifecycle supports `pending_review`, `active`, `sold`, `expired`, `removed` and `rejected`. The current low-risk path activates a structurally valid listing immediately while retaining complete history; risk-based moderation and administrative transitions remain Phase 4.

@@ -546,7 +546,10 @@ export const listing = pgTable(
     check('listing_version_positive', sql`${table.version} > 0`),
     check('listing_title_not_blank', sql`length(btrim(${table.title})) >= 5`),
     check('listing_description_not_blank', sql`length(btrim(${table.description})) >= 20`),
-    check('listing_price_non_negative', sql`${table.priceMinor} is null or ${table.priceMinor} >= 0`),
+    check(
+      'listing_price_non_negative',
+      sql`${table.priceMinor} is null or ${table.priceMinor} >= 0`
+    ),
     check(
       'listing_active_has_published_at',
       sql`${table.status} <> 'active' or ${table.publishedAt} is not null`
@@ -578,7 +581,11 @@ export const listingAttributeValue = pgTable(
       foreignColumns: [attributeOption.attributeId, attributeOption.id],
       name: 'listing_scalar_option_belongs_to_attribute_fk'
     }).onDelete('restrict'),
-    index('listing_attribute_projection_idx').on(table.attributeId, table.optionId, table.listingId),
+    index('listing_attribute_projection_idx').on(
+      table.attributeId,
+      table.optionId,
+      table.listingId
+    ),
     check(
       'listing_attribute_exactly_one_scalar_value',
       sql`num_nonnulls(${table.textValue}, ${table.integerValue}, ${table.decimalValue}, ${table.booleanValue}, ${table.dateValue}, ${table.optionId}) = 1`
@@ -607,7 +614,11 @@ export const listingAttributeOptionValue = pgTable(
       foreignColumns: [attributeOption.attributeId, attributeOption.id],
       name: 'listing_multi_option_belongs_to_attribute_fk'
     }).onDelete('restrict'),
-    index('listing_multi_option_projection_idx').on(table.attributeId, table.optionId, table.listingId)
+    index('listing_multi_option_projection_idx').on(
+      table.attributeId,
+      table.optionId,
+      table.listingId
+    )
   ]
 );
 
@@ -624,7 +635,9 @@ export const listingStatusHistory = pgTable(
     reason: varchar('reason', {length: 240}),
     createdAt: timestamp('created_at', {withTimezone: true}).defaultNow().notNull()
   },
-  (table) => [index('listing_status_history_listing_created_idx').on(table.listingId, table.createdAt)]
+  (table) => [
+    index('listing_status_history_listing_created_idx').on(table.listingId, table.createdAt)
+  ]
 );
 
 export const outboxEvent = pgTable(
@@ -643,7 +656,11 @@ export const outboxEvent = pgTable(
   },
   (table) => [
     index('outbox_pending_idx').on(table.processedAt, table.availableAt, table.occurredAt),
-    index('outbox_aggregate_idx').on(table.aggregateType, table.aggregateId, table.aggregateVersion),
+    index('outbox_aggregate_idx').on(
+      table.aggregateType,
+      table.aggregateId,
+      table.aggregateVersion
+    ),
     check('outbox_version_positive', sql`${table.aggregateVersion} > 0`),
     check('outbox_attempts_non_negative', sql`${table.attempts} >= 0`)
   ]

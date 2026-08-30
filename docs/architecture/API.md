@@ -28,3 +28,7 @@ Rate limits are endpoint- and actor-specific. Login/OTP/recovery, uploads, searc
 The initial marketplace API slice exposes PostgreSQL-backed category trees, localized attribute schemas and geography under `/api/v1/catalog` and `/api/v1/locations`. Category schema responses include validation constraints, options and filter/search/sort capabilities so clients never hardcode category-specific forms.
 
 Authenticated draft routes under `/api/v1/listing-drafts` support creation, owner-only reads, autosave and safe category changes. Draft updates require the last observed `version`; stale autosaves receive a conflict response instead of overwriting newer work. Category-change responses report removed attribute IDs so the UI can explain recalculation without duplicating catalog rules. Draft responses are private and use `no-store`; public catalog and geography reads have short shared-cache policies.
+
+`POST /api/v1/listing-drafts/{draftId}/publish` is owner-only, version-checked and idempotent through the unique source-draft relationship. It reruns server-side completeness and category-schema validation before creating an active PostgreSQL snapshot and outbox event.
+
+`GET /api/v1/listings` exposes newest-first cursor pagination with optional category/location bounds. `GET /api/v1/listings/{listingId}` exposes only active listings with localized category, location and attribute labels. Public responses use short shared-cache headers; private draft/publication responses use `no-store`.

@@ -4,10 +4,7 @@ import {Suspense} from 'react';
 
 import {SiteHeader} from '@/components/site-header';
 import type {AppLocale} from '@/i18n/routing';
-import {
-  PublicListingFeed,
-  PublicListingFeedSkeleton
-} from '@/modules/listings/ui/public-listings';
+import {PublicListingFeed, PublicListingFeedSkeleton} from '@/modules/listings/ui/public-listings';
 
 export default async function HomePage({params}: {params: Promise<{locale: AppLocale}>}) {
   const {locale} = await params;

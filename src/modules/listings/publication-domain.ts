@@ -44,7 +44,10 @@ export function assertPublishableDraft(
   if (!draft.locationId) {
     throw new AppError('BAD_REQUEST', 'Listing location is required', 400);
   }
-  if (draft.priceMinor !== null && (!Number.isSafeInteger(draft.priceMinor) || draft.priceMinor < 0)) {
+  if (
+    draft.priceMinor !== null &&
+    (!Number.isSafeInteger(draft.priceMinor) || draft.priceMinor < 0)
+  ) {
     throw new AppError('BAD_REQUEST', 'Listing price must be a non-negative safe integer', 400);
   }
   if (draft.currency !== 'AZN') {
@@ -80,4 +83,31 @@ export function publicLocationDepth(precision: 'city' | 'district' | 'neighborho
   if (precision === 'city') return 2;
   if (precision === 'district') return 3;
   return 4;
+}
+
+type PublicLocationKind =
+  | 'country'
+  | 'economic_region'
+  | 'city'
+  | 'district'
+  | 'settlement'
+  | 'neighborhood'
+  | 'metro'
+  | 'street';
+
+export function selectPublicLocationId(
+  ancestry: readonly {id: string; kind: PublicLocationKind}[],
+  precision: 'city' | 'district' | 'neighborhood'
+): string {
+  const allowed =
+    precision === 'city'
+      ? new Set<PublicLocationKind>(['city'])
+      : precision === 'district'
+        ? new Set<PublicLocationKind>(['district', 'city'])
+        : new Set<PublicLocationKind>(['neighborhood', 'settlement', 'metro', 'district', 'city']);
+  const publicLocation = ancestry.find((item) => allowed.has(item.kind));
+  if (!publicLocation) {
+    throw new AppError('BAD_REQUEST', 'Selected location has no safe public ancestor', 400);
+  }
+  return publicLocation.id;
 }

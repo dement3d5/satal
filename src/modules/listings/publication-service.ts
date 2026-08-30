@@ -10,6 +10,7 @@ import {
   listingDraftAttributeValue,
   listingDraftStatusHistory,
   listingStatusHistory,
+  location,
   outboxEvent
 } from '@/server/db/schema';
 import {AppError} from '@/server/errors/app-error';
@@ -17,7 +18,7 @@ import {AppError} from '@/server/errors/app-error';
 import {assertDraftOwner, assertDraftVersion} from './draft-domain';
 import {loadAttributeRules, loadStoredAttributes, lockDraft, requireDraft} from './draft-service';
 import type {PublishListingInput} from './publication-contracts';
-import {assertPublishableDraft} from './publication-domain';
+import {assertPublishableDraft, selectPublicLocationId} from './publication-domain';
 
 export interface PublishedListingContract {
   id: string;
@@ -66,6 +67,11 @@ export async function publishListingDraft(
     const now = new Date();
     const expiresAt = new Date(now);
     expiresAt.setUTCDate(expiresAt.getUTCDate() + 45);
+    const publicLocationId = await resolvePublicLocationId(
+      tx,
+      draft.locationId!,
+      draft.publicLocationPrecision
+    );
     const [created] = await tx
       .insert(listing)
       .values({
@@ -73,7 +79,7 @@ export async function publishListingDraft(
         sourceDraftId: draftId,
         categoryId: draft.categoryId,
         categorySchemaVersion: draft.categorySchemaVersion,
-        locationId: draft.locationId!,
+        locationId: publicLocationId,
         publicLocationPrecision: draft.publicLocationPrecision,
         status: 'active',
         title: draft.title.trim(),
@@ -140,6 +146,26 @@ export async function publishListingDraft(
 
     return toPublishedContract(created);
   });
+}
+
+async function resolvePublicLocationId(
+  tx: Parameters<Parameters<DatabaseClient['transaction']>[0]>[0],
+  selectedLocationId: string,
+  precision: 'city' | 'district' | 'neighborhood'
+): Promise<string> {
+  const ancestry: {id: string; kind: typeof location.$inferSelect.kind}[] = [];
+  let currentId: string | null = selectedLocationId;
+  for (let depth = 0; currentId && depth < 8; depth += 1) {
+    const [current] = await tx
+      .select({id: location.id, parentId: location.parentId, kind: location.kind})
+      .from(location)
+      .where(and(eq(location.id, currentId), eq(location.enabled, true)))
+      .limit(1);
+    if (!current) throw new AppError('BAD_REQUEST', 'Listing location is not available', 400);
+    ancestry.push({id: current.id, kind: current.kind});
+    currentId = current.parentId;
+  }
+  return selectPublicLocationId(ancestry, precision);
 }
 
 async function copyDraftAttributes(

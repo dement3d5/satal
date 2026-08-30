@@ -16,7 +16,9 @@ export async function GET(request: Request) {
       ? (requestedLocale as (typeof routing.locales)[number])
       : routing.defaultLocale;
     const query = publicListingQuerySchema.parse(Object.fromEntries(url.searchParams));
-    const response = NextResponse.json({data: await listPublicListings(getDatabase(), locale, query)});
+    const response = NextResponse.json({
+      data: await listPublicListings(getDatabase(), locale, query)
+    });
     response.headers.set('cache-control', 'public, s-maxage=30, stale-while-revalidate=120');
     return response;
   } catch (error) {

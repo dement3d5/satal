@@ -51,6 +51,6 @@ A WebSocket/Socket.IO gateway lives beside the web process initially. Messages a
 
 `catalog` owns the three-level category tree, localized labels, typed attribute definitions/options and category applicability. Frontend code renders the schema returned by an application query; it must not contain category-specific forms or lists.
 
-`listings` owns draft authorization, lifecycle and category-change recalculation. A category change is one PostgreSQL transaction: lock/version-check the draft, authorize the owner, load the next schema, retain only compatible values, remove invalid values, update the captured schema version and increment the autosave version. Route handlers remain thin and will be added with the draft API/UI milestone.
+`listings` owns draft authorization, lifecycle, category-change recalculation and the published aggregate. Publication is one PostgreSQL transaction: lock/version-check and authorize the draft, validate required category content, coarsen location precision, copy typed values into immutable listing snapshot tables, advance the draft, append lifecycle history and write an outbox event. Public reads select only `active` PostgreSQL rows; the localized homepage feed and listing detail page do not depend on Typesense.
 
-Media, Typesense, chat, shops and payments are not implemented in this milestone. Published-listing and search projections remain later boundaries driven from PostgreSQL/outbox state.
+Secure media upload/processing, Typesense, chat, shops and payments are not implemented in this milestone. Listing cards deliberately show a neutral placeholder rather than pretending an object-storage integration is ready.

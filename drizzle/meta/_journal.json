@@ -15,6 +15,13 @@
       "when": 1788018279295,
       "tag": "0001_glorious_abomination",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1788101360716,
+      "tag": "0002_worthless_supernaut",
+      "breakpoints": true
     }
   ]
 }

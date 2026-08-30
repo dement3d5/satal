@@ -2,7 +2,7 @@
 
 Satal is an Azerbaijan-first multilingual classifieds marketplace. The product optimizes for a short path from arrival to a relevant listing, category-aware search, trustworthy seller interactions, and low-complexity operation during MVP.
 
-Phase 2 foundation and Phase 3A data foundations are complete. The repository contains no production-ready SMS, email, search, storage, payment, or hosting integration; disabled providers fail closed instead of simulating success.
+Phase 2 foundation and Phase 3A/3B marketplace foundations are complete. The repository contains no production-ready SMS, email, search, storage, payment, or hosting integration; disabled providers fail closed instead of simulating success.
 
 ## Foundation
 
@@ -14,6 +14,7 @@ Phase 2 foundation and Phase 3A data foundations are complete. The repository co
 - Vitest, ESLint, Prettier and GitHub Actions quality gates;
 - responsive design tokens, accessible focus/reduced-motion behavior and health endpoint.
 - imported hierarchical geography, three-level localized taxonomy, typed category attributes and owner/version-controlled listing drafts.
+- atomic draft publication into a PostgreSQL listing snapshot, lifecycle/outbox history, public API, localized homepage feed and public detail page.
 
 ## Requirements
 

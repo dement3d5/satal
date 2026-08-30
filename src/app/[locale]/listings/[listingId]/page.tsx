@@ -15,7 +15,11 @@ type PageProps = {params: Promise<{locale: AppLocale; listingId: string}>};
 export async function generateMetadata({params}: PageProps): Promise<Metadata> {
   const {locale, listingId: rawListingId} = await params;
   try {
-    const item = await getPublicListing(getDatabase(), locale, parseUuid(rawListingId, 'listingId'));
+    const item = await getPublicListing(
+      getDatabase(),
+      locale,
+      parseUuid(rawListingId, 'listingId')
+    );
     return {title: `${item.title} — Satal`, description: item.description.slice(0, 160)};
   } catch {
     return {title: 'Satal'};
@@ -35,7 +39,11 @@ export default async function ListingPage({params}: PageProps) {
 
   return (
     <main className="page-shell">
-      <SiteHeader locale={locale} languageLabel={t('languageNavigation')} sellLabel={t('sellAction')} />
+      <SiteHeader
+        locale={locale}
+        languageLabel={t('languageNavigation')}
+        sellLabel={t('sellAction')}
+      />
       <article className="listing-detail">
         <div className="listing-detail-media" aria-label={t('mediaPlaceholder')}>
           <span>SATAL</span>

@@ -1,6 +1,10 @@
 import {describe, expect, it} from 'vitest';
 
-import {assertPublishableDraft, publicLocationDepth} from './publication-domain';
+import {
+  assertPublishableDraft,
+  publicLocationDepth,
+  selectPublicLocationId
+} from './publication-domain';
 
 const rules = new Map([
   [
@@ -56,5 +60,16 @@ describe('listing publication rules', () => {
     expect(() => assertPublishableDraft({...validDraft, status: 'submitted'}, rules)).toThrow(
       /current state/i
     );
+  });
+
+  it('coarsens a private selected location to the requested public precision', () => {
+    const ancestry = [
+      {id: 'street', kind: 'street' as const},
+      {id: 'district', kind: 'district' as const},
+      {id: 'city', kind: 'city' as const},
+      {id: 'country', kind: 'country' as const}
+    ];
+    expect(selectPublicLocationId(ancestry, 'district')).toBe('district');
+    expect(selectPublicLocationId(ancestry, 'city')).toBe('city');
   });
 });

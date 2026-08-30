@@ -72,11 +72,17 @@ export async function listPublicListings(
     .from(listing)
     .innerJoin(
       categoryTranslation,
-      and(eq(categoryTranslation.categoryId, listing.categoryId), eq(categoryTranslation.locale, locale))
+      and(
+        eq(categoryTranslation.categoryId, listing.categoryId),
+        eq(categoryTranslation.locale, locale)
+      )
     )
     .innerJoin(
       locationTranslation,
-      and(eq(locationTranslation.locationId, listing.locationId), eq(locationTranslation.locale, locale))
+      and(
+        eq(locationTranslation.locationId, listing.locationId),
+        eq(locationTranslation.locale, locale)
+      )
     )
     .where(
       and(
@@ -116,11 +122,17 @@ export async function getPublicListing(
     .innerJoin(user, eq(user.id, listing.sellerId))
     .innerJoin(
       categoryTranslation,
-      and(eq(categoryTranslation.categoryId, listing.categoryId), eq(categoryTranslation.locale, locale))
+      and(
+        eq(categoryTranslation.categoryId, listing.categoryId),
+        eq(categoryTranslation.locale, locale)
+      )
     )
     .innerJoin(
       locationTranslation,
-      and(eq(locationTranslation.locationId, listing.locationId), eq(locationTranslation.locale, locale))
+      and(
+        eq(locationTranslation.locationId, listing.locationId),
+        eq(locationTranslation.locale, locale)
+      )
     )
     .where(and(eq(listing.id, listingId), eq(listing.status, 'active')))
     .limit(1);

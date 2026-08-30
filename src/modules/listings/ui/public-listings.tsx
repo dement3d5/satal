@@ -5,54 +5,21 @@ import Link from 'next/link';
 import type {AppLocale} from '@/i18n/routing';
 import {getDatabase} from '@/server/db/client';
 
-import {listPublicListings} from '../public-listing-service';
+import {listPublicListings, type PublicListingCard} from '../public-listing-service';
 
 export async function PublicListingFeed({locale}: {locale: AppLocale}) {
   await connection();
   const t = await getTranslations('home');
 
+  let items: PublicListingCard[] = [];
+  let unavailable = false;
   try {
-    const {items} = await listPublicListings(getDatabase(), locale, {limit: 12});
-    if (!items.length) {
-      return (
-        <section className="listing-section" aria-labelledby="listing-feed-title">
-          <ListingSectionHeading title={t('listingFeedTitle')} action={t('listingFeedAction')} />
-          <div className="listing-empty">
-            <strong>{t('listingEmptyTitle')}</strong>
-            <span>{t('listingEmptyText')}</span>
-            <Link className="button button-primary" href={`/${locale}/sell`}>
-              {t('sellAction')}
-            </Link>
-          </div>
-        </section>
-      );
-    }
-
-    return (
-      <section className="listing-section" aria-labelledby="listing-feed-title">
-        <ListingSectionHeading title={t('listingFeedTitle')} action={t('listingFeedAction')} />
-        <div className="listing-grid">
-          {items.map((item) => (
-            <Link className="listing-card" href={`/${locale}/listings/${item.id}`} key={item.id}>
-              <div className="listing-card-media" aria-hidden="true">
-                <ListingPlaceholderIcon />
-              </div>
-              <div className="listing-card-body">
-                <strong className="listing-price">
-                  {formatPrice(item.priceMinor, item.currency, locale, t('priceOnRequest'))}
-                </strong>
-                <h3>{item.title}</h3>
-                <p>{item.categoryName}</p>
-                <span>
-                  {item.locationName} · {formatDate(item.publishedAt, locale)}
-                </span>
-              </div>
-            </Link>
-          ))}
-        </div>
-      </section>
-    );
+    ({items} = await listPublicListings(getDatabase(), locale, {limit: 12}));
   } catch {
+    unavailable = true;
+  }
+
+  if (unavailable) {
     return (
       <section className="listing-section" aria-labelledby="listing-feed-title">
         <ListingSectionHeading title={t('listingFeedTitle')} action={t('listingFeedAction')} />
@@ -63,6 +30,46 @@ export async function PublicListingFeed({locale}: {locale: AppLocale}) {
       </section>
     );
   }
+
+  if (!items.length) {
+    return (
+      <section className="listing-section" aria-labelledby="listing-feed-title">
+        <ListingSectionHeading title={t('listingFeedTitle')} action={t('listingFeedAction')} />
+        <div className="listing-empty">
+          <strong>{t('listingEmptyTitle')}</strong>
+          <span>{t('listingEmptyText')}</span>
+          <Link className="button button-primary" href={`/${locale}/sell`}>
+            {t('sellAction')}
+          </Link>
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section className="listing-section" aria-labelledby="listing-feed-title">
+      <ListingSectionHeading title={t('listingFeedTitle')} action={t('listingFeedAction')} />
+      <div className="listing-grid">
+        {items.map((item) => (
+          <Link className="listing-card" href={`/${locale}/listings/${item.id}`} key={item.id}>
+            <div className="listing-card-media" aria-hidden="true">
+              <ListingPlaceholderIcon />
+            </div>
+            <div className="listing-card-body">
+              <strong className="listing-price">
+                {formatPrice(item.priceMinor, item.currency, locale, t('priceOnRequest'))}
+              </strong>
+              <h3>{item.title}</h3>
+              <p>{item.categoryName}</p>
+              <span>
+                {item.locationName} · {formatDate(item.publishedAt, locale)}
+              </span>
+            </div>
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
 }
 
 export function PublicListingFeedSkeleton() {

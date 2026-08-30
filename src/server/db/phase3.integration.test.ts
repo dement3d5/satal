@@ -89,4 +89,67 @@ integration('Phase 3 PostgreSQL model', () => {
     await client!`delete from listing_draft where id = ${draftId}`;
     await client!`delete from "user" where id = ${userId}`;
   });
+
+  it('enforces one published listing per source draft and active publication timestamps', async () => {
+    const userId = randomUUID();
+    const draftId = randomUUID();
+    const listingId = randomUUID();
+    await client!`
+      insert into "user" (id, name, email, email_verified)
+      values (${userId}, 'Publication owner', ${`${userId}@example.test`}, true)
+    `;
+    await client!`
+      insert into listing_draft
+        (id, owner_id, category_id, category_schema_version, location_id, title, description)
+      values (
+        ${draftId},
+        ${userId},
+        '20000000-0000-4000-8000-000000000003',
+        1,
+        '10000000-0000-4000-8000-000000000002',
+        'Integration listing',
+        'A sufficiently complete integration listing description.'
+      )
+    `;
+
+    await expect(
+      client!`
+        insert into listing
+          (seller_id, source_draft_id, category_id, category_schema_version, location_id,
+           public_location_precision, status, title, description)
+        values (
+          ${userId}, ${draftId}, '20000000-0000-4000-8000-000000000003', 1,
+          '10000000-0000-4000-8000-000000000002', 'city', 'active',
+          'Missing published date', 'This active listing intentionally lacks a publication date.'
+        )
+      `
+    ).rejects.toThrow();
+
+    await client!`
+      insert into listing
+        (id, seller_id, source_draft_id, category_id, category_schema_version, location_id,
+         public_location_precision, status, title, description, published_at)
+      values (
+        ${listingId}, ${userId}, ${draftId}, '20000000-0000-4000-8000-000000000003', 1,
+        '10000000-0000-4000-8000-000000000002', 'city', 'active',
+        'Published integration listing', 'A complete published integration listing description.', now()
+      )
+    `;
+    await expect(
+      client!`
+        insert into listing
+          (seller_id, source_draft_id, category_id, category_schema_version, location_id,
+           public_location_precision, status, title, description, published_at)
+        values (
+          ${userId}, ${draftId}, '20000000-0000-4000-8000-000000000003', 1,
+          '10000000-0000-4000-8000-000000000002', 'city', 'active',
+          'Duplicate publication', 'This duplicate must be rejected by the source draft key.', now()
+        )
+      `
+    ).rejects.toThrow();
+
+    await client!`delete from listing where id = ${listingId}`;
+    await client!`delete from listing_draft where id = ${draftId}`;
+    await client!`delete from "user" where id = ${userId}`;
+  });
 });

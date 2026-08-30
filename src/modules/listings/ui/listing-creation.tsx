@@ -1,6 +1,7 @@
 'use client';
 
 import {useLocale, useTranslations} from 'next-intl';
+import {useRouter} from 'next/navigation';
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 
 import type {
@@ -35,6 +36,7 @@ interface ApiErrorShape {
 export function ListingCreation() {
   const t = useTranslations('sell');
   const locale = useLocale() as ContractLocale;
+  const router = useRouter();
   const [step, setStep] = useState<Step>('category');
   const [categories, setCategories] = useState<CategoryNodeContract[]>([]);
   const [categoryPath, setCategoryPath] = useState<CategoryNodeContract[]>([]);
@@ -223,7 +225,7 @@ export function ListingCreation() {
       });
       const body = (await response.json()) as {data?: {id: string}} & ApiErrorShape;
       if (!response.ok || !body.data) throw new Error(body.error?.message || t('publishError'));
-      window.location.assign(`/${locale}/listings/${body.data.id}`);
+      router.push(`/${locale}/listings/${body.data.id}`);
     } catch (error) {
       setPublishError(error instanceof Error ? error.message : t('publishError'));
       setPublishing(false);
