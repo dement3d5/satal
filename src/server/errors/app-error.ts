@@ -3,6 +3,7 @@ export type ErrorCode =
   | 'CONFLICT'
   | 'FORBIDDEN'
   | 'NOT_FOUND'
+  | 'UNAUTHORIZED'
   | 'SERVICE_UNAVAILABLE'
   | 'UNEXPECTED_ERROR';
 
