@@ -23,3 +23,11 @@ Design and test loading, empty, upload failure/processing, offline/network error
 ## Accessibility/SEO
 
 Semantic landmarks and controls, keyboard navigation, labels, contrast, reduced motion and correct dialogs are baseline. Public listings/categories use SSR, clean canonical localized URLs, structured metadata, Open Graph and controlled indexing of filter combinations.
+
+## Listing creation UI foundation
+
+The first visual listing flow lives at `/{locale}/sell` and is intentionally mobile-first. It presents category, details, location and review as a short progressive flow rather than one long form. Category choices, localized labels, validation constraints and control types come from the catalog API; frontend code contains no category-specific field lists.
+
+Authenticated sessions receive a PostgreSQL-backed draft and debounced optimistic autosave. Without a session, the same schema can be previewed locally, but the interface explicitly states that it is not persisted. Approximate location is selected through the geography hierarchy and the interface explains that a private seller's exact address is not public.
+
+Search, phone sign-in, media upload and publication controls are visibly non-operational until their dedicated milestones. The UI does not simulate successful integration for those boundaries.
