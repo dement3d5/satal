@@ -8,6 +8,13 @@
     "searchPlaceholder": "iPhone, Toyota Camry, квартира...",
     "searchAction": "Найти",
     "searchSoon": "Поиск заработает на следующем этапе",
+    "listingFeedTitle": "Новые объявления",
+    "listingFeedAction": "Сначала свежие",
+    "listingEmptyTitle": "Здесь появятся первые объявления",
+    "listingEmptyText": "Опубликованные объявления сразу попадут в эту ленту.",
+    "listingUnavailableTitle": "Объявления временно недоступны",
+    "listingUnavailableText": "Лента появится автоматически после запуска базы данных.",
+    "priceOnRequest": "Цена договорная",
     "sellAction": "Подать объявление",
     "sellHint": "Выберите категорию, заполните детали — остальное Satal сделает проще.",
     "visualTitle": "Покупать и продавать проще",
@@ -19,6 +26,21 @@
     "trustLocationText": "По городам и районам",
     "trustSimpleTitle": "Простая подача",
     "trustSimpleText": "Только действительно нужные поля"
+  },
+  "listing": {
+    "languageNavigation": "Выбор языка",
+    "sellAction": "Подать объявление",
+    "breadcrumbLabel": "Навигация",
+    "home": "Главная",
+    "mediaPlaceholder": "Фотографии скоро",
+    "priceOnRequest": "Цена договорная",
+    "attributesTitle": "Основные характеристики",
+    "descriptionTitle": "Описание",
+    "sellerLabel": "Продавец",
+    "contactAction": "Связаться с продавцом",
+    "contactSoon": "Связь заработает на этапе identity и чата.",
+    "yes": "Да",
+    "no": "Нет"
   },
   "sell": {
     "eyebrow": "Новое объявление",
@@ -88,9 +110,12 @@
     "mediaLater": "Фото на следующем этапе",
     "untitled": "Объявление без заголовка",
     "priceOnRequest": "Цена договорная",
-    "foundationReadyTitle": "Основа черновика готова",
-    "foundationReadyText": "Медиа и публикация появятся в следующем milestone после отдельных проверок безопасности.",
+    "foundationReadyTitle": "Объявление готово к публикации",
+    "foundationReadyText": "Сохранённые данные будут проверены ещё раз, после чего объявление безопасно опубликуется. Фотографии появятся отдельным этапом.",
     "editDetails": "Изменить",
-    "publishLater": "Публикация скоро"
+    "publishLater": "Публикация скоро",
+    "publishAction": "Опубликовать объявление",
+    "publishing": "Публикуем...",
+    "publishError": "Не удалось опубликовать объявление"
   }
 }

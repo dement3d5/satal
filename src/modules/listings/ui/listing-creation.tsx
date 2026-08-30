@@ -54,6 +54,8 @@ export function ListingCreation() {
   const [locationId, setLocationId] = useState<string | null>(null);
   const [saveState, setSaveState] = useState<SaveState>('local');
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [publishing, setPublishing] = useState(false);
+  const [publishError, setPublishError] = useState<string | null>(null);
   const dirtyRevision = useRef(0);
   const savedRevision = useRef(0);
   const saving = useRef(false);
@@ -209,6 +211,25 @@ export function ListingCreation() {
     return () => window.clearTimeout(timer);
   }, [draft, saveDraft, title, description, price, attributes, locationId]);
 
+  async function publishDraft() {
+    if (!draft || saveState !== 'saved') return;
+    setPublishing(true);
+    setPublishError(null);
+    try {
+      const response = await fetch(`/api/v1/listing-drafts/${draft.id}/publish`, {
+        method: 'POST',
+        headers: {'content-type': 'application/json'},
+        body: JSON.stringify({version: draft.version})
+      });
+      const body = (await response.json()) as {data?: {id: string}} & ApiErrorShape;
+      if (!response.ok || !body.data) throw new Error(body.error?.message || t('publishError'));
+      window.location.assign(`/${locale}/listings/${body.data.id}`);
+    } catch (error) {
+      setPublishError(error instanceof Error ? error.message : t('publishError'));
+      setPublishing(false);
+    }
+  }
+
   async function loadLocations(parentId: string | null, trail: LocationContract[]) {
     setLoadingLocations(true);
     try {
@@ -353,12 +374,21 @@ export function ListingCreation() {
 
         {step === 'review' && schema && (
           <ReviewStep
+            canPublish={
+              Boolean(draft) &&
+              saveState === 'saved' &&
+              requiredMissing.length === 0 &&
+              Boolean(locationId)
+            }
             category={schema.category.name}
             location={locationTrail.at(-1)?.name ?? t('notSelected')}
             missing={requiredMissing.map((item) => item.label)}
             onBack={() => setStep('location')}
             onEdit={() => setStep('details')}
+            onPublish={() => void publishDraft()}
             price={price}
+            publishError={publishError}
+            publishing={publishing}
             t={t}
             title={title}
           />
@@ -786,12 +816,16 @@ function LocationStep(props: {
 }
 
 function ReviewStep(props: {
+  canPublish: boolean;
   category: string;
   location: string;
   missing: string[];
   onBack: () => void;
   onEdit: () => void;
+  onPublish: () => void;
   price: string;
+  publishError: string | null;
+  publishing: boolean;
   t: Translator;
   title: string;
 }) {
@@ -832,6 +866,15 @@ function ReviewStep(props: {
           <p>{t('foundationReadyText')}</p>
         </div>
       </div>
+      {props.publishError && (
+        <div className="notice notice-error" role="alert">
+          <AlertIcon />
+          <div>
+            <strong>{t('publishError')}</strong>
+            <p>{props.publishError}</p>
+          </div>
+        </div>
+      )}
       <div className="form-actions">
         <button className="button button-ghost" onClick={props.onBack} type="button">
           {t('back')}
@@ -839,8 +882,13 @@ function ReviewStep(props: {
         <button className="button button-secondary" onClick={props.onEdit} type="button">
           {t('editDetails')}
         </button>
-        <button className="button button-primary" disabled type="button">
-          {t('publishLater')}
+        <button
+          className="button button-primary"
+          disabled={!props.canPublish || props.publishing}
+          onClick={props.onPublish}
+          type="button"
+        >
+          {props.publishing ? t('publishing') : t('publishAction')}
         </button>
       </div>
     </>

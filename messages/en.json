@@ -8,6 +8,13 @@
     "searchPlaceholder": "iPhone, Toyota Camry, apartment...",
     "searchAction": "Search",
     "searchSoon": "Search will be enabled in the next milestone",
+    "listingFeedTitle": "New listings",
+    "listingFeedAction": "Newest first",
+    "listingEmptyTitle": "The first listings will appear here",
+    "listingEmptyText": "Published listings are added to this feed immediately.",
+    "listingUnavailableTitle": "Listings are temporarily unavailable",
+    "listingUnavailableText": "The feed will appear automatically when the database is running.",
+    "priceOnRequest": "Price on request",
     "sellAction": "Post a listing",
     "sellHint": "Choose a category, add the details — Satal makes the rest feel simple.",
     "visualTitle": "A simpler way to buy and sell",
@@ -19,6 +26,21 @@
     "trustLocationText": "Cities and districts included",
     "trustSimpleTitle": "Simple listing flow",
     "trustSimpleText": "Only the fields that matter"
+  },
+  "listing": {
+    "languageNavigation": "Language selection",
+    "sellAction": "Post a listing",
+    "breadcrumbLabel": "Breadcrumb",
+    "home": "Home",
+    "mediaPlaceholder": "Photos coming soon",
+    "priceOnRequest": "Price on request",
+    "attributesTitle": "Key details",
+    "descriptionTitle": "Description",
+    "sellerLabel": "Seller",
+    "contactAction": "Contact seller",
+    "contactSoon": "Contact will be enabled with identity and chat.",
+    "yes": "Yes",
+    "no": "No"
   },
   "sell": {
     "eyebrow": "New listing",
@@ -88,9 +110,12 @@
     "mediaLater": "Photos in the next phase",
     "untitled": "Untitled listing",
     "priceOnRequest": "Price on request",
-    "foundationReadyTitle": "Draft foundation is ready",
-    "foundationReadyText": "Media and publishing will follow in the next milestone with their own security checks.",
+    "foundationReadyTitle": "Your listing is ready to publish",
+    "foundationReadyText": "Saved data will be validated again before the listing is published. Photos follow in a separate milestone.",
     "editDetails": "Edit details",
-    "publishLater": "Publishing soon"
+    "publishLater": "Publishing soon",
+    "publishAction": "Publish listing",
+    "publishing": "Publishing...",
+    "publishError": "The listing could not be published"
   }
 }

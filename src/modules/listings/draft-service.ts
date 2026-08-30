@@ -197,7 +197,7 @@ async function requireLeafCategory(executor: QueryExecutor, categoryId: string) 
   return row;
 }
 
-async function requireDraft(executor: QueryExecutor, draftId: string) {
+export async function requireDraft(executor: QueryExecutor, draftId: string) {
   const [row] = await executor
     .select()
     .from(listingDraft)
@@ -207,17 +207,17 @@ async function requireDraft(executor: QueryExecutor, draftId: string) {
   return row;
 }
 
-async function lockDraft(
+export async function lockDraft(
   executor: Pick<DatabaseClient, 'execute'>,
   draftId: string
 ): Promise<void> {
   await executor.execute(sql`select id from listing_draft where id = ${draftId} for update`);
 }
 
-async function loadAttributeRules(
+export async function loadAttributeRules(
   executor: QueryExecutor,
   categoryId: string
-): Promise<Map<string, AttributeRules>> {
+): Promise<Map<string, AttributeRules & {required: boolean}>> {
   const rows = await executor
     .select({
       id: attributeDefinition.id,
@@ -229,7 +229,8 @@ async function loadAttributeRules(
       maxLength: attributeDefinition.maxLength,
       validationPattern: attributeDefinition.validationPattern,
       minSelections: attributeDefinition.minSelections,
-      maxSelections: attributeDefinition.maxSelections
+      maxSelections: attributeDefinition.maxSelections,
+      required: categoryAttribute.required
     })
     .from(categoryAttribute)
     .innerJoin(attributeDefinition, eq(attributeDefinition.id, categoryAttribute.attributeId))
@@ -313,7 +314,7 @@ async function replaceAttributes(
     await executor.insert(listingDraftAttributeOptionValue).values(multiValues);
 }
 
-async function loadStoredAttributes(
+export async function loadStoredAttributes(
   executor: QueryExecutor,
   draftId: string
 ): Promise<DraftAttributeInput[]> {

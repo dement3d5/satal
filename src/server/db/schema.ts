@@ -6,6 +6,7 @@ import {
   foreignKey,
   index,
   integer,
+  jsonb,
   numeric,
   pgEnum,
   pgTable,
@@ -485,4 +486,165 @@ export const listingDraftStatusHistory = pgTable(
     createdAt: timestamp('created_at', {withTimezone: true}).defaultNow().notNull()
   },
   (table) => [index('draft_status_history_draft_created_idx').on(table.draftId, table.createdAt)]
+);
+
+export const listingStatus = pgEnum('listing_status', [
+  'pending_review',
+  'active',
+  'sold',
+  'expired',
+  'removed',
+  'rejected'
+]);
+
+export const listing = pgTable(
+  'listing',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    sellerId: uuid('seller_id')
+      .notNull()
+      .references(() => user.id, {onDelete: 'restrict'}),
+    sourceDraftId: uuid('source_draft_id')
+      .notNull()
+      .references(() => listingDraft.id, {onDelete: 'restrict'}),
+    categoryId: uuid('category_id')
+      .notNull()
+      .references(() => category.id, {onDelete: 'restrict'}),
+    categorySchemaVersion: integer('category_schema_version').notNull(),
+    locationId: uuid('location_id')
+      .notNull()
+      .references(() => location.id, {onDelete: 'restrict'}),
+    publicLocationPrecision: publicLocationPrecision('public_location_precision').notNull(),
+    status: listingStatus('status').default('pending_review').notNull(),
+    title: varchar('title', {length: 180}).notNull(),
+    description: text('description').notNull(),
+    priceMinor: bigint('price_minor', {mode: 'number'}),
+    currency: varchar('currency', {length: 3}).default('AZN').notNull(),
+    version: integer('version').default(1).notNull(),
+    publishedAt: timestamp('published_at', {withTimezone: true}),
+    expiresAt: timestamp('expires_at', {withTimezone: true}),
+    soldAt: timestamp('sold_at', {withTimezone: true}),
+    ...timestamps
+  },
+  (table) => [
+    uniqueIndex('listing_source_draft_unique').on(table.sourceDraftId),
+    index('listing_public_feed_idx').on(table.status, table.publishedAt, table.id),
+    index('listing_category_feed_idx').on(
+      table.categoryId,
+      table.status,
+      table.publishedAt,
+      table.id
+    ),
+    index('listing_location_feed_idx').on(
+      table.locationId,
+      table.status,
+      table.publishedAt,
+      table.id
+    ),
+    index('listing_seller_status_updated_idx').on(table.sellerId, table.status, table.updatedAt),
+    check('listing_schema_version_positive', sql`${table.categorySchemaVersion} > 0`),
+    check('listing_version_positive', sql`${table.version} > 0`),
+    check('listing_title_not_blank', sql`length(btrim(${table.title})) >= 5`),
+    check('listing_description_not_blank', sql`length(btrim(${table.description})) >= 20`),
+    check('listing_price_non_negative', sql`${table.priceMinor} is null or ${table.priceMinor} >= 0`),
+    check(
+      'listing_active_has_published_at',
+      sql`${table.status} <> 'active' or ${table.publishedAt} is not null`
+    )
+  ]
+);
+
+export const listingAttributeValue = pgTable(
+  'listing_attribute_value',
+  {
+    listingId: uuid('listing_id')
+      .notNull()
+      .references(() => listing.id, {onDelete: 'cascade'}),
+    attributeId: uuid('attribute_id')
+      .notNull()
+      .references(() => attributeDefinition.id, {onDelete: 'restrict'}),
+    textValue: text('text_value'),
+    integerValue: bigint('integer_value', {mode: 'number'}),
+    decimalValue: numeric('decimal_value', {precision: 18, scale: 4}),
+    booleanValue: boolean('boolean_value'),
+    dateValue: date('date_value'),
+    optionId: uuid('option_id').references(() => attributeOption.id, {onDelete: 'restrict'}),
+    ...timestamps
+  },
+  (table) => [
+    primaryKey({columns: [table.listingId, table.attributeId]}),
+    foreignKey({
+      columns: [table.attributeId, table.optionId],
+      foreignColumns: [attributeOption.attributeId, attributeOption.id],
+      name: 'listing_scalar_option_belongs_to_attribute_fk'
+    }).onDelete('restrict'),
+    index('listing_attribute_projection_idx').on(table.attributeId, table.optionId, table.listingId),
+    check(
+      'listing_attribute_exactly_one_scalar_value',
+      sql`num_nonnulls(${table.textValue}, ${table.integerValue}, ${table.decimalValue}, ${table.booleanValue}, ${table.dateValue}, ${table.optionId}) = 1`
+    )
+  ]
+);
+
+export const listingAttributeOptionValue = pgTable(
+  'listing_attribute_option_value',
+  {
+    listingId: uuid('listing_id')
+      .notNull()
+      .references(() => listing.id, {onDelete: 'cascade'}),
+    attributeId: uuid('attribute_id')
+      .notNull()
+      .references(() => attributeDefinition.id, {onDelete: 'restrict'}),
+    optionId: uuid('option_id')
+      .notNull()
+      .references(() => attributeOption.id, {onDelete: 'restrict'}),
+    ...timestamps
+  },
+  (table) => [
+    primaryKey({columns: [table.listingId, table.attributeId, table.optionId]}),
+    foreignKey({
+      columns: [table.attributeId, table.optionId],
+      foreignColumns: [attributeOption.attributeId, attributeOption.id],
+      name: 'listing_multi_option_belongs_to_attribute_fk'
+    }).onDelete('restrict'),
+    index('listing_multi_option_projection_idx').on(table.attributeId, table.optionId, table.listingId)
+  ]
+);
+
+export const listingStatusHistory = pgTable(
+  'listing_status_history',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    listingId: uuid('listing_id')
+      .notNull()
+      .references(() => listing.id, {onDelete: 'cascade'}),
+    actorId: uuid('actor_id').references(() => user.id, {onDelete: 'restrict'}),
+    fromStatus: listingStatus('from_status'),
+    toStatus: listingStatus('to_status').notNull(),
+    reason: varchar('reason', {length: 240}),
+    createdAt: timestamp('created_at', {withTimezone: true}).defaultNow().notNull()
+  },
+  (table) => [index('listing_status_history_listing_created_idx').on(table.listingId, table.createdAt)]
+);
+
+export const outboxEvent = pgTable(
+  'outbox_event',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    aggregateType: varchar('aggregate_type', {length: 80}).notNull(),
+    aggregateId: uuid('aggregate_id').notNull(),
+    eventType: varchar('event_type', {length: 120}).notNull(),
+    aggregateVersion: integer('aggregate_version').notNull(),
+    payload: jsonb('payload').$type<Record<string, unknown>>().default({}).notNull(),
+    occurredAt: timestamp('occurred_at', {withTimezone: true}).defaultNow().notNull(),
+    availableAt: timestamp('available_at', {withTimezone: true}).defaultNow().notNull(),
+    processedAt: timestamp('processed_at', {withTimezone: true}),
+    attempts: integer('attempts').default(0).notNull()
+  },
+  (table) => [
+    index('outbox_pending_idx').on(table.processedAt, table.availableAt, table.occurredAt),
+    index('outbox_aggregate_idx').on(table.aggregateType, table.aggregateId, table.aggregateVersion),
+    check('outbox_version_positive', sql`${table.aggregateVersion} > 0`),
+    check('outbox_attempts_non_negative', sql`${table.attempts} >= 0`)
+  ]
 );

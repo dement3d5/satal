@@ -1,8 +1,13 @@
 import {getTranslations} from 'next-intl/server';
 import Link from 'next/link';
+import {Suspense} from 'react';
 
 import {SiteHeader} from '@/components/site-header';
 import type {AppLocale} from '@/i18n/routing';
+import {
+  PublicListingFeed,
+  PublicListingFeedSkeleton
+} from '@/modules/listings/ui/public-listings';
 
 export default async function HomePage({params}: {params: Promise<{locale: AppLocale}>}) {
   const {locale} = await params;
@@ -79,6 +84,10 @@ export default async function HomePage({params}: {params: Promise<{locale: AppLo
           </span>
         </div>
       </section>
+
+      <Suspense fallback={<PublicListingFeedSkeleton />}>
+        <PublicListingFeed locale={locale} />
+      </Suspense>
     </main>
   );
 }

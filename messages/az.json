@@ -8,6 +8,13 @@
     "searchPlaceholder": "iPhone, Toyota Camry, mənzil...",
     "searchAction": "Axtar",
     "searchSoon": "Axtarış növbəti mərhələdə aktiv olacaq",
+    "listingFeedTitle": "Yeni elanlar",
+    "listingFeedAction": "Ən yenilər əvvəl",
+    "listingEmptyTitle": "İlk elanları gözləyirik",
+    "listingEmptyText": "Dərc olunan elanlar burada dərhal görünəcək.",
+    "listingUnavailableTitle": "Elanlar müvəqqəti əlçatan deyil",
+    "listingUnavailableText": "Məlumat bazası işə düşdükdən sonra lent avtomatik görünəcək.",
+    "priceOnRequest": "Qiymət razılaşma ilə",
     "sellAction": "Elan yerləşdir",
     "sellHint": "Kateqoriyanı seç, məlumatları doldur — qalanını Satal asanlaşdıracaq.",
     "visualTitle": "Daha sadə al və sat",
@@ -19,6 +26,21 @@
     "trustLocationText": "Şəhər və rayonlar üzrə",
     "trustSimpleTitle": "Sadə elan yaratma",
     "trustSimpleText": "Yalnız lazım olan sahələr"
+  },
+  "listing": {
+    "languageNavigation": "Dil seçimi",
+    "sellAction": "Elan yerləşdir",
+    "breadcrumbLabel": "Naviqasiya",
+    "home": "Ana səhifə",
+    "mediaPlaceholder": "Şəkillər tezliklə",
+    "priceOnRequest": "Qiymət razılaşma ilə",
+    "attributesTitle": "Əsas xüsusiyyətlər",
+    "descriptionTitle": "Təsvir",
+    "sellerLabel": "Satıcı",
+    "contactAction": "Satıcı ilə əlaqə",
+    "contactSoon": "Əlaqə funksiyası identity və chat mərhələsində aktiv olacaq.",
+    "yes": "Bəli",
+    "no": "Xeyr"
   },
   "sell": {
     "eyebrow": "Yeni elan",
@@ -88,9 +110,12 @@
     "mediaLater": "Foto növbəti mərhələdə",
     "untitled": "Başlıqsız elan",
     "priceOnRequest": "Qiymət razılaşma ilə",
-    "foundationReadyTitle": "Qaralama əsası hazırdır",
-    "foundationReadyText": "Media və nəşr mərhələsi ayrıca təhlükəsizlik yoxlamaları ilə növbəti milestone-da əlavə olunacaq.",
+    "foundationReadyTitle": "Elan dərcə hazırdır",
+    "foundationReadyText": "Saxlanılmış məlumatlar yenidən yoxlanacaq və elan təhlükəsiz şəkildə dərc olunacaq. Şəkillər ayrıca mərhələdə əlavə ediləcək.",
     "editDetails": "Düzəliş et",
-    "publishLater": "Nəşr tezliklə"
+    "publishLater": "Nəşr tezliklə",
+    "publishAction": "Elanı dərc et",
+    "publishing": "Dərc olunur...",
+    "publishError": "Elanı dərc etmək mümkün olmadı"
   }
 }
