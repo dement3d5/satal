@@ -5,7 +5,7 @@ import {getServerEnvironment} from '@/config/env';
 
 import * as schema from './schema';
 
-type DatabaseClient = ReturnType<typeof createDatabaseClient>;
+export type DatabaseClient = ReturnType<typeof createDatabaseClient>;
 
 const globalDatabase = globalThis as typeof globalThis & {
   satalDatabase?: DatabaseClient;
