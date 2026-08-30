@@ -665,3 +665,128 @@ export const outboxEvent = pgTable(
     check('outbox_attempts_non_negative', sql`${table.attempts} >= 0`)
   ]
 );
+
+export const mediaAssetStatus = pgEnum('media_asset_status', [
+  'pending_upload',
+  'quarantined',
+  'processing',
+  'ready',
+  'rejected',
+  'deleted'
+]);
+
+export const mediaVariantKind = pgEnum('media_variant_kind', ['thumbnail', 'card', 'detail']);
+
+export const mediaAsset = pgTable(
+  'media_asset',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    ownerId: uuid('owner_id')
+      .notNull()
+      .references(() => user.id, {onDelete: 'restrict'}),
+    status: mediaAssetStatus('status').default('pending_upload').notNull(),
+    quarantineObjectKey: varchar('quarantine_object_key', {length: 500}).notNull(),
+    declaredMediaType: varchar('declared_media_type', {length: 80}).notNull(),
+    detectedMediaType: varchar('detected_media_type', {length: 80}),
+    expectedBytes: bigint('expected_bytes', {mode: 'number'}).notNull(),
+    actualBytes: bigint('actual_bytes', {mode: 'number'}),
+    expectedSha256: varchar('expected_sha256', {length: 64}).notNull(),
+    actualSha256: varchar('actual_sha256', {length: 64}),
+    width: integer('width'),
+    height: integer('height'),
+    rejectionCode: varchar('rejection_code', {length: 80}),
+    uploadExpiresAt: timestamp('upload_expires_at', {withTimezone: true}).notNull(),
+    uploadedAt: timestamp('uploaded_at', {withTimezone: true}),
+    processedAt: timestamp('processed_at', {withTimezone: true}),
+    ...timestamps
+  },
+  (table) => [
+    uniqueIndex('media_asset_quarantine_key_unique').on(table.quarantineObjectKey),
+    index('media_asset_owner_status_created_idx').on(table.ownerId, table.status, table.createdAt),
+    index('media_asset_expired_upload_idx').on(table.status, table.uploadExpiresAt),
+    check('media_asset_expected_bytes_range', sql`${table.expectedBytes} between 1 and 10485760`),
+    check(
+      'media_asset_actual_bytes_range',
+      sql`${table.actualBytes} is null or ${table.actualBytes} between 1 and 10485760`
+    ),
+    check('media_asset_expected_sha256_format', sql`${table.expectedSha256} ~ '^[0-9a-f]{64}$'`),
+    check(
+      'media_asset_actual_sha256_format',
+      sql`${table.actualSha256} is null or ${table.actualSha256} ~ '^[0-9a-f]{64}$'`
+    ),
+    check(
+      'media_asset_dimensions_together',
+      sql`(${table.width} is null and ${table.height} is null) or (${table.width} > 0 and ${table.height} > 0)`
+    )
+  ]
+);
+
+export const listingDraftMedia = pgTable(
+  'listing_draft_media',
+  {
+    draftId: uuid('draft_id')
+      .notNull()
+      .references(() => listingDraft.id, {onDelete: 'cascade'}),
+    mediaAssetId: uuid('media_asset_id')
+      .notNull()
+      .references(() => mediaAsset.id, {onDelete: 'restrict'}),
+    sortOrder: smallint('sort_order').notNull(),
+    isCover: boolean('is_cover').default(false).notNull(),
+    ...timestamps
+  },
+  (table) => [
+    primaryKey({columns: [table.draftId, table.mediaAssetId]}),
+    uniqueIndex('listing_draft_media_asset_unique').on(table.mediaAssetId),
+    uniqueIndex('listing_draft_media_order_unique').on(table.draftId, table.sortOrder),
+    uniqueIndex('listing_draft_media_single_cover_unique')
+      .on(table.draftId)
+      .where(sql`${table.isCover} = true`),
+    check('listing_draft_media_order_range', sql`${table.sortOrder} between 0 and 11`)
+  ]
+);
+
+export const mediaVariant = pgTable(
+  'media_variant',
+  {
+    mediaAssetId: uuid('media_asset_id')
+      .notNull()
+      .references(() => mediaAsset.id, {onDelete: 'cascade'}),
+    kind: mediaVariantKind('kind').notNull(),
+    objectKey: varchar('object_key', {length: 500}).notNull(),
+    mediaType: varchar('media_type', {length: 80}).notNull(),
+    bytes: bigint('bytes', {mode: 'number'}).notNull(),
+    width: integer('width').notNull(),
+    height: integer('height').notNull(),
+    ...timestamps
+  },
+  (table) => [
+    primaryKey({columns: [table.mediaAssetId, table.kind]}),
+    uniqueIndex('media_variant_object_key_unique').on(table.objectKey),
+    check('media_variant_bytes_positive', sql`${table.bytes} > 0`),
+    check('media_variant_dimensions_positive', sql`${table.width} > 0 and ${table.height} > 0`)
+  ]
+);
+
+export const listingMedia = pgTable(
+  'listing_media',
+  {
+    listingId: uuid('listing_id')
+      .notNull()
+      .references(() => listing.id, {onDelete: 'cascade'}),
+    mediaAssetId: uuid('media_asset_id')
+      .notNull()
+      .references(() => mediaAsset.id, {onDelete: 'restrict'}),
+    sortOrder: smallint('sort_order').notNull(),
+    isCover: boolean('is_cover').default(false).notNull(),
+    ...timestamps
+  },
+  (table) => [
+    primaryKey({columns: [table.listingId, table.mediaAssetId]}),
+    uniqueIndex('listing_media_asset_unique').on(table.mediaAssetId),
+    uniqueIndex('listing_media_order_unique').on(table.listingId, table.sortOrder),
+    uniqueIndex('listing_media_single_cover_unique')
+      .on(table.listingId)
+      .where(sql`${table.isCover} = true`),
+    check('listing_media_order_range', sql`${table.sortOrder} between 0 and 11`)
+  ]
+);
