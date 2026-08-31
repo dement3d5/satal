@@ -1,4 +1,4 @@
-import {and, desc, eq, lt, or} from 'drizzle-orm';
+import {and, desc, eq, inArray, lt, or} from 'drizzle-orm';
 
 import type {AppLocale} from '@/i18n/routing';
 import type {DatabaseClient} from '@/server/db/client';
@@ -10,7 +10,10 @@ import {
   listing,
   listingAttributeOptionValue,
   listingAttributeValue,
+  listingMedia,
   locationTranslation,
+  mediaAsset,
+  mediaVariant,
   user
 } from '@/server/db/schema';
 import {AppError} from '@/server/errors/app-error';
@@ -25,6 +28,7 @@ export interface PublicListingCard {
   categoryName: string;
   locationName: string;
   publishedAt: string;
+  mediaUrl: string | null;
 }
 
 export interface PublicListingAttribute {
@@ -97,7 +101,12 @@ export async function listPublicListings(
 
   const hasMore = rows.length > query.limit;
   const page = hasMore ? rows.slice(0, query.limit) : rows;
-  const items = page.map(toCard);
+  const covers = await loadCoverUrls(
+    db,
+    page.map((row) => row.id),
+    'card'
+  );
+  const items = page.map((row) => toCard(row, covers.get(row.id) ?? null));
   return {items, nextCursor: hasMore ? (items.at(-1)?.id ?? null) : null};
 }
 
@@ -138,7 +147,7 @@ export async function getPublicListing(
     .limit(1);
   if (!row?.publishedAt) throw new AppError('NOT_FOUND', 'Listing was not found', 404);
 
-  const [scalarRows, multiRows] = await Promise.all([
+  const [scalarRows, multiRows, covers] = await Promise.all([
     db
       .select({
         attributeId: listingAttributeValue.attributeId,
@@ -189,7 +198,8 @@ export async function getPublicListing(
           eq(attributeOptionTranslation.locale, locale)
         )
       )
-      .where(eq(listingAttributeOptionValue.listingId, listingId))
+      .where(eq(listingAttributeOptionValue.listingId, listingId)),
+    loadCoverUrls(db, [listingId], 'detail')
   ]);
 
   const multi = new Map<string, {label: string; values: string[]}>();
@@ -200,7 +210,7 @@ export async function getPublicListing(
   }
 
   return {
-    ...toCard(row),
+    ...toCard(row, covers.get(listingId) ?? null),
     description: row.description,
     sellerName: row.sellerName,
     attributes: [
@@ -220,17 +230,46 @@ export async function getPublicListing(
   };
 }
 
-function toCard(row: {
-  id: string;
-  title: string;
-  priceMinor: number | null;
-  currency: string;
-  categoryName: string;
-  locationName: string;
-  publishedAt: Date | null;
-}): PublicListingCard {
+async function loadCoverUrls(
+  db: DatabaseClient,
+  listingIds: string[],
+  kind: 'card' | 'detail'
+): Promise<Map<string, string>> {
+  if (!listingIds.length) return new Map();
+  const rows = await db
+    .select({listingId: listingMedia.listingId, assetId: mediaAsset.id})
+    .from(listingMedia)
+    .innerJoin(mediaAsset, eq(mediaAsset.id, listingMedia.mediaAssetId))
+    .innerJoin(
+      mediaVariant,
+      and(eq(mediaVariant.mediaAssetId, mediaAsset.id), eq(mediaVariant.kind, kind))
+    )
+    .where(
+      and(
+        inArray(listingMedia.listingId, listingIds),
+        eq(listingMedia.isCover, true),
+        eq(mediaAsset.status, 'ready')
+      )
+    );
+  return new Map(
+    rows.map((row) => [row.listingId, `/api/v1/media/${row.assetId}/variants/${kind}`])
+  );
+}
+
+function toCard(
+  row: {
+    id: string;
+    title: string;
+    priceMinor: number | null;
+    currency: string;
+    categoryName: string;
+    locationName: string;
+    publishedAt: Date | null;
+  },
+  mediaUrl: string | null
+): PublicListingCard {
   if (!row.publishedAt) throw new AppError('UNEXPECTED_ERROR', 'Active listing has no date', 500);
-  return {...row, publishedAt: row.publishedAt.toISOString()};
+  return {...row, mediaUrl, publishedAt: row.publishedAt.toISOString()};
 }
 
 function scalarPublicValue(row: {

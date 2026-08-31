@@ -32,3 +32,11 @@ Authenticated draft routes under `/api/v1/listing-drafts` support creation, owne
 `POST /api/v1/listing-drafts/{draftId}/publish` is owner-only, version-checked and idempotent through the unique source-draft relationship. It reruns server-side completeness and category-schema validation before creating an active PostgreSQL snapshot and outbox event.
 
 `GET /api/v1/listings` exposes newest-first cursor pagination with optional category/location bounds. `GET /api/v1/listings/{listingId}` exposes only active listings with localized category, location and attribute labels. Public responses use short shared-cache headers; private draft/publication responses use `no-store`.
+
+## Media contracts
+
+`GET|POST|PATCH /api/v1/listing-drafts/{draftId}/media` lists media, authorizes a new upload and atomically changes order/cover. `DELETE /api/v1/listing-drafts/{draftId}/media/{assetId}` detaches owner-controlled media before submission. These routes authenticate the session and re-check draft ownership and lifecycle server-side.
+
+Authorization declares an allowed MIME type, exact byte count and lowercase SHA-256 digest. The server returns a ten-minute single-asset capability. `PUT /api/v1/media/{assetId}/content` accepts a bounded, uncompressed body with the capability in `x-satal-upload-token`, verifies its signature, expiry, byte count, digest and magic bytes, and stores it only in quarantine. The capability is consumed once. The response status `quarantined` does not imply that the image is publicly safe or available.
+
+`GET /api/v1/media/{assetId}/variants/{kind}` serves immutable `thumbnail`, `card` or `detail` bytes only when the asset is `ready`, attached to an active listing and the requested variant exists. It never serves originals, quarantine data or draft-only media.

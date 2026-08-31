@@ -30,7 +30,9 @@ Exit: lint, typecheck, tests and production build pass.
 
 In progress. Milestone 3A implements locations/import contract, three-level localized taxonomy, typed dynamic attributes and owner-controlled listing draft foundations. Milestone 3B adds the schema-driven creation UI, atomic publication snapshot, public listing lifecycle/read APIs, localized homepage feed and public listing detail page.
 
-Remaining sequence: secure image upload/inspection/variants → Typesense indexing/search/filtering → favorites and saved searches.
+Media milestone in progress: owner-only authorization, bounded quarantine ingress, signature/size/checksum verification, draft ordering/cover state, publication attachment snapshot, localized creation UI, decode/re-encode worker, dimension/animation checks, metadata-free variants and active-listing-only delivery are implemented. Remaining production exit work is worker scheduling/isolation, retention cleanup, malicious corpus testing and a live R2 verification.
+
+Remaining sequence: complete secure image processing/variants → Typesense indexing/search/filtering → favorites and saved searches.
 
 ## Phase 4 — trust and communication
 

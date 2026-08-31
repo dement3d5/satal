@@ -45,9 +45,19 @@ export default async function ListingPage({params}: PageProps) {
         sellLabel={t('sellAction')}
       />
       <article className="listing-detail">
-        <div className="listing-detail-media" aria-label={t('mediaPlaceholder')}>
-          <span>SATAL</span>
-          <strong>{t('mediaPlaceholder')}</strong>
+        <div
+          className={item.mediaUrl ? 'listing-detail-media has-photo' : 'listing-detail-media'}
+          aria-label={t('mediaPlaceholder')}
+          style={
+            item.mediaUrl ? {backgroundImage: `url(${JSON.stringify(item.mediaUrl)})`} : undefined
+          }
+        >
+          {!item.mediaUrl && (
+            <>
+              <span>SATAL</span>
+              <strong>{t('mediaPlaceholder')}</strong>
+            </>
+          )}
         </div>
         <div className="listing-detail-main">
           <nav className="listing-breadcrumb" aria-label={t('breadcrumbLabel')}>

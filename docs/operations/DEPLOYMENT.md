@@ -23,6 +23,8 @@ Local Docker dependencies, one shared staging environment with isolated data/key
 
 Every release runs `pnpm install --frozen-lockfile`, `pnpm db:check`, lint, typecheck, tests and build. Apply `pnpm db:migrate` as a controlled release step before starting new application code; run `pnpm db:seed` for idempotent reference data. Rollback must account for whether a migration is backward-compatible.
 
+The worker image can run `pnpm media:process` as a bounded one-shot media batch. Production scheduling must repeat it with overlap protection and backlog/error metrics. Before enabling uploads, replace the fail-closed R2 adapter with least-privilege quarantine/variant bucket access and verify upload, processing, active-listing delivery, rejected-input cleanup and object lifecycle policies end to end. Web processes must never serve quarantine keys.
+
 ## Reliability
 
 Health/readiness checks, structured logs with correlation IDs, error tracking, basic latency/error/job/backlog metrics, cost counters and alerting. Database backups and object lifecycle rules require a documented restore drill before launch. Typesense is rebuildable from PostgreSQL.

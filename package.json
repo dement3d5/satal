@@ -16,6 +16,7 @@
     "postgres": "^3.4.9",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "sharp": "^0.35.3",
     "zod": "^4.0.0"
   },
   "devDependencies": {
@@ -43,6 +44,7 @@
     "db:check": "drizzle-kit check",
     "db:migrate": "drizzle-kit migrate",
     "db:seed": "tsx scripts/seed.ts",
+    "media:process": "tsx scripts/process-media.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   }

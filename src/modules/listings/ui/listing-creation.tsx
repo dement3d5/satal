@@ -33,6 +33,15 @@ interface ApiErrorShape {
   error?: {code?: string; message?: string};
 }
 
+interface DraftPhoto {
+  clientId: string;
+  assetId?: string;
+  name: string;
+  previewUrl: string;
+  status: 'uploading' | 'quarantined' | 'ready' | 'error';
+  error?: string;
+}
+
 export function ListingCreation() {
   const t = useTranslations('sell');
   const locale = useLocale() as ContractLocale;
@@ -58,6 +67,7 @@ export function ListingCreation() {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [publishing, setPublishing] = useState(false);
   const [publishError, setPublishError] = useState<string | null>(null);
+  const [photos, setPhotos] = useState<DraftPhoto[]>([]);
   const dirtyRevision = useRef(0);
   const savedRevision = useRef(0);
   const saving = useRef(false);
@@ -256,6 +266,31 @@ export function ListingCreation() {
     }
   }, [step]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  useEffect(() => {
+    if (!draft || !photos.some((photo) => photo.assetId && photo.status === 'quarantined')) return;
+    const refresh = async () => {
+      const response = await fetch(`/api/v1/listing-drafts/${draft.id}/media`);
+      if (!response.ok) return;
+      const body = (await response.json()) as {
+        data?: {assetId: string; status: 'quarantined' | 'processing' | 'ready' | 'rejected'}[];
+      };
+      if (!body.data) return;
+      const statuses = new Map(body.data.map((item) => [item.assetId, item.status]));
+      setPhotos((current) =>
+        current.map((photo) => {
+          const status = photo.assetId ? statuses.get(photo.assetId) : undefined;
+          if (status === 'ready' && photo.status !== 'ready') return {...photo, status: 'ready'};
+          if (status === 'rejected' && photo.status !== 'error') {
+            return {...photo, status: 'error', error: t('photoRejected')};
+          }
+          return photo;
+        })
+      );
+    };
+    const timer = window.setInterval(() => void refresh(), 3000);
+    return () => window.clearInterval(timer);
+  }, [draft, photos, t]);
+
   async function chooseLocation(location: LocationContract) {
     const nextTrail = [...locationTrail, location];
     if (isPublicLocation(location)) {
@@ -263,6 +298,88 @@ export function ListingCreation() {
       markDirty();
     }
     await loadLocations(location.id, nextTrail);
+  }
+
+  async function uploadPhotos(files: FileList | null) {
+    if (!files || !draft) return;
+    const available = Math.max(0, 12 - photos.length);
+    for (const file of Array.from(files).slice(0, available)) {
+      const clientId = crypto.randomUUID();
+      const previewUrl = URL.createObjectURL(file);
+      setPhotos((current) => [
+        ...current,
+        {clientId, name: file.name, previewUrl, status: 'uploading'}
+      ]);
+      try {
+        const buffer = await file.arrayBuffer();
+        const digest = await crypto.subtle.digest('SHA-256', buffer);
+        const sha256 = Array.from(new Uint8Array(digest), (byte) =>
+          byte.toString(16).padStart(2, '0')
+        ).join('');
+        const authorizationResponse = await fetch(`/api/v1/listing-drafts/${draft.id}/media`, {
+          method: 'POST',
+          headers: {'content-type': 'application/json'},
+          body: JSON.stringify({mediaType: file.type, bytes: file.size, sha256})
+        });
+        const authorizationBody = (await authorizationResponse.json()) as {
+          data?: {
+            media: {assetId: string};
+            upload: {url: string; token: string};
+          };
+        } & ApiErrorShape;
+        if (!authorizationResponse.ok || !authorizationBody.data) {
+          throw new Error(authorizationBody.error?.message || t('photoUploadError'));
+        }
+        const assetId = authorizationBody.data.media.assetId;
+        setPhotos((current) =>
+          current.map((photo) => (photo.clientId === clientId ? {...photo, assetId} : photo))
+        );
+        const uploadResponse = await fetch(authorizationBody.data.upload.url, {
+          method: 'PUT',
+          headers: {
+            'content-type': file.type,
+            'x-satal-upload-token': authorizationBody.data.upload.token
+          },
+          body: file
+        });
+        const uploadBody = (await uploadResponse.json()) as ApiErrorShape;
+        if (!uploadResponse.ok) throw new Error(uploadBody.error?.message || t('photoUploadError'));
+        setPhotos((current) =>
+          current.map((photo) =>
+            photo.clientId === clientId
+              ? {
+                  ...photo,
+                  assetId,
+                  status: 'quarantined'
+                }
+              : photo
+          )
+        );
+      } catch (error) {
+        setPhotos((current) =>
+          current.map((photo) =>
+            photo.clientId === clientId
+              ? {
+                  ...photo,
+                  status: 'error',
+                  error: error instanceof Error ? error.message : t('photoUploadError')
+                }
+              : photo
+          )
+        );
+      }
+    }
+  }
+
+  async function removePhoto(photo: DraftPhoto) {
+    if (draft && photo.assetId) {
+      const response = await fetch(`/api/v1/listing-drafts/${draft.id}/media/${photo.assetId}`, {
+        method: 'DELETE'
+      });
+      if (!response.ok) return;
+    }
+    URL.revokeObjectURL(photo.previewUrl);
+    setPhotos((current) => current.filter((item) => item.clientId !== photo.clientId));
   }
 
   const requiredMissing = useMemo(
@@ -342,6 +459,7 @@ export function ListingCreation() {
               markDirty();
             }}
             onNext={() => setStep('location')}
+            onPhotos={(files) => void uploadPhotos(files)}
             onPrice={(value) => {
               setPrice(value);
               markDirty();
@@ -351,6 +469,8 @@ export function ListingCreation() {
               markDirty();
             }}
             price={price}
+            photos={photos}
+            onRemovePhoto={(photo) => void removePhoto(photo)}
             schema={schema}
             t={t}
             title={title}
@@ -389,6 +509,7 @@ export function ListingCreation() {
             onEdit={() => setStep('details')}
             onPublish={() => void publishDraft()}
             price={price}
+            photoUrl={photos.find((photo) => photo.status !== 'error')?.previewUrl}
             publishError={publishError}
             publishing={publishing}
             t={t}
@@ -491,7 +612,10 @@ function DetailsStep(props: {
   onBack: () => void;
   onDescription: (value: string) => void;
   onNext: () => void;
+  onPhotos: (files: FileList | null) => void;
   onPrice: (value: string) => void;
+  onRemovePhoto: (photo: DraftPhoto) => void;
+  photos: DraftPhoto[];
   onTitle: (value: string) => void;
   price: string;
   schema: CategorySchemaContract;
@@ -511,6 +635,13 @@ function DetailsStep(props: {
           </div>
         </div>
       )}
+      <PhotoUploader
+        disabled={props.authRequired}
+        onPhotos={props.onPhotos}
+        onRemove={props.onRemovePhoto}
+        photos={props.photos}
+        t={t}
+      />
       <div className="form-grid">
         <label className="field field-wide">
           <span>
@@ -572,6 +703,56 @@ function DetailsStep(props: {
         </button>
       </div>
     </>
+  );
+}
+
+function PhotoUploader(props: {
+  disabled: boolean;
+  onPhotos: (files: FileList | null) => void;
+  onRemove: (photo: DraftPhoto) => void;
+  photos: DraftPhoto[];
+  t: Translator;
+}) {
+  return (
+    <section className="photo-uploader" aria-labelledby="photo-uploader-title">
+      <div>
+        <strong id="photo-uploader-title">{props.t('photosTitle')}</strong>
+        <p>{props.t('photosText')}</p>
+      </div>
+      <label className="photo-picker">
+        <input
+          accept="image/jpeg,image/png,image/webp"
+          disabled={props.disabled || props.photos.length >= 12}
+          multiple
+          onChange={(event) => {
+            props.onPhotos(event.target.files);
+            event.target.value = '';
+          }}
+          type="file"
+        />
+        <span>{props.t('photosAction')}</span>
+        <small>{props.t('photosLimit', {count: props.photos.length})}</small>
+      </label>
+      {props.photos.length > 0 && (
+        <div className="photo-grid">
+          {props.photos.map((photo, index) => (
+            <article className={`photo-item photo-${photo.status}`} key={photo.clientId}>
+              <div style={{backgroundImage: `url(${JSON.stringify(photo.previewUrl)})`}} />
+              <span>{index === 0 ? props.t('photoCover') : photo.name}</span>
+              <small>
+                {photo.status === 'uploading' && props.t('photoUploading')}
+                {photo.status === 'quarantined' && props.t('photoChecking')}
+                {photo.status === 'ready' && props.t('photoReady')}
+                {photo.status === 'error' && (photo.error || props.t('photoUploadError'))}
+              </small>
+              <button onClick={() => props.onRemove(photo)} type="button">
+                {props.t('photoRemove')}
+              </button>
+            </article>
+          ))}
+        </div>
+      )}
+    </section>
   );
 }
 
@@ -826,6 +1007,7 @@ function ReviewStep(props: {
   onEdit: () => void;
   onPublish: () => void;
   price: string;
+  photoUrl: string | undefined;
   publishError: string | null;
   publishing: boolean;
   t: Translator;
@@ -845,9 +1027,14 @@ function ReviewStep(props: {
         </div>
       )}
       <div className="listing-preview">
-        <div className="preview-image">
-          <span>S</span>
-          <small>{t('mediaLater')}</small>
+        <div
+          className={props.photoUrl ? 'preview-image has-photo' : 'preview-image'}
+          style={
+            props.photoUrl ? {backgroundImage: `url(${JSON.stringify(props.photoUrl)})`} : undefined
+          }
+        >
+          {!props.photoUrl && <span>S</span>}
+          <small>{props.photoUrl ? t('photoChecking') : t('mediaLater')}</small>
         </div>
         <div className="preview-content">
           <span className="preview-category">{props.category}</span>

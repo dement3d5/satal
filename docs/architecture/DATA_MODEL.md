@@ -67,3 +67,12 @@ Changing category is allowed only before submission. The application transaction
 Publication locks the source draft, authorizes its owner, checks the optimistic version, validates required content and every category attribute, resolves the selected draft location to a safe public ancestor, copies the snapshot, advances the draft to `submitted`, and writes `listing.published` to the outbox in one transaction. `listing.source_draft_id` is unique, making a repeated publication request idempotent. Only `active` listings are public. Typesense is never queried to decide publication or visibility.
 
 The public lifecycle supports `pending_review`, `active`, `sold`, `expired`, `removed` and `rejected`. The current low-risk path activates a structurally valid listing immediately while retaining complete history; risk-based moderation and administrative transitions remain Phase 4.
+
+### Listing media
+
+- `media_asset`: owner, quarantine key, declared/observed byte metadata, SHA-256 digests, processing timestamps and lifecycle;
+- `listing_draft_media`: ordered draft attachment with one cover and a maximum of 12 positions;
+- `media_variant`: normalized thumbnail/card/detail object metadata created only by the processor;
+- `listing_media`: publication attachment/order copied in the publication transaction.
+
+The lifecycle is `pending_upload → quarantined → processing → ready`, with terminal `rejected` and `deleted` states. PostgreSQL is authoritative for ownership, attachment and readiness; object storage contains opaque bytes and cannot make an asset public by itself. Unique order/cover constraints prevent ambiguous presentation, and an asset can belong to only one draft/listing aggregate in the current MVP. Publishing copies attachment references even when processing is pending, so an asynchronous worker can expose verified variants later without mutating the listing snapshot.

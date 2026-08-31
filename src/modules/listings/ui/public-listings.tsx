@@ -52,8 +52,16 @@ export async function PublicListingFeed({locale}: {locale: AppLocale}) {
       <div className="listing-grid">
         {items.map((item) => (
           <Link className="listing-card" href={`/${locale}/listings/${item.id}`} key={item.id}>
-            <div className="listing-card-media" aria-hidden="true">
-              <ListingPlaceholderIcon />
+            <div
+              className={item.mediaUrl ? 'listing-card-media has-photo' : 'listing-card-media'}
+              aria-hidden="true"
+              style={
+                item.mediaUrl
+                  ? {backgroundImage: `url(${JSON.stringify(item.mediaUrl)})`}
+                  : undefined
+              }
+            >
+              {!item.mediaUrl && <ListingPlaceholderIcon />}
             </div>
             <div className="listing-card-body">
               <strong className="listing-price">

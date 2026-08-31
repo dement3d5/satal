@@ -18,6 +18,8 @@ Validate server-side, escape output, apply CSP/security headers, CSRF defenses w
 
 Uploads use short-lived server-authorized object keys. Quarantine until signature, size and dimensions are checked and images are safely decoded/re-encoded with metadata removed. Serve variants from a separate media origin. No video, voice, executables or arbitrary files in MVP.
 
+The implemented ingress requires draft ownership, an exact declared size and SHA-256 digest, a ten-minute HMAC capability, a bounded uncompressed request body and JPEG/PNG/WebP magic-byte agreement. Client filenames never become object keys. Local development writes only below ignored `.data/media`; the production R2 adapter fails closed until credentials and a live end-to-end check exist. Quarantine objects are never served. The Sharp/libvips worker performs bounded real decoding, rejects animation and unsupported formats/dimensions, applies orientation and re-encodes metadata-free WebP variants. Public reads additionally require a `ready` asset attached to an active listing. Decoder updates, worker isolation/resource limits, cleanup monitoring and malicious corpus tests remain launch gates.
+
 ## Privacy
 
 Collect minimum data. Never publish email, IP, device identifiers, exact private address, internal risk state or private account data. Define retention/export/deletion before launch. Azerbaijan privacy/e-commerce obligations require qualified legal review before production.

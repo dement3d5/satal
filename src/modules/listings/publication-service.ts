@@ -8,7 +8,9 @@ import {
   listingDraft,
   listingDraftAttributeOptionValue,
   listingDraftAttributeValue,
+  listingDraftMedia,
   listingDraftStatusHistory,
+  listingMedia,
   listingStatusHistory,
   location,
   outboxEvent
@@ -93,6 +95,7 @@ export async function publishListingDraft(
     if (!created) throw new AppError('UNEXPECTED_ERROR', 'Listing could not be published', 500);
 
     await copyDraftAttributes(tx, draftId, created.id);
+    await copyDraftMedia(tx, draftId, created.id);
     await tx.insert(listingStatusHistory).values({
       listingId: created.id,
       actorId,
@@ -146,6 +149,24 @@ export async function publishListingDraft(
 
     return toPublishedContract(created);
   });
+}
+
+async function copyDraftMedia(
+  tx: Parameters<Parameters<DatabaseClient['transaction']>[0]>[0],
+  draftId: string,
+  listingId: string
+): Promise<void> {
+  const media = await tx
+    .select({
+      mediaAssetId: listingDraftMedia.mediaAssetId,
+      sortOrder: listingDraftMedia.sortOrder,
+      isCover: listingDraftMedia.isCover
+    })
+    .from(listingDraftMedia)
+    .where(eq(listingDraftMedia.draftId, draftId));
+  if (media.length) {
+    await tx.insert(listingMedia).values(media.map((item) => ({listingId, ...item})));
+  }
 }
 
 async function resolvePublicLocationId(

@@ -15,6 +15,7 @@ Phase 2 foundation and Phase 3A/3B marketplace foundations are complete. The rep
 - responsive design tokens, accessible focus/reduced-motion behavior and health endpoint.
 - imported hierarchical geography, three-level localized taxonomy, typed category attributes and owner/version-controlled listing drafts.
 - atomic draft publication into a PostgreSQL listing snapshot, lifecycle/outbox history, public API, localized homepage feed and public detail page.
+- owner-authorized image uploads, hostile-file quarantine, Sharp/libvips re-encoding and metadata-free responsive variants for local development.
 
 ## Requirements
 
@@ -35,6 +36,8 @@ pnpm dev
 The default local database URL is `postgresql://satal:satal@localhost:5432/satal`. Replace `AUTH_SECRET` in `.env.local` with a unique value of at least 32 characters. Never commit local environment files or real credentials.
 
 The application is available at `http://localhost:3000/az`; `GET /api/v1/health` is the process health endpoint. OTP delivery intentionally returns a service-unavailable error while `SMS_PROVIDER=disabled`.
+
+Uploaded local images remain under ignored `.data/media/quarantine` until a worker pass processes them. Run `pnpm media:process` in another terminal (or schedule repeated one-shot runs) to create safe local WebP variants. Production requires a separately configured worker and verified R2 adapter; quarantine files are never public.
 
 ## Database workflow
 
@@ -82,7 +85,7 @@ GitHub Actions currently validates the foundation only. Production deployment re
 
 ## Troubleshooting
 
-- If pnpm cannot reach the registry, allow outbound HTTPS access from the Codex environment to `registry.npmjs.org` and rerun `pnpm install --frozen-lockfile`.
+- If pnpm cannot reach the registry, allow outbound HTTPS access from the Codex environment to `registry.npmjs.org`, including `/-/npm/v1/attestations/`, and rerun `pnpm install --frozen-lockfile`.
 - If migration or seed fails, confirm PostgreSQL is running and `DATABASE_URL` points to an accessible database.
 - On Windows, run commands from PowerShell and confirm the Node/pnpm versions before diagnosing application code.
 - Never resolve a temporary network or provider problem by silently replacing the stack recorded in the ADRs.
