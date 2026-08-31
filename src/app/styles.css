@@ -18,6 +18,59 @@
   --space-page: clamp(1rem, 4vw, 3rem);
 }
 
+.search-page-heading {
+  padding: 3.5rem 0 1.5rem;
+}
+
+.search-page-heading h1 {
+  margin: 0.5rem 0;
+  font-size: clamp(2rem, 5vw, 4rem);
+}
+
+.search-filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 1rem;
+  padding: 1.25rem;
+  margin-bottom: 2rem;
+  border: 1px solid var(--line);
+  border-radius: 1.5rem;
+  background: var(--surface);
+}
+
+.search-filters label,
+.search-filters fieldset {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0;
+  border: 0;
+  font-weight: 700;
+}
+
+.search-filters input,
+.search-filters select {
+  min-width: 0;
+  padding: 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 0.75rem;
+  background: var(--background);
+  color: inherit;
+}
+
+.search-notice {
+  padding: 0.8rem 1rem;
+  border-radius: 0.75rem;
+  background: #fff4ce;
+  color: #5f4900;
+}
+
+.search-pagination {
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+  padding: 2rem 0 4rem;
+}
+
 * {
   box-sizing: border-box;
 }

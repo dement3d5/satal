@@ -25,6 +25,8 @@ Every release runs `pnpm install --frozen-lockfile`, `pnpm db:check`, lint, type
 
 The worker image can run `pnpm media:process` as a bounded one-shot media batch. Production scheduling must repeat it with overlap protection and backlog/error metrics. Before enabling uploads, replace the fail-closed R2 adapter with least-privilege quarantine/variant bucket access and verify upload, processing, active-listing delivery, rejected-input cleanup and object lifecycle policies end to end. Web processes must never serve quarantine keys.
 
+Set `SEARCH_PROVIDER=typesense`, `TYPESENSE_URL` and a least-privilege `TYPESENSE_API_KEY` only after the service is reachable. Run `pnpm search:reindex` once to create and atomically attach the initial collection alias, then schedule `pnpm search:process` as a repeated bounded outbox drain. Alert on unprocessed event age, attempts and `last_error`. PostgreSQL remains usable in degraded mode, but this is not a substitute for monitoring and restoring Typesense.
+
 ## Reliability
 
 Health/readiness checks, structured logs with correlation IDs, error tracking, basic latency/error/job/backlog metrics, cost counters and alerting. Database backups and object lifecycle rules require a documented restore drill before launch. Typesense is rebuildable from PostgreSQL.

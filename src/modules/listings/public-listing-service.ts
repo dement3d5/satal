@@ -110,6 +110,45 @@ export async function listPublicListings(
   return {items, nextCursor: hasMore ? (items.at(-1)?.id ?? null) : null};
 }
 
+export async function getPublicListingCardsByIds(
+  db: DatabaseClient,
+  locale: AppLocale,
+  listingIds: string[]
+): Promise<PublicListingCard[]> {
+  if (!listingIds.length) return [];
+  const rows = await db
+    .select({
+      id: listing.id,
+      title: listing.title,
+      priceMinor: listing.priceMinor,
+      currency: listing.currency,
+      categoryName: categoryTranslation.name,
+      locationName: locationTranslation.name,
+      publishedAt: listing.publishedAt
+    })
+    .from(listing)
+    .innerJoin(
+      categoryTranslation,
+      and(
+        eq(categoryTranslation.categoryId, listing.categoryId),
+        eq(categoryTranslation.locale, locale)
+      )
+    )
+    .innerJoin(
+      locationTranslation,
+      and(
+        eq(locationTranslation.locationId, listing.locationId),
+        eq(locationTranslation.locale, locale)
+      )
+    )
+    .where(and(eq(listing.status, 'active'), inArray(listing.id, listingIds)));
+  const covers = await loadCoverUrls(db, listingIds, 'card');
+  const order = new Map(listingIds.map((id, position) => [id, position]));
+  return rows
+    .sort((left, right) => order.get(left.id)! - order.get(right.id)!)
+    .map((row) => toCard(row, covers.get(row.id) ?? null));
+}
+
 export async function getPublicListing(
   db: DatabaseClient,
   locale: AppLocale,

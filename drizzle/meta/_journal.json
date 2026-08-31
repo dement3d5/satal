@@ -29,6 +29,13 @@
       "when": 1788103271179,
       "tag": "0003_dry_eternals",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1788189883552,
+      "tag": "0004_petite_pyro",
+      "breakpoints": true
     }
   ]
 }

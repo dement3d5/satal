@@ -2,7 +2,7 @@
 
 Satal is an Azerbaijan-first multilingual classifieds marketplace. The product optimizes for a short path from arrival to a relevant listing, category-aware search, trustworthy seller interactions, and low-complexity operation during MVP.
 
-Phase 2 foundation and Phase 3A/3B marketplace foundations are complete. The repository contains no production-ready SMS, email, search, storage, payment, or hosting integration; disabled providers fail closed instead of simulating success.
+Phase 2 and the Phase 3 marketplace, media and search foundations are complete. The repository contains no production-ready SMS, email, storage, payment or hosting integration. Typesense has a real adapter but still requires owner-provided service credentials and deployment verification; disabled providers fail closed instead of simulating success.
 
 ## Foundation
 
@@ -16,6 +16,7 @@ Phase 2 foundation and Phase 3A/3B marketplace foundations are complete. The rep
 - imported hierarchical geography, three-level localized taxonomy, typed category attributes and owner/version-controlled listing drafts.
 - atomic draft publication into a PostgreSQL listing snapshot, lifecycle/outbox history, public API, localized homepage feed and public detail page.
 - owner-authorized image uploads, hostile-file quarantine, Sharp/libvips re-encoding and metadata-free responsive variants for local development.
+- localized URL-state search/filter UI, validated dynamic facets, a replaceable Typesense adapter/outbox indexer and indexed PostgreSQL degraded fallback.
 
 ## Requirements
 
@@ -38,6 +39,8 @@ The default local database URL is `postgresql://satal:satal@localhost:5432/satal
 The application is available at `http://localhost:3000/az`; `GET /api/v1/health` is the process health endpoint. OTP delivery intentionally returns a service-unavailable error while `SMS_PROVIDER=disabled`.
 
 Uploaded local images remain under ignored `.data/media/quarantine` until a worker pass processes them. Run `pnpm media:process` in another terminal (or schedule repeated one-shot runs) to create safe local WebP variants. Production requires a separately configured worker and verified R2 adapter; quarantine files are never public.
+
+Local search defaults to PostgreSQL. For Typesense, set `SEARCH_PROVIDER=typesense`, `TYPESENSE_URL` and `TYPESENSE_API_KEY`, then run `pnpm search:reindex`; schedule `pnpm search:process` to drain publication events. Never commit the API key.
 
 ## Database workflow
 

@@ -26,16 +26,14 @@ export default async function HomePage({params}: {params: Promise<{locale: AppLo
           </p>
           <h1 id="hero-title">{t('title')}</h1>
           <p>{t('description')}</p>
-          <div className="search" role="search">
+          <form className="search" role="search" action={`/${locale}/search`}>
             <label className="sr-only" htmlFor="marketplace-search">
               {t('searchLabel')}
             </label>
             <SearchIcon />
             <input id="marketplace-search" name="q" placeholder={t('searchPlaceholder')} />
-            <button type="button" disabled title={t('searchSoon')}>
-              {t('searchAction')}
-            </button>
-          </div>
+            <button type="submit">{t('searchAction')}</button>
+          </form>
           <div className="hero-actions">
             <Link className="button button-primary" href={`/${locale}/sell`}>
               {t('sellAction')}

@@ -35,3 +35,27 @@ export async function listLocations(
     .orderBy(asc(location.sortOrder), asc(locationTranslation.name))
     .then((rows) => rows.map((row) => ({...row, verified: row.verified !== null})));
 }
+
+export async function listFilterLocations(
+  db: DatabaseClient,
+  locale: ContractLocale
+): Promise<LocationContract[]> {
+  return db
+    .select({
+      id: location.id,
+      parentId: location.parentId,
+      slug: location.slug,
+      name: locationTranslation.name,
+      kind: location.kind,
+      depth: location.depth,
+      verified: location.verifiedAt
+    })
+    .from(location)
+    .innerJoin(
+      locationTranslation,
+      and(eq(locationTranslation.locationId, location.id), eq(locationTranslation.locale, locale))
+    )
+    .where(eq(location.enabled, true))
+    .orderBy(asc(location.depth), asc(location.sortOrder), asc(locationTranslation.name))
+    .then((rows) => rows.map((row) => ({...row, verified: row.verified !== null})));
+}

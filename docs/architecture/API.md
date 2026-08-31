@@ -40,3 +40,9 @@ Authenticated draft routes under `/api/v1/listing-drafts` support creation, owne
 Authorization declares an allowed MIME type, exact byte count and lowercase SHA-256 digest. The server returns a ten-minute single-asset capability. `PUT /api/v1/media/{assetId}/content` accepts a bounded, uncompressed body with the capability in `x-satal-upload-token`, verifies its signature, expiry, byte count, digest and magic bytes, and stores it only in quarantine. The capability is consumed once. The response status `quarantined` does not imply that the image is publicly safe or available.
 
 `GET /api/v1/media/{assetId}/variants/{kind}` serves immutable `thumbnail`, `card` or `detail` bytes only when the asset is `ready`, attached to an active listing and the requested variant exists. It never serves originals, quarantine data or draft-only media.
+
+## Search contracts
+
+`GET /api/v1/search` accepts `locale`, `q`, `categoryId`, `locationId`, `priceMin`, `priceMax`, `sort`, `page` and `limit`. Schema-driven filters use `f.{attributeId}` for select option IDs, `b.{attributeId}` for booleans and `n.{attributeId}.min|max` for numeric/measurement bounds. Attribute filters require a category and are checked against PostgreSQL applicability/type rules before either search adapter runs.
+
+The response contains authoritative public cards plus `total`, `page`, `limit`, `source` and `degraded`. Typesense returns only ordered listing IDs; PostgreSQL rehydrates and rechecks active visibility. Public responses have a short shared-cache policy.

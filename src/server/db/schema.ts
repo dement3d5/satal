@@ -542,6 +542,12 @@ export const listing = pgTable(
       table.id
     ),
     index('listing_seller_status_updated_idx').on(table.sellerId, table.status, table.updatedAt),
+    index('listing_public_search_idx')
+      .using(
+        'gin',
+        sql`to_tsvector('simple', coalesce(${table.title}, '') || ' ' || coalesce(${table.description}, ''))`
+      )
+      .where(sql`${table.status} = 'active'`),
     check('listing_schema_version_positive', sql`${table.categorySchemaVersion} > 0`),
     check('listing_version_positive', sql`${table.version} > 0`),
     check('listing_title_not_blank', sql`length(btrim(${table.title})) >= 5`),
@@ -652,7 +658,10 @@ export const outboxEvent = pgTable(
     occurredAt: timestamp('occurred_at', {withTimezone: true}).defaultNow().notNull(),
     availableAt: timestamp('available_at', {withTimezone: true}).defaultNow().notNull(),
     processedAt: timestamp('processed_at', {withTimezone: true}),
-    attempts: integer('attempts').default(0).notNull()
+    attempts: integer('attempts').default(0).notNull(),
+    leasedAt: timestamp('leased_at', {withTimezone: true}),
+    leaseOwner: varchar('lease_owner', {length: 100}),
+    lastError: varchar('last_error', {length: 240})
   },
   (table) => [
     index('outbox_pending_idx').on(table.processedAt, table.availableAt, table.occurredAt),

@@ -30,9 +30,11 @@ Exit: lint, typecheck, tests and production build pass.
 
 In progress. Milestone 3A implements locations/import contract, three-level localized taxonomy, typed dynamic attributes and owner-controlled listing draft foundations. Milestone 3B adds the schema-driven creation UI, atomic publication snapshot, public listing lifecycle/read APIs, localized homepage feed and public listing detail page.
 
-Media milestone in progress: owner-only authorization, bounded quarantine ingress, signature/size/checksum verification, draft ordering/cover state, publication attachment snapshot, localized creation UI, decode/re-encode worker, dimension/animation checks, metadata-free variants and active-listing-only delivery are implemented. Remaining production exit work is worker scheduling/isolation, retention cleanup, malicious corpus testing and a live R2 verification.
+Media foundation is implemented: owner-only authorization, bounded quarantine ingress, signature/size/checksum verification, draft ordering/cover state, publication attachment snapshot, localized creation UI, decode/re-encode worker, dimension/animation checks, metadata-free variants and active-listing-only delivery. Production still requires worker scheduling/isolation, retention cleanup, malicious corpus testing and a live R2 verification.
 
-Remaining sequence: complete secure image processing/variants → Typesense indexing/search/filtering → favorites and saved searches.
+Search/filter foundation is implemented: localized URL-state UI and API, category/location/price/dynamic facets, Typesense adapter, leased outbox indexing, atomic alias rebuild and indexed PostgreSQL fallback. Production still requires a live Typesense deployment/rebuild drill, load/ranking tuning and operational alerts.
+
+Remaining sequence: favorites and saved searches → identity/contact foundation → moderation boundaries.
 
 ## Phase 4 — trust and communication
 

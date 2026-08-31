@@ -10,7 +10,7 @@ const validEnvironment = {
   SMS_PROVIDER: 'disabled',
   EMAIL_PROVIDER: 'disabled',
   OBJECT_STORAGE_PROVIDER: 'local',
-  SEARCH_PROVIDER: 'typesense'
+  SEARCH_PROVIDER: 'postgres'
 };
 
 describe('parseServerEnvironment', () => {
@@ -29,5 +29,19 @@ describe('parseServerEnvironment', () => {
     expect(() =>
       parseServerEnvironment({...validEnvironment, DATABASE_URL: 'mysql://localhost/satal'})
     ).toThrow();
+  });
+
+  it('requires explicit Typesense credentials when selected', () => {
+    expect(() =>
+      parseServerEnvironment({...validEnvironment, SEARCH_PROVIDER: 'typesense'})
+    ).toThrow();
+    expect(
+      parseServerEnvironment({
+        ...validEnvironment,
+        SEARCH_PROVIDER: 'typesense',
+        TYPESENSE_URL: 'https://search.example.test',
+        TYPESENSE_API_KEY: 'typesense-test-key'
+      })
+    ).toMatchObject({SEARCH_PROVIDER: 'typesense'});
   });
 });

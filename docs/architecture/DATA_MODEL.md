@@ -62,11 +62,13 @@ Changing category is allowed only before submission. The application transaction
 - `listing`: immutable publication snapshot identity plus seller, category/schema version, privacy-coarsened location, lifecycle, price and publication/expiry timestamps;
 - `listing_attribute_value` and `listing_attribute_option_value`: normalized typed attribute snapshot copied from the validated draft;
 - `listing_status_history`: actor-attributed public lifecycle audit;
-- `outbox_event`: transactional, versioned integration events for later search/media/notification workers.
+- `outbox_event`: transactional, versioned integration events with availability, expiring worker lease, attempts and safe last-error metadata for search/media/notification workers.
 
 Publication locks the source draft, authorizes its owner, checks the optimistic version, validates required content and every category attribute, resolves the selected draft location to a safe public ancestor, copies the snapshot, advances the draft to `submitted`, and writes `listing.published` to the outbox in one transaction. `listing.source_draft_id` is unique, making a repeated publication request idempotent. Only `active` listings are public. Typesense is never queried to decide publication or visibility.
 
 The public lifecycle supports `pending_review`, `active`, `sold`, `expired`, `removed` and `rejected`. The current low-risk path activates a structurally valid listing immediately while retaining complete history; risk-based moderation and administrative transitions remain Phase 4.
+
+Active listings have a partial GIN full-text index over title and description for degraded PostgreSQL search. Typesense documents are derived projections only: IDs, localized searchable text, ancestor scopes and typed facet values can always be rebuilt from these relational tables. Public search results are rehydrated through the active-listing query before exposure.
 
 ### Listing media
 

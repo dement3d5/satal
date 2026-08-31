@@ -6,7 +6,7 @@ Typesense is the initial dedicated search engine because it provides typo tolera
 
 ## Indexed document
 
-Each active listing document contains stable listing/category/location IDs, normalized AZ/RU/EN search aliases, user title/description, price, freshness, seller type, selected typed facets, coarse location and promotion signals. Private data and internal risk scores are never indexed into a public collection.
+Each active listing document contains stable listing/category/location IDs, AZ/RU/EN searchable text, user title/description, price, freshness, selected typed facets and coarse location ancestry. Private data and internal risk scores are never indexed into a public collection. Seller-type and promotion ranking signals remain future versioned schema additions.
 
 ## Query pipeline
 
@@ -19,10 +19,12 @@ Synonyms and multilingual aliases are curated data with admin/version history. A
 
 ## Consistency and recovery
 
-Listing transactions write an outbox entry. The worker upserts/deletes search documents idempotently. Failed jobs retry with bounded backoff and dead-letter visibility. A versioned reindex command rebuilds a new collection from PostgreSQL and atomically switches an alias.
+Listing transactions write an outbox entry. The worker upserts/deletes search documents idempotently. Failed jobs retry with bounded backoff and expose attempts plus a safe last-error field for operations. A versioned reindex command rebuilds a new collection from PostgreSQL and atomically switches an alias.
 
-Phase 3 stores future facet intent in `category_attribute.filterable/searchable/sortable` and keeps draft values typed. Typesense is deliberately not connected yet. Publication will build a locale-aware denormalized document from validated PostgreSQL rows; draft JSON or frontend category definitions will never feed the index directly.
+The search milestone implements this pipeline. `listing.published` outbox events are claimed with an expiring lease, retried with bounded exponential backoff and projected only from active PostgreSQL rows. `pnpm search:process` drains pending events; `pnpm search:reindex` builds a timestamped collection, verifies every JSONL import result and switches the stable `satal_listings` alias only after a complete import. Old collections are retained for operator-controlled rollback/cleanup.
+
+The public query contract is `/api/v1/search` and `/{locale}/search`. Query, category, location, price, sort, page and schema-driven attribute filters remain in the URL. Dynamic filters are accepted only when the selected category marks the attribute filterable and submitted option IDs belong to that attribute. Search returns IDs; public cards are rehydrated from PostgreSQL, so stale index documents cannot expose removed listings.
 
 ## Migration path
 
-The gateway owns search request/result contracts so Typesense can be replaced. PostgreSQL full-text/trigram search may provide a degraded fallback for maintenance, but production search is not based on `LIKE`.
+The gateway owns search request/result contracts so Typesense can be replaced. If Typesense times out or is unavailable, PostgreSQL uses a partial GIN `to_tsvector('simple', title || description)` index plus relational category/location/typed-attribute filters. The response exposes `degraded: true`; production search is never based on `LIKE`.
