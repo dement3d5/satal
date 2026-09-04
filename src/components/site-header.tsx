@@ -7,9 +7,16 @@ interface SiteHeaderProps {
   languageLabel: string;
   sellLabel: string;
   savedLabel?: string;
+  accountLabel: string;
 }
 
-export function SiteHeader({locale, languageLabel, sellLabel, savedLabel}: SiteHeaderProps) {
+export function SiteHeader({
+  locale,
+  languageLabel,
+  sellLabel,
+  savedLabel,
+  accountLabel
+}: SiteHeaderProps) {
   return (
     <header className="site-header">
       <Link className="brand" href={`/${locale}`} aria-label="Satal">
@@ -20,6 +27,9 @@ export function SiteHeader({locale, languageLabel, sellLabel, savedLabel}: SiteH
       </Link>
 
       <div className="header-actions">
+        <Link className="header-account" href={`/${locale}/account`} aria-label={accountLabel}>
+          ◎
+        </Link>
         {savedLabel && (
           <Link className="header-saved" href={`/${locale}/saved`}>
             ♥ <span>{savedLabel}</span>

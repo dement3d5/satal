@@ -13,6 +13,7 @@ export default async function SavedPage({params}: {params: Promise<{locale: AppL
         languageLabel={t('languageNavigation')}
         sellLabel={t('sellAction')}
         savedLabel={t('title')}
+        accountLabel={t('accountLink')}
       />
       <header className="search-page-heading">
         <p className="eyebrow">SATAL</p>

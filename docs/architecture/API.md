@@ -52,3 +52,11 @@ The response contains authoritative public cards plus `total`, `page`, `limit`, 
 `GET /api/v1/favorites?locale=az|ru|en` returns the current actor's active favorite listing cards. `GET|PUT|DELETE /api/v1/favorites/{listingId}` reads, idempotently adds, or idempotently removes one relationship. The client never supplies a user ID; every operation derives ownership from the authenticated session.
 
 `GET|POST /api/v1/saved-searches` lists or creates owner-only saved searches. Creation accepts a localized name and the same bounded query string used by public search, then reparses and normalizes it server-side. `PATCH|DELETE /api/v1/saved-searches/{savedSearchId}` can rename or delete only the current owner's resource; a cross-owner identifier returns `NOT_FOUND`. All engagement responses are private and `no-store`.
+
+## Identity, profile and seller contact
+
+Better Auth owns `/api/auth/*`, credential hashing, database sessions, HttpOnly cookies, origin checks and sign-out. Email/password sign-up and sign-in provide a working account path while phone OTP remains fail-closed until a production SMS adapter is verified. Email recovery and verification are not advertised as ready without an email provider.
+
+`GET|PATCH /api/v1/profile` returns a minimal owner DTO and updates only the display name. Email and phone verification state are read-only through this resource; changing either identifier requires a separate verified flow.
+
+`POST /api/v1/listings/{listingId}/contact` requires a database-backed session, an active listing, a different buyer and a verified seller phone. It returns only the phone protocol/number needed for a `tel:` action, records or increments an access audit, and limits an actor to 30 distinct contacts per rolling hour. Responses are private and `no-store`.

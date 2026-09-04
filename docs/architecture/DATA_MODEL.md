@@ -79,6 +79,12 @@ Deleting a user or listing cascades its favorites. Saved searches cascade with t
 
 The model is deliberately hybrid. Frequently queried core fields (`query_text`, category, location, price bounds and sort) remain relational. Only the category-defined dynamic filter union is stored as validated JSONB because its keys vary with taxonomy. Creation always passes through the public search parser and verifies referenced enabled records; arbitrary client JSON is never persisted. See ADR 0006.
 
+### Identity and contact access
+
+Better Auth owns `user`, `account`, `session` and `verification`. Credential accounts use the framework's password hashing and the unique `(provider_id, account_id)` identity. The legacy optional `issuer` field remains for compatibility but is not authoritative.
+
+`listing_contact_access` stores buyer, seller, listing, first/last access timestamps and a positive retry count. One row exists per buyer/listing. Foreign keys cascade when the user or listing is deleted; a database check prevents self-contact. The application serializes requests per buyer with a row lock before enforcing the distinct-contact window and upserting the audit. The phone itself is not copied into the audit table.
+
 ### Listing media
 
 - `media_asset`: owner, quarantine key, declared/observed byte metadata, SHA-256 digests, processing timestamps and lifecycle;

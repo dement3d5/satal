@@ -16,6 +16,7 @@ export default async function HomePage({params}: {params: Promise<{locale: AppLo
         locale={locale}
         languageLabel={t('languageNavigation')}
         sellLabel={t('sellAction')}
+        accountLabel={t('accountLink')}
       />
 
       <section className="hero" aria-labelledby="hero-title">

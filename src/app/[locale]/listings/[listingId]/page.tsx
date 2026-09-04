@@ -4,6 +4,7 @@ import {getTranslations} from 'next-intl/server';
 
 import {SiteHeader} from '@/components/site-header';
 import {FavoriteButton} from '@/modules/engagement/ui/favorite-button';
+import {ContactButton} from '@/modules/identity/ui/contact-button';
 import type {AppLocale} from '@/i18n/routing';
 import {getPublicListing} from '@/modules/listings/public-listing-service';
 import {formatPrice} from '@/modules/listings/ui/format';
@@ -45,6 +46,7 @@ export default async function ListingPage({params}: PageProps) {
         languageLabel={t('languageNavigation')}
         sellLabel={t('sellAction')}
         savedLabel={t('savedLink')}
+        accountLabel={t('accountLink')}
       />
       <article className="listing-detail">
         <div
@@ -113,10 +115,19 @@ export default async function ListingPage({params}: PageProps) {
           />
           <span>{t('sellerLabel')}</span>
           <strong>{item.sellerName}</strong>
-          <button type="button" disabled title={t('contactSoon')}>
-            {t('contactAction')}
-          </button>
-          <small>{t('contactSoon')}</small>
+          <ContactButton
+            listingId={item.id}
+            locale={locale}
+            labels={{
+              action: t('contactAction'),
+              loading: t('contactLoading'),
+              signIn: t('contactSignIn'),
+              unavailable: t('contactUnavailable'),
+              limit: t('contactLimit'),
+              error: t('contactError'),
+              privacy: t('contactPrivacy')
+            }}
+          />
         </aside>
       </article>
     </main>

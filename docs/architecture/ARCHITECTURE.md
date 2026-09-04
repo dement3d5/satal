@@ -35,6 +35,8 @@ Modules communicate through typed application interfaces and explicit events wri
 
 The `engagement` application boundary owns favorites and saved searches. It derives ownership exclusively from the authenticated actor, exposes only active listing cards, and stores normalized public-search snapshots in PostgreSQL. UI components call versioned APIs and contain no authorization or taxonomy rules.
 
+The `identity` boundary delegates credentials, password hashing, sessions, secure cookies and origin validation to Better Auth. Satal profile services expose explicit DTOs. Seller contact disclosure is a separate application service that rechecks listing visibility and phone verification, blocks self-contact, serializes per-buyer rate-limit decisions and writes an audit before returning a number.
+
 ## Background work
 
 Use a PostgreSQL job/outbox table with leases, retry policy and `FOR UPDATE SKIP LOCKED`. This is sufficient for early volume and avoids Redis/queue operations. Introduce a dedicated queue only after measured contention or throughput demands it.

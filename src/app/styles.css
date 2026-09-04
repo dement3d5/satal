@@ -1588,6 +1588,117 @@ h1 {
   font-weight: 700;
 }
 
+.header-account {
+  display: grid;
+  width: 2.25rem;
+  height: 2.25rem;
+  place-items: center;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  color: var(--color-text);
+  text-decoration: none;
+  font-size: 1.15rem;
+  font-weight: 800;
+}
+
+.identity-page {
+  padding-bottom: 4rem;
+}
+
+.auth-card,
+.account-panel {
+  max-width: 40rem;
+  padding: 1.4rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: white;
+  box-shadow: var(--shadow-card);
+}
+
+.auth-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.4rem;
+  padding: 0.3rem;
+  border-radius: 0.8rem;
+  background: var(--color-surface-muted);
+}
+
+.auth-tabs button {
+  padding: 0.75rem;
+  border: 0;
+  border-radius: 0.6rem;
+  background: transparent;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.auth-tabs button[aria-selected='true'] {
+  background: white;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 8%);
+}
+
+.auth-form {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1.25rem;
+}
+
+.auth-form label {
+  display: grid;
+  gap: 0.4rem;
+  color: var(--color-muted);
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.auth-form input {
+  width: 100%;
+  padding: 0.85rem 0.9rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.7rem;
+  background: white;
+  color: var(--color-text);
+  font: inherit;
+}
+
+.auth-form input[readonly] {
+  background: var(--color-surface-muted);
+}
+
+.auth-error,
+.contact-action small {
+  color: var(--color-muted);
+}
+
+.auth-phone-note {
+  margin-top: 1.25rem;
+  padding: 1rem;
+  border-radius: 0.8rem;
+  background: var(--color-surface-muted);
+}
+
+.auth-phone-note p {
+  margin: 0.35rem 0 0;
+  color: var(--color-muted);
+  line-height: 1.5;
+}
+
+.account-panel {
+  display: grid;
+  gap: 1rem;
+}
+
+.contact-action {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.contact-action > a:not(.button) {
+  color: var(--color-accent-strong);
+  font-weight: 700;
+}
+
 .favorite-action {
   display: grid;
   gap: 0.45rem;

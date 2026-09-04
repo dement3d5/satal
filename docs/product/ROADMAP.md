@@ -36,7 +36,9 @@ Search/filter foundation is implemented: localized URL-state UI and API, categor
 
 Favorites and saved searches are implemented with owner-only APIs, active-listing visibility, reusable localized URL queries and a localized saved-items page.
 
-Remaining sequence: identity/contact foundation → moderation boundaries.
+Identity/contact foundation is implemented with Better Auth email credentials and database sessions, a localized account UI, minimal profile DTOs and audited verified-phone disclosure. Production phone OTP and email recovery still require verified providers.
+
+Remaining Phase 3 sequence: moderation boundaries.
 
 ## Phase 4 — trust and communication
 

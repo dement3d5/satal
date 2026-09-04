@@ -39,6 +39,7 @@ export default async function SearchPage({
         languageLabel={t('languageNavigation')}
         sellLabel={t('sellAction')}
         savedLabel={t('savedLink')}
+        accountLabel={t('accountLink')}
       />
       <header className="search-page-heading">
         <p className="eyebrow">SATAL SEARCH</p>

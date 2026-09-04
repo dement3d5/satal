@@ -71,7 +71,7 @@ export const account = pgTable(
     userId: uuid('user_id')
       .notNull()
       .references(() => user.id, {onDelete: 'cascade'}),
-    issuer: text('issuer').notNull(),
+    issuer: text('issuer'),
     accountId: text('account_id').notNull(),
     providerId: text('provider_id').notNull(),
     accessToken: text('access_token'),
@@ -85,6 +85,7 @@ export const account = pgTable(
   },
   (table) => [
     uniqueIndex('account_issuer_account_unique').on(table.issuer, table.accountId),
+    uniqueIndex('account_provider_account_unique').on(table.providerId, table.accountId),
     index('account_user_idx').on(table.userId)
   ]
 );
@@ -712,6 +713,36 @@ export const savedSearch = pgTable(
       sql`${table.sort} in ('relevance', 'newest', 'price_asc', 'price_desc')`
     ),
     check('saved_search_filters_array', sql`jsonb_typeof(${table.filters}) = 'array'`)
+  ]
+);
+
+export const listingContactAccess = pgTable(
+  'listing_contact_access',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    buyerId: uuid('buyer_id')
+      .notNull()
+      .references(() => user.id, {onDelete: 'cascade'}),
+    sellerId: uuid('seller_id')
+      .notNull()
+      .references(() => user.id, {onDelete: 'cascade'}),
+    listingId: uuid('listing_id')
+      .notNull()
+      .references(() => listing.id, {onDelete: 'cascade'}),
+    accessCount: integer('access_count').default(1).notNull(),
+    firstAccessedAt: timestamp('first_accessed_at', {withTimezone: true}).defaultNow().notNull(),
+    lastAccessedAt: timestamp('last_accessed_at', {withTimezone: true}).defaultNow().notNull()
+  },
+  (table) => [
+    uniqueIndex('listing_contact_access_buyer_listing_unique').on(table.buyerId, table.listingId),
+    index('listing_contact_access_buyer_recent_idx').on(table.buyerId, table.lastAccessedAt),
+    index('listing_contact_access_seller_recent_idx').on(table.sellerId, table.lastAccessedAt),
+    check('listing_contact_access_count_positive', sql`${table.accessCount} > 0`),
+    check('listing_contact_access_not_self', sql`${table.buyerId} <> ${table.sellerId}`),
+    check(
+      'listing_contact_access_time_order',
+      sql`${table.firstAccessedAt} <= ${table.lastAccessedAt}`
+    )
   ]
 );
 

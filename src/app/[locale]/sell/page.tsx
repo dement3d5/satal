@@ -14,6 +14,7 @@ export default async function SellPage({params}: {params: Promise<{locale: AppLo
         locale={locale}
         languageLabel={home('languageNavigation')}
         sellLabel={home('sellAction')}
+        accountLabel={home('accountLink')}
       />
       <ListingCreation />
     </main>

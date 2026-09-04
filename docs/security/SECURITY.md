@@ -6,6 +6,8 @@ Better Auth is the initial session/auth framework with a phone-number plugin and
 
 Sessions use secure HttpOnly cookies, rotation, revocation and active-session management. Passwords use a modern memory-hard hash through the auth framework. OTP requests and attempts receive per-number, per-session and network risk limits without relying on IP alone.
 
+Email/password is enabled as a functional account path through Better Auth; passwords never enter Satal tables or logs outside the framework's credential record. Phone OTP remains the preferred production path but fails closed while SMS is disabled. Email verification/reset and phone verification require real provider adapters and remain explicit launch prerequisites.
+
 ## Authorization
 
 Use capability-based RBAC for user, shop owner, moderator, support, admin and owner. Application services authorize both action and target ownership. Add integration tests for IDOR and privilege boundaries.
@@ -25,6 +27,8 @@ The implemented ingress requires draft ownership, an exact declared size and SHA
 ## Privacy
 
 Collect minimum data. Never publish email, IP, device identifiers, exact private address, internal risk state or private account data. Define retention/export/deletion before launch. Azerbaijan privacy/e-commerce obligations require qualified legal review before production.
+
+An authenticated buyer may request the verified phone of a different seller only for an active listing. The exact number is returned in a private non-cacheable response, never embedded in public HTML, search, logs or the contact audit. Per-buyer access is recorded and bounded to reduce harvesting; data retention and seller visibility controls require launch review.
 
 ## Operations
 
