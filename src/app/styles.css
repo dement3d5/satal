@@ -1578,3 +1578,105 @@ h1 {
     animation-duration: 0.01ms !important;
   }
 }
+
+.header-saved {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--color-text);
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.favorite-action {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.favorite-action small,
+.save-search-form small {
+  color: var(--color-muted);
+}
+
+.save-search-form {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 1rem 0 1.5rem;
+}
+
+.save-search-form input {
+  min-width: min(22rem, 60vw);
+  padding: 0.78rem 0.9rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.75rem;
+  background: white;
+}
+
+.saved-dashboard {
+  display: grid;
+  gap: 2rem;
+  padding-bottom: 4rem;
+}
+
+.saved-search-list {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.saved-search-list article {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.85rem;
+  background: white;
+}
+
+.saved-search-list a {
+  color: var(--color-text);
+  font-weight: 700;
+}
+
+.saved-search-list button,
+.saved-remove {
+  border: 0;
+  background: transparent;
+  color: var(--color-muted);
+  cursor: pointer;
+}
+
+.saved-dashboard .listing-card {
+  position: relative;
+}
+
+.saved-dashboard .listing-card > a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.saved-remove {
+  position: absolute;
+  top: 0.7rem;
+  right: 0.7rem;
+  padding: 0.4rem 0.6rem;
+  border-radius: 0.5rem;
+  background: rgb(255 255 255 / 90%);
+}
+
+@media (max-width: 640px) {
+  .header-saved span {
+    display: none;
+  }
+
+  .save-search-form {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .save-search-form input {
+    min-width: 0;
+  }
+}

@@ -646,6 +646,75 @@ export const listingStatusHistory = pgTable(
   ]
 );
 
+export const favoriteListing = pgTable(
+  'favorite_listing',
+  {
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => user.id, {onDelete: 'cascade'}),
+    listingId: uuid('listing_id')
+      .notNull()
+      .references(() => listing.id, {onDelete: 'cascade'}),
+    createdAt: timestamp('created_at', {withTimezone: true}).defaultNow().notNull()
+  },
+  (table) => [
+    primaryKey({columns: [table.userId, table.listingId]}),
+    index('favorite_listing_user_created_idx').on(table.userId, table.createdAt),
+    index('favorite_listing_listing_idx').on(table.listingId)
+  ]
+);
+
+export type SavedSearchFilterSnapshot =
+  | {type: 'options'; attributeId: string; optionIds: string[]}
+  | {type: 'numeric'; attributeId: string; min?: number; max?: number}
+  | {type: 'boolean'; attributeId: string; value: boolean};
+
+export const savedSearch = pgTable(
+  'saved_search',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    ownerId: uuid('owner_id')
+      .notNull()
+      .references(() => user.id, {onDelete: 'cascade'}),
+    name: varchar('name', {length: 100}).notNull(),
+    locale: varchar('locale', {length: 8})
+      .notNull()
+      .references(() => supportedLocale.code, {onDelete: 'restrict'}),
+    queryText: varchar('query_text', {length: 120}).default('').notNull(),
+    categoryId: uuid('category_id').references(() => category.id, {onDelete: 'restrict'}),
+    locationId: uuid('location_id').references(() => location.id, {onDelete: 'restrict'}),
+    priceMinMinor: bigint('price_min_minor', {mode: 'number'}),
+    priceMaxMinor: bigint('price_max_minor', {mode: 'number'}),
+    sort: varchar('sort', {length: 20}).default('newest').notNull(),
+    filters: jsonb('filters').$type<SavedSearchFilterSnapshot[]>().default([]).notNull(),
+    ...timestamps
+  },
+  (table) => [
+    uniqueIndex('saved_search_owner_name_unique').on(table.ownerId, table.name),
+    index('saved_search_owner_updated_idx').on(table.ownerId, table.updatedAt),
+    index('saved_search_category_idx').on(table.categoryId),
+    index('saved_search_location_idx').on(table.locationId),
+    check('saved_search_name_not_blank', sql`length(btrim(${table.name})) > 0`),
+    check(
+      'saved_search_price_min_non_negative',
+      sql`${table.priceMinMinor} is null or ${table.priceMinMinor} >= 0`
+    ),
+    check(
+      'saved_search_price_max_non_negative',
+      sql`${table.priceMaxMinor} is null or ${table.priceMaxMinor} >= 0`
+    ),
+    check(
+      'saved_search_price_range_valid',
+      sql`${table.priceMinMinor} is null or ${table.priceMaxMinor} is null or ${table.priceMinMinor} <= ${table.priceMaxMinor}`
+    ),
+    check(
+      'saved_search_sort_valid',
+      sql`${table.sort} in ('relevance', 'newest', 'price_asc', 'price_desc')`
+    ),
+    check('saved_search_filters_array', sql`jsonb_typeof(${table.filters}) = 'array'`)
+  ]
+);
+
 export const outboxEvent = pgTable(
   'outbox_event',
   {

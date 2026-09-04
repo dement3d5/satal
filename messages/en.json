@@ -39,6 +39,11 @@
     "sellerLabel": "Seller",
     "contactAction": "Contact seller",
     "contactSoon": "Contact will be enabled with identity and chat.",
+    "savedLink": "Saved",
+    "favoriteAdd": "Add to favorites",
+    "favoriteRemove": "Remove from favorites",
+    "favoriteAuth": "Sign in to save listings.",
+    "favoriteError": "Could not update favorites.",
     "yes": "Yes",
     "no": "No"
   },
@@ -156,6 +161,28 @@
     "pagination": "Search pages",
     "previous": "Previous",
     "next": "Next",
-    "page": "Page {page} of {total}"
+    "page": "Page {page} of {total}",
+    "savedLink": "Saved",
+    "saveName": "Name this search",
+    "saveAction": "Save search",
+    "saveSuccess": "Saved",
+    "saveAuth": "Sign in to save searches.",
+    "saveError": "Could not save this search. The name may already be in use."
+  },
+  "saved": {
+    "languageNavigation": "Choose language",
+    "sellAction": "Post a listing",
+    "title": "Saved",
+    "description": "Your favorite listings and reusable searches in one place.",
+    "loading": "Loading saved items...",
+    "authTitle": "Sign in to view saved items",
+    "authText": "Favorites and saved searches are private to your account.",
+    "error": "Saved items are temporarily unavailable.",
+    "searchesTitle": "Saved searches",
+    "searchesEmpty": "You have no saved searches yet.",
+    "favoritesTitle": "Favorite listings",
+    "favoritesEmpty": "You have no favorite listings yet.",
+    "remove": "Remove",
+    "priceOnRequest": "Price on request"
   }
 }

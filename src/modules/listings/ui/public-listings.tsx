@@ -6,6 +6,7 @@ import type {AppLocale} from '@/i18n/routing';
 import {getDatabase} from '@/server/db/client';
 
 import {listPublicListings, type PublicListingCard} from '../public-listing-service';
+import {formatPrice} from './format';
 
 export async function PublicListingFeed({locale}: {locale: AppLocale}) {
   await connection();
@@ -103,20 +104,6 @@ function ListingSectionHeading({title, action}: {title: string; action: string})
       <span>{action}</span>
     </div>
   );
-}
-
-export function formatPrice(
-  priceMinor: number | null,
-  currency: string,
-  locale: AppLocale,
-  fallback: string
-): string {
-  if (priceMinor === null) return fallback;
-  return new Intl.NumberFormat(locale === 'az' ? 'az-AZ' : locale, {
-    style: 'currency',
-    currency,
-    maximumFractionDigits: priceMinor % 100 === 0 ? 0 : 2
-  }).format(priceMinor / 100);
 }
 
 function formatDate(value: string, locale: AppLocale): string {

@@ -33,6 +33,8 @@ Modules communicate through typed application interfaces and explicit events wri
 4. The worker processes media, indexing, notifications or analytics idempotently.
 5. Realtime delivery notifies connected clients; persisted state remains authoritative.
 
+The `engagement` application boundary owns favorites and saved searches. It derives ownership exclusively from the authenticated actor, exposes only active listing cards, and stores normalized public-search snapshots in PostgreSQL. UI components call versioned APIs and contain no authorization or taxonomy rules.
+
 ## Background work
 
 Use a PostgreSQL job/outbox table with leases, retry policy and `FOR UPDATE SKIP LOCKED`. This is sufficient for early volume and avoids Redis/queue operations. Introduce a dedicated queue only after measured contention or throughput demands it.

@@ -36,6 +36,13 @@
       "when": 1788189883552,
       "tag": "0004_petite_pyro",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1788533563343,
+      "tag": "0005_tired_bishop",
+      "breakpoints": true
     }
   ]
 }

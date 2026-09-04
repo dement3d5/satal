@@ -10,6 +10,8 @@ Sessions use secure HttpOnly cookies, rotation, revocation and active-session ma
 
 Use capability-based RBAC for user, shop owner, moderator, support, admin and owner. Application services authorize both action and target ownership. Add integration tests for IDOR and privilege boundaries.
 
+Favorites and saved searches never accept an owner ID from the client. The actor comes from the validated session, cross-owner saved-search mutations return `NOT_FOUND`, and private responses use `no-store`. Favorite reads re-check active listing visibility so a stale relationship cannot expose removed content. Integration coverage exercises these ownership boundaries.
+
 ## Web/API controls
 
 Validate server-side, escape output, apply CSP/security headers, CSRF defenses where cookies authorize mutations, strict CORS/trusted origins, request size/time limits and SSRF-safe outbound clients. Return safe errors with correlation IDs.

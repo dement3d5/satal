@@ -17,6 +17,7 @@ Phase 2 and the Phase 3 marketplace, media and search foundations are complete. 
 - atomic draft publication into a PostgreSQL listing snapshot, lifecycle/outbox history, public API, localized homepage feed and public detail page.
 - owner-authorized image uploads, hostile-file quarantine, Sharp/libvips re-encoding and metadata-free responsive variants for local development.
 - localized URL-state search/filter UI, validated dynamic facets, a replaceable Typesense adapter/outbox indexer and indexed PostgreSQL degraded fallback.
+- owner-only favorites and reusable saved searches with localized UI and normalized PostgreSQL query snapshots.
 
 ## Requirements
 

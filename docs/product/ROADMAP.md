@@ -34,7 +34,9 @@ Media foundation is implemented: owner-only authorization, bounded quarantine in
 
 Search/filter foundation is implemented: localized URL-state UI and API, category/location/price/dynamic facets, Typesense adapter, leased outbox indexing, atomic alias rebuild and indexed PostgreSQL fallback. Production still requires a live Typesense deployment/rebuild drill, load/ranking tuning and operational alerts.
 
-Remaining sequence: favorites and saved searches → identity/contact foundation → moderation boundaries.
+Favorites and saved searches are implemented with owner-only APIs, active-listing visibility, reusable localized URL queries and a localized saved-items page.
+
+Remaining sequence: identity/contact foundation → moderation boundaries.
 
 ## Phase 4 — trust and communication
 

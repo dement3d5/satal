@@ -3,9 +3,10 @@ import {notFound} from 'next/navigation';
 import {getTranslations} from 'next-intl/server';
 
 import {SiteHeader} from '@/components/site-header';
+import {FavoriteButton} from '@/modules/engagement/ui/favorite-button';
 import type {AppLocale} from '@/i18n/routing';
 import {getPublicListing} from '@/modules/listings/public-listing-service';
-import {formatPrice} from '@/modules/listings/ui/public-listings';
+import {formatPrice} from '@/modules/listings/ui/format';
 import {getDatabase} from '@/server/db/client';
 import {AppError} from '@/server/errors/app-error';
 import {parseUuid} from '@/server/http/params';
@@ -43,6 +44,7 @@ export default async function ListingPage({params}: PageProps) {
         locale={locale}
         languageLabel={t('languageNavigation')}
         sellLabel={t('sellAction')}
+        savedLabel={t('savedLink')}
       />
       <article className="listing-detail">
         <div
@@ -100,6 +102,15 @@ export default async function ListingPage({params}: PageProps) {
           </section>
         </div>
         <aside className="seller-card">
+          <FavoriteButton
+            listingId={item.id}
+            labels={{
+              add: t('favoriteAdd'),
+              remove: t('favoriteRemove'),
+              auth: t('favoriteAuth'),
+              error: t('favoriteError')
+            }}
+          />
           <span>{t('sellerLabel')}</span>
           <strong>{item.sellerName}</strong>
           <button type="button" disabled title={t('contactSoon')}>

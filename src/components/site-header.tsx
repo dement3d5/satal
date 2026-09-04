@@ -6,9 +6,10 @@ interface SiteHeaderProps {
   locale: AppLocale;
   languageLabel: string;
   sellLabel: string;
+  savedLabel?: string;
 }
 
-export function SiteHeader({locale, languageLabel, sellLabel}: SiteHeaderProps) {
+export function SiteHeader({locale, languageLabel, sellLabel, savedLabel}: SiteHeaderProps) {
   return (
     <header className="site-header">
       <Link className="brand" href={`/${locale}`} aria-label="Satal">
@@ -19,6 +20,11 @@ export function SiteHeader({locale, languageLabel, sellLabel}: SiteHeaderProps) 
       </Link>
 
       <div className="header-actions">
+        {savedLabel && (
+          <Link className="header-saved" href={`/${locale}/saved`}>
+            ♥ <span>{savedLabel}</span>
+          </Link>
+        )}
         <nav className="language-nav" aria-label={languageLabel}>
           {(['az', 'ru', 'en'] as const).map((item) => (
             <Link

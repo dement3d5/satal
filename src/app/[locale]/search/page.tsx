@@ -2,12 +2,13 @@ import {getTranslations} from 'next-intl/server';
 import Link from 'next/link';
 
 import {SiteHeader} from '@/components/site-header';
+import {SaveSearchForm} from '@/modules/engagement/ui/save-search-form';
 import type {AppLocale} from '@/i18n/routing';
 import type {CategoryAttributeContract, CategoryNodeContract} from '@/modules/catalog/contracts';
 import {getCategorySchema, listCategoryTree} from '@/modules/catalog/repository';
 import {listFilterLocations} from '@/modules/geography/repository';
 import type {PublicListingCard} from '@/modules/listings/public-listing-service';
-import {formatPrice} from '@/modules/listings/ui/public-listings';
+import {formatPrice} from '@/modules/listings/ui/format';
 import {parseSearchParams} from '@/modules/search/contracts';
 import {searchListings} from '@/modules/search/search-service';
 import {getDatabase} from '@/server/db/client';
@@ -37,6 +38,7 @@ export default async function SearchPage({
         locale={locale}
         languageLabel={t('languageNavigation')}
         sellLabel={t('sellAction')}
+        savedLabel={t('savedLink')}
       />
       <header className="search-page-heading">
         <p className="eyebrow">SATAL SEARCH</p>
@@ -115,6 +117,17 @@ export default async function SearchPage({
           {t('reset')}
         </Link>
       </form>
+      <SaveSearchForm
+        locale={locale}
+        query={url.toString()}
+        labels={{
+          name: t('saveName'),
+          action: t('saveAction'),
+          saved: t('saveSuccess'),
+          auth: t('saveAuth'),
+          error: t('saveError')
+        }}
+      />
       {result.degraded && <p className="search-notice">{t('degraded')}</p>}
       {result.items.length ? (
         <SearchGrid items={result.items} locale={locale} fallback={t('priceOnRequest')} />

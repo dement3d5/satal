@@ -46,3 +46,9 @@ Authorization declares an allowed MIME type, exact byte count and lowercase SHA-
 `GET /api/v1/search` accepts `locale`, `q`, `categoryId`, `locationId`, `priceMin`, `priceMax`, `sort`, `page` and `limit`. Schema-driven filters use `f.{attributeId}` for select option IDs, `b.{attributeId}` for booleans and `n.{attributeId}.min|max` for numeric/measurement bounds. Attribute filters require a category and are checked against PostgreSQL applicability/type rules before either search adapter runs.
 
 The response contains authoritative public cards plus `total`, `page`, `limit`, `source` and `degraded`. Typesense returns only ordered listing IDs; PostgreSQL rehydrates and rechecks active visibility. Public responses have a short shared-cache policy.
+
+## Favorites and saved searches
+
+`GET /api/v1/favorites?locale=az|ru|en` returns the current actor's active favorite listing cards. `GET|PUT|DELETE /api/v1/favorites/{listingId}` reads, idempotently adds, or idempotently removes one relationship. The client never supplies a user ID; every operation derives ownership from the authenticated session.
+
+`GET|POST /api/v1/saved-searches` lists or creates owner-only saved searches. Creation accepts a localized name and the same bounded query string used by public search, then reparses and normalizes it server-side. `PATCH|DELETE /api/v1/saved-searches/{savedSearchId}` can rename or delete only the current owner's resource; a cross-owner identifier returns `NOT_FOUND`. All engagement responses are private and `no-store`.

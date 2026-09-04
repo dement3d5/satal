@@ -70,6 +70,15 @@ The public lifecycle supports `pending_review`, `active`, `sold`, `expired`, `re
 
 Active listings have a partial GIN full-text index over title and description for degraded PostgreSQL search. Typesense documents are derived projections only: IDs, localized searchable text, ancestor scopes and typed facet values can always be rebuilt from these relational tables. Public search results are rehydrated through the active-listing query before exposure.
 
+### Favorites and saved searches
+
+- `favorite_listing`: owner/listing relationship with a composite primary key and reverse/list-order indexes;
+- `saved_search`: owner, localized name, locale, typed core query columns, bounded dynamic filter snapshot and timestamps.
+
+Deleting a user or listing cascades its favorites. Saved searches cascade with the owner but restrict deletion of referenced category, location and locale records. Name uniqueness is scoped to the owner, prices are non-negative and ordered, sort values are constrained, and filters must be a JSON array.
+
+The model is deliberately hybrid. Frequently queried core fields (`query_text`, category, location, price bounds and sort) remain relational. Only the category-defined dynamic filter union is stored as validated JSONB because its keys vary with taxonomy. Creation always passes through the public search parser and verifies referenced enabled records; arbitrary client JSON is never persisted. See ADR 0006.
+
 ### Listing media
 
 - `media_asset`: owner, quarantine key, declared/observed byte metadata, SHA-256 digests, processing timestamps and lifecycle;

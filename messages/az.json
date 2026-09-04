@@ -39,6 +39,11 @@
     "sellerLabel": "Satıcı",
     "contactAction": "Satıcı ilə əlaqə",
     "contactSoon": "Əlaqə funksiyası identity və chat mərhələsində aktiv olacaq.",
+    "savedLink": "Yadda saxlanılanlar",
+    "favoriteAdd": "Seçilmişlərə əlavə et",
+    "favoriteRemove": "Seçilmişlərdən sil",
+    "favoriteAuth": "Elanları saxlamaq üçün daxil olun.",
+    "favoriteError": "Seçilmişləri yeniləmək mümkün olmadı.",
     "yes": "Bəli",
     "no": "Xeyr"
   },
@@ -156,6 +161,28 @@
     "pagination": "Axtarış səhifələri",
     "previous": "Əvvəlki",
     "next": "Növbəti",
-    "page": "Səhifə {page} / {total}"
+    "page": "Səhifə {page} / {total}",
+    "savedLink": "Yadda saxlanılanlar",
+    "saveName": "Axtarışın adı",
+    "saveAction": "Axtarışı saxla",
+    "saveSuccess": "Saxlanıldı",
+    "saveAuth": "Axtarışları saxlamaq üçün daxil olun.",
+    "saveError": "Axtarışı saxlamaq mümkün olmadı. Bu ad artıq istifadə oluna bilər."
+  },
+  "saved": {
+    "languageNavigation": "Dil seçimi",
+    "sellAction": "Elan yerləşdir",
+    "title": "Yadda saxlanılanlar",
+    "description": "Seçilmiş elanlarınız və saxlanılmış axtarışlarınız bir yerdə.",
+    "loading": "Yadda saxlanılanlar yüklənir...",
+    "authTitle": "Yadda saxlanılanları görmək üçün daxil olun",
+    "authText": "Seçilmişlər və saxlanılmış axtarışlar yalnız hesab sahibinə açıqdır.",
+    "error": "Yadda saxlanılanlar müvəqqəti olaraq əlçatan deyil.",
+    "searchesTitle": "Saxlanılmış axtarışlar",
+    "searchesEmpty": "Hələ saxlanılmış axtarışınız yoxdur.",
+    "favoritesTitle": "Seçilmiş elanlar",
+    "favoritesEmpty": "Hələ seçilmiş elanınız yoxdur.",
+    "remove": "Sil",
+    "priceOnRequest": "Qiymət razılaşma ilə"
   }
 }
