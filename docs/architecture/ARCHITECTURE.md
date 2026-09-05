@@ -37,6 +37,8 @@ The `engagement` application boundary owns favorites and saved searches. It deri
 
 The `identity` boundary delegates credentials, password hashing, sessions, secure cookies and origin validation to Better Auth. Satal profile services expose explicit DTOs. Seller contact disclosure is a separate application service that rechecks listing visibility and phone verification, blocks self-contact, serializes per-buyer rate-limit decisions and writes an audit before returning a number.
 
+The `moderation` boundary owns staff capabilities, the review queue and append-only decisions. Submission creates a `pending_review` listing and one open case in the publication transaction. A separate staff-authorized transaction locks the case, blocks self-review, records the decision and seller-safe explanation, changes PostgreSQL visibility and emits the existing `listing.published` event only after approval. No privileged identity is seeded or assignable from a public API.
+
 ## Background work
 
 Use a PostgreSQL job/outbox table with leases, retry policy and `FOR UPDATE SKIP LOCKED`. This is sufficient for early volume and avoids Redis/queue operations. Introduce a dedicated queue only after measured contention or throughput demands it.
@@ -55,7 +57,7 @@ A WebSocket/Socket.IO gateway lives beside the web process initially. Messages a
 
 `catalog` owns the three-level category tree, localized labels, typed attribute definitions/options and category applicability. Frontend code renders the schema returned by an application query; it must not contain category-specific forms or lists.
 
-`listings` owns draft authorization, lifecycle, category-change recalculation and the published aggregate. Publication is one PostgreSQL transaction: lock/version-check and authorize the draft, validate required category content, coarsen location precision, copy typed values into immutable listing snapshot tables, advance the draft, append lifecycle history and write an outbox event. Public reads select only `active` PostgreSQL rows; the localized homepage feed and listing detail page do not depend on Typesense.
+`listings` owns draft authorization, lifecycle, category-change recalculation and the published aggregate. Submission is one PostgreSQL transaction: lock/version-check and authorize the draft, validate required category content, coarsen location precision, copy typed values into immutable listing snapshot tables, advance the draft, open moderation and write an outbox event. Public reads select only moderator-approved `active` PostgreSQL rows; the localized homepage feed and listing detail page do not depend on Typesense.
 
 The media boundary now authorizes owner-only, short-lived uploads, stores originals under server-generated quarantine keys and verifies the byte length, SHA-256 digest and file signature before recording them as quarantined. Draft ordering and cover selection remain PostgreSQL state and are copied to the published listing transactionally. Quarantined originals are never public. The worker uses a real image decoder, rejects oversized/animated/unsupported input, applies orientation, strips source metadata through re-encoding and creates bounded WebP thumbnail/card/detail variants before changing an asset to `ready`. Production worker scheduling and the R2 adapter remain deployment responsibilities; R2 deliberately fails closed until configured and verified.
 

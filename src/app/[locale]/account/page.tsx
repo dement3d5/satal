@@ -35,7 +35,19 @@ export default async function AccountPage({params}: {params: Promise<{locale: Ap
           save: t('save'),
           saved: t('saved'),
           saveError: t('saveError'),
-          signOut: t('signOut')
+          signOut: t('signOut'),
+          moderation: t('moderation'),
+          listingsTitle: t('listingsTitle'),
+          listingsEmpty: t('listingsEmpty'),
+          listingOpen: t('listingOpen'),
+          statuses: {
+            pending_review: t('statuses.pendingReview'),
+            active: t('statuses.active'),
+            sold: t('statuses.sold'),
+            expired: t('statuses.expired'),
+            removed: t('statuses.removed'),
+            rejected: t('statuses.rejected')
+          }
         }}
       />
     </main>

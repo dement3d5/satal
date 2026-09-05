@@ -38,11 +38,11 @@ Favorites and saved searches are implemented with owner-only APIs, active-listin
 
 Identity/contact foundation is implemented with Better Auth email credentials and database sessions, a localized account UI, minimal profile DTOs and audited verified-phone disclosure. Production phone OTP and email recovery still require verified providers.
 
-Remaining Phase 3 sequence: moderation boundaries.
+Phase 3 moderation boundaries now include explicit staff roles, a localized owner queue, pending-review submissions, atomic approve/reject decisions, safe seller explanations and audit/outbox records.
 
 ## Phase 4 — trust and communication
 
-Chat, notification center, ratings, reports, moderation queues, risk signals, bans and audit.
+Chat, notification center, ratings, reports, appeals, explainable risk signals, bans and broader audit operations. The core listing moderation queue and decision boundary already exist from Phase 3.
 
 ## Phase 5 — shops
 

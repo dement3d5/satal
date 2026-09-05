@@ -1687,6 +1687,72 @@ h1 {
 .account-panel {
   display: grid;
   gap: 1rem;
+  max-width: none;
+}
+
+.account-panel > .auth-form,
+.account-panel > .button {
+  max-width: 40rem;
+}
+
+.account-listings {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--color-border);
+}
+
+.account-listings h2 {
+  margin: 0;
+}
+
+.account-listing-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));
+  gap: 0.8rem;
+}
+
+.account-listing-grid article {
+  display: grid;
+  align-content: start;
+  gap: 0.8rem;
+  padding: 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.85rem;
+  background: var(--color-surface-muted);
+}
+
+.account-listing-grid h3 {
+  margin: 0.25rem 0 0;
+  font-size: 1rem;
+}
+
+.account-listing-grid span {
+  color: var(--color-muted);
+  font-size: 0.82rem;
+}
+
+.account-listing-grid a {
+  color: var(--color-accent-strong);
+  font-weight: 700;
+}
+
+.listing-status {
+  width: fit-content;
+  padding: 0.35rem 0.55rem;
+  border-radius: 999px;
+  background: white;
+  font-size: 0.82rem;
+}
+
+.listing-status-active {
+  color: #16734a;
+}
+
+.listing-status-rejected,
+.listing-status-removed {
+  color: #a63d31;
 }
 
 .contact-action {
@@ -1777,6 +1843,89 @@ h1 {
   background: rgb(255 255 255 / 90%);
 }
 
+.moderation-page {
+  padding-bottom: 4rem;
+}
+
+.moderation-queue {
+  display: grid;
+  gap: 1rem;
+}
+
+.moderation-card {
+  display: grid;
+  gap: 1rem;
+  padding: clamp(1rem, 2vw, 1.5rem);
+  border: 1px solid var(--color-border);
+  border-radius: 1rem;
+  background: white;
+}
+
+.moderation-card header,
+.moderation-actions {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.moderation-card header span,
+.moderation-card small {
+  color: var(--color-muted);
+}
+
+.moderation-card h2 {
+  margin: 0.25rem 0 0;
+  font-size: 1.2rem;
+}
+
+.status-chip {
+  flex: none;
+  padding: 0.35rem 0.55rem;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  font-size: 0.8rem;
+}
+
+.moderation-actions details {
+  width: min(100%, 31rem);
+  padding: 0.7rem 0.9rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.75rem;
+}
+
+.moderation-actions summary {
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.moderation-actions form {
+  display: grid;
+  gap: 0.8rem;
+  margin-top: 1rem;
+}
+
+.moderation-actions label {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.moderation-actions select,
+.moderation-actions textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.65rem;
+  background: white;
+  color: var(--color-text);
+  font: inherit;
+}
+
+.moderation-actions textarea {
+  min-height: 7rem;
+  resize: vertical;
+}
+
 @media (max-width: 640px) {
   .header-saved span {
     display: none;
@@ -1789,5 +1938,11 @@ h1 {
 
   .save-search-form input {
     min-width: 0;
+  }
+
+  .moderation-card header,
+  .moderation-actions {
+    align-items: stretch;
+    flex-direction: column;
   }
 }

@@ -64,9 +64,17 @@ Changing category is allowed only before submission. The application transaction
 - `listing_status_history`: actor-attributed public lifecycle audit;
 - `outbox_event`: transactional, versioned integration events with availability, expiring worker lease, attempts and safe last-error metadata for search/media/notification workers.
 
-Publication locks the source draft, authorizes its owner, checks the optimistic version, validates required content and every category attribute, resolves the selected draft location to a safe public ancestor, copies the snapshot, advances the draft to `submitted`, and writes `listing.published` to the outbox in one transaction. `listing.source_draft_id` is unique, making a repeated publication request idempotent. Only `active` listings are public. Typesense is never queried to decide publication or visibility.
+Submission locks the source draft, authorizes its owner, checks the optimistic version, validates required content and every category attribute, resolves the selected draft location to a safe public ancestor, copies the snapshot, advances the draft to `submitted`, creates one open moderation case and writes `listing.submitted_for_review` to the outbox in one transaction. `listing.source_draft_id` is unique, making a repeated request idempotent. Only `active` listings are public. Typesense is never queried to decide publication or visibility.
 
-The public lifecycle supports `pending_review`, `active`, `sold`, `expired`, `removed` and `rejected`. The current low-risk path activates a structurally valid listing immediately while retaining complete history; risk-based moderation and administrative transitions remain Phase 4.
+The public lifecycle supports `pending_review`, `active`, `sold`, `expired`, `removed` and `rejected`. Approval stamps publication/expiry time and emits `listing.published`; rejection stores a seller-safe explanation without exposing internal signals. Future explainable risk rules may auto-approve low-risk cases, but the implemented safe baseline requires review.
+
+### Moderation and staff access
+
+- `user_role`: explicit expiring `moderator`, `admin` or `owner` grants with grant provenance;
+- `moderation_case`: one review case per submitted listing, ordered by bounded priority and explicit risk band/policy version;
+- `moderation_action`: append-only reviewer decision with reason code, seller-safe explanation and optional internal note.
+
+The application checks live role grants inside every queue read and decision transaction. Cases are locked before a decision, reviewers cannot act on their own listings, and resolved cases cannot be decided twice. Listing, case, action, lifecycle history and outbox updates remain atomic. Production staff bootstrap is an owner-controlled operation; privileged users are never created by seed data.
 
 Active listings have a partial GIN full-text index over title and description for degraded PostgreSQL search. Typesense documents are derived projections only: IDs, localized searchable text, ancestor scopes and typed facet values can always be rebuilt from these relational tables. Public search results are rehydrated through the active-listing query before exposure.
 

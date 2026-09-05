@@ -134,12 +134,15 @@
     "untitled": "Untitled listing",
     "priceOnRequest": "Price on request",
     "foundationReadyTitle": "Your listing is ready to publish",
-    "foundationReadyText": "Saved data will be validated again before the listing is published. Photos follow in a separate milestone.",
+    "foundationReadyText": "Saved data will be validated again before the listing is submitted for moderation.",
     "editDetails": "Edit details",
     "publishLater": "Publishing soon",
     "publishAction": "Publish listing",
     "publishing": "Publishing...",
-    "publishError": "The listing could not be published"
+    "publishError": "The listing could not be submitted",
+    "submittedTitle": "Listing sent for review",
+    "submittedText": "It is not public yet. A moderation decision will make it active or explain what needs to be corrected.",
+    "submittedAccount": "Go to account"
   },
   "search": {
     "accountLink": "Account",
@@ -216,7 +219,52 @@
     "save": "Save name",
     "saved": "Saved",
     "saveError": "Could not save the profile.",
-    "signOut": "Sign out"
+    "signOut": "Sign out",
+    "moderation": "Moderation queue",
+    "listingsTitle": "My listings",
+    "listingsEmpty": "You have not submitted any listings yet.",
+    "listingOpen": "Open listing",
+    "statuses": {
+      "pendingReview": "Under review",
+      "active": "Active",
+      "sold": "Sold",
+      "expired": "Expired",
+      "removed": "Removed",
+      "rejected": "Needs changes"
+    }
+  },
+  "moderation": {
+    "accountLink": "Account",
+    "languageNavigation": "Choose language",
+    "sellAction": "Post a listing",
+    "title": "Moderation queue",
+    "description": "Review submitted listings with an explicit, auditable decision.",
+    "loading": "Loading moderation queue...",
+    "auth": "Sign in with a staff account to continue.",
+    "signIn": "Sign in",
+    "forbidden": "Your account does not have moderation access.",
+    "error": "The moderation queue is temporarily unavailable.",
+    "empty": "The queue is clear.",
+    "seller": "Seller",
+    "risk": "Risk",
+    "riskUnassessed": "not assessed",
+    "approve": "Approve",
+    "approving": "Approving...",
+    "rejectTitle": "Reject with explanation",
+    "reason": "Reason",
+    "explanation": "Explanation for the seller",
+    "explanationHint": "Explain what must be corrected without exposing internal detection rules.",
+    "reject": "Reject listing",
+    "rejecting": "Rejecting...",
+    "actionError": "The decision could not be saved. Refresh the queue and try again.",
+    "reasons": {
+      "prohibitedItem": "Prohibited item",
+      "fraudRisk": "Fraud risk",
+      "duplicate": "Duplicate listing",
+      "wrongCategory": "Wrong category",
+      "insufficientInformation": "Insufficient information",
+      "other": "Other policy reason"
+    }
   },
   "saved": {
     "accountLink": "Account",

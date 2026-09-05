@@ -13,6 +13,7 @@ import {
   listingMedia,
   listingStatusHistory,
   location,
+  moderationCase,
   outboxEvent
 } from '@/server/db/schema';
 import {AppError} from '@/server/errors/app-error';
@@ -67,8 +68,6 @@ export async function publishListingDraft(
     );
 
     const now = new Date();
-    const expiresAt = new Date(now);
-    expiresAt.setUTCDate(expiresAt.getUTCDate() + 45);
     const publicLocationId = await resolvePublicLocationId(
       tx,
       draft.locationId!,
@@ -83,13 +82,13 @@ export async function publishListingDraft(
         categorySchemaVersion: draft.categorySchemaVersion,
         locationId: publicLocationId,
         publicLocationPrecision: draft.publicLocationPrecision,
-        status: 'active',
+        status: 'pending_review',
         title: draft.title.trim(),
         description: draft.description.trim(),
         priceMinor: draft.priceMinor,
         currency: draft.currency,
-        publishedAt: now,
-        expiresAt
+        publishedAt: null,
+        expiresAt: null
       })
       .returning();
     if (!created) throw new AppError('UNEXPECTED_ERROR', 'Listing could not be published', 500);
@@ -100,8 +99,12 @@ export async function publishListingDraft(
       listingId: created.id,
       actorId,
       fromStatus: null,
-      toStatus: 'active',
-      reason: 'owner_publication'
+      toStatus: 'pending_review',
+      reason: 'owner_submission'
+    });
+    await tx.insert(moderationCase).values({
+      listingId: created.id,
+      policyVersion: 'manual-review-v1'
     });
 
     const draftHistory =
@@ -142,7 +145,7 @@ export async function publishListingDraft(
     await tx.insert(outboxEvent).values({
       aggregateType: 'listing',
       aggregateId: created.id,
-      eventType: 'listing.published',
+      eventType: 'listing.submitted_for_review',
       aggregateVersion: created.version,
       payload: {listingId: created.id, categoryId: created.categoryId}
     });

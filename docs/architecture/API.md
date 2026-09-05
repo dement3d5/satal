@@ -29,7 +29,7 @@ The initial marketplace API slice exposes PostgreSQL-backed category trees, loca
 
 Authenticated draft routes under `/api/v1/listing-drafts` support creation, owner-only reads, autosave and safe category changes. Draft updates require the last observed `version`; stale autosaves receive a conflict response instead of overwriting newer work. Category-change responses report removed attribute IDs so the UI can explain recalculation without duplicating catalog rules. Draft responses are private and use `no-store`; public catalog and geography reads have short shared-cache policies.
 
-`POST /api/v1/listing-drafts/{draftId}/publish` is owner-only, version-checked and idempotent through the unique source-draft relationship. It reruns server-side completeness and category-schema validation before creating an active PostgreSQL snapshot and outbox event.
+`POST /api/v1/listing-drafts/{draftId}/publish` is owner-only, version-checked and idempotent through the unique source-draft relationship. It reruns server-side completeness and category-schema validation before creating a `pending_review` PostgreSQL snapshot and moderation case.
 
 `GET /api/v1/listings` exposes newest-first cursor pagination with optional category/location bounds. `GET /api/v1/listings/{listingId}` exposes only active listings with localized category, location and attribute labels. Public responses use short shared-cache headers; private draft/publication responses use `no-store`.
 
@@ -59,4 +59,12 @@ Better Auth owns `/api/auth/*`, credential hashing, database sessions, HttpOnly 
 
 `GET|PATCH /api/v1/profile` returns a minimal owner DTO and updates only the display name. Email and phone verification state are read-only through this resource; changing either identifier requires a separate verified flow.
 
+`GET /api/v1/profile/listings?locale=az|ru|en` returns the current seller's own listings across lifecycle states, including the safe rejection explanation when present. It does not make pending or rejected content public.
+
 `POST /api/v1/listings/{listingId}/contact` requires a database-backed session, an active listing, a different buyer and a verified seller phone. It returns only the phone protocol/number needed for a `tel:` action, records or increments an access audit, and limits an actor to 30 distinct contacts per rolling hour. Responses are private and `no-store`.
+
+## Moderation contracts
+
+`GET /api/v1/moderation/cases?locale=az|ru|en&limit=30` returns a minimal localized queue DTO only to users with a live staff role. It excludes seller email, phone, internal risk evidence and credentials. `POST /api/v1/moderation/cases/{caseId}/decision` accepts a validated approve/reject union. Rejection requires a bounded public explanation; authorization, self-review and current case/listing state are rechecked inside the transaction.
+
+`GET /api/v1/listings/{listingId}/review` is seller-owner only and returns the current review state plus the safe rejection explanation. Cross-owner identifiers return `NOT_FOUND`. All moderation and owner-review responses are private and `no-store`.

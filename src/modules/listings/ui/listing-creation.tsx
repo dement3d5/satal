@@ -1,7 +1,6 @@
 'use client';
 
 import {useLocale, useTranslations} from 'next-intl';
-import {useRouter} from 'next/navigation';
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 
 import type {
@@ -20,7 +19,7 @@ import {
   type AttributeState
 } from './listing-form-model';
 
-type Step = 'category' | 'details' | 'location' | 'review';
+type Step = 'category' | 'details' | 'location' | 'review' | 'submitted';
 type SaveState = 'local' | 'saving' | 'saved' | 'error';
 
 interface DraftSnapshot {
@@ -45,7 +44,6 @@ interface DraftPhoto {
 export function ListingCreation() {
   const t = useTranslations('sell');
   const locale = useLocale() as ContractLocale;
-  const router = useRouter();
   const [step, setStep] = useState<Step>('category');
   const [categories, setCategories] = useState<CategoryNodeContract[]>([]);
   const [categoryPath, setCategoryPath] = useState<CategoryNodeContract[]>([]);
@@ -233,9 +231,12 @@ export function ListingCreation() {
         headers: {'content-type': 'application/json'},
         body: JSON.stringify({version: draft.version})
       });
-      const body = (await response.json()) as {data?: {id: string}} & ApiErrorShape;
+      const body = (await response.json()) as {
+        data?: {id: string; status: 'pending_review'};
+      } & ApiErrorShape;
       if (!response.ok || !body.data) throw new Error(body.error?.message || t('publishError'));
-      router.push(`/${locale}/listings/${body.data.id}`);
+      setStep('submitted');
+      setPublishing(false);
     } catch (error) {
       setPublishError(error instanceof Error ? error.message : t('publishError'));
       setPublishing(false);
@@ -424,8 +425,18 @@ export function ListingCreation() {
 
       <section className="sell-card" aria-labelledby="sell-step-title">
         <div className="mobile-progress" aria-hidden="true">
-          <span style={{width: `${(stepIndex(step) + 1) * 25}%`}} />
+          <span style={{width: `${Math.min((stepIndex(step) + 1) * 25, 100)}%`}} />
         </div>
+        {step === 'submitted' && (
+          <div className="submission-complete" role="status">
+            <SparkIcon />
+            <h2 id="sell-step-title">{t('submittedTitle')}</h2>
+            <p>{t('submittedText')}</p>
+            <a className="button button-primary" href={`/${locale}/account`}>
+              {t('submittedAccount')}
+            </a>
+          </div>
+        )}
         {step === 'category' && (
           <CategoryStep
             categories={categoryChoices}

@@ -134,12 +134,15 @@
     "untitled": "Başlıqsız elan",
     "priceOnRequest": "Qiymət razılaşma ilə",
     "foundationReadyTitle": "Elan dərcə hazırdır",
-    "foundationReadyText": "Saxlanılmış məlumatlar yenidən yoxlanacaq və elan təhlükəsiz şəkildə dərc olunacaq. Şəkillər ayrıca mərhələdə əlavə ediləcək.",
+    "foundationReadyText": "Saxlanılmış məlumatlar elan moderasiyaya göndərilməzdən əvvəl yenidən yoxlanacaq.",
     "editDetails": "Düzəliş et",
     "publishLater": "Nəşr tezliklə",
     "publishAction": "Elanı dərc et",
     "publishing": "Dərc olunur...",
-    "publishError": "Elanı dərc etmək mümkün olmadı"
+    "publishError": "Elanı göndərmək mümkün olmadı",
+    "submittedTitle": "Elan yoxlamaya göndərildi",
+    "submittedText": "Elan hələ ictimai deyil. Yoxlamadan sonra aktiv olacaq və ya nəyin düzəldilməli olduğu izah ediləcək.",
+    "submittedAccount": "Hesaba keç"
   },
   "search": {
     "accountLink": "Hesab",
@@ -216,7 +219,52 @@
     "save": "Adı saxla",
     "saved": "Saxlanıldı",
     "saveError": "Profili saxlamaq mümkün olmadı.",
-    "signOut": "Çıx"
+    "signOut": "Çıx",
+    "moderation": "Moderasiya növbəsi",
+    "listingsTitle": "Elanlarım",
+    "listingsEmpty": "Hələ heç bir elan göndərməmisiniz.",
+    "listingOpen": "Elanı aç",
+    "statuses": {
+      "pendingReview": "Yoxlamadadır",
+      "active": "Aktivdir",
+      "sold": "Satılıb",
+      "expired": "Müddəti bitib",
+      "removed": "Silinib",
+      "rejected": "Düzəliş lazımdır"
+    }
+  },
+  "moderation": {
+    "accountLink": "Hesab",
+    "languageNavigation": "Dil seçimi",
+    "sellAction": "Elan yerləşdir",
+    "title": "Moderasiya növbəsi",
+    "description": "Yeni elanları aydın və audit olunan qərarla yoxlayın.",
+    "loading": "Moderasiya növbəsi yüklənir...",
+    "auth": "Davam etmək üçün əməkdaş hesabı ilə daxil olun.",
+    "signIn": "Daxil ol",
+    "forbidden": "Hesabınızın moderasiya icazəsi yoxdur.",
+    "error": "Moderasiya növbəsi müvəqqəti olaraq əlçatan deyil.",
+    "empty": "Növbə boşdur.",
+    "seller": "Satıcı",
+    "risk": "Risk",
+    "riskUnassessed": "qiymətləndirilməyib",
+    "approve": "Təsdiqlə",
+    "approving": "Təsdiqlənir...",
+    "rejectTitle": "İzahla rədd et",
+    "reason": "Səbəb",
+    "explanation": "Satıcı üçün izah",
+    "explanationHint": "Daxili aşkarlama qaydalarını açıqlamadan nəyin düzəldilməli olduğunu izah edin.",
+    "reject": "Elanı rədd et",
+    "rejecting": "Rədd edilir...",
+    "actionError": "Qərarı saxlamaq mümkün olmadı. Növbəni yeniləyib yenidən cəhd edin.",
+    "reasons": {
+      "prohibitedItem": "Qadağan olunmuş məhsul",
+      "fraudRisk": "Dələduzluq riski",
+      "duplicate": "Təkrar elan",
+      "wrongCategory": "Yanlış kateqoriya",
+      "insufficientInformation": "Məlumat kifayət deyil",
+      "other": "Digər siyasət səbəbi"
+    }
   },
   "saved": {
     "accountLink": "Hesab",

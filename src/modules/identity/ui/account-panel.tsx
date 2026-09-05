@@ -12,6 +12,18 @@ interface Profile {
   emailVerified: boolean;
   phoneNumber: string | null;
   phoneNumberVerified: boolean;
+  staffRoles: Array<'moderator' | 'admin' | 'owner'>;
+}
+
+interface OwnedListing {
+  id: string;
+  title: string;
+  status: 'pending_review' | 'active' | 'sold' | 'expired' | 'removed' | 'rejected';
+  updatedAt: string;
+  categoryName: string;
+  locationName: string;
+  reasonCode: string | null;
+  publicExplanation: string | null;
 }
 
 interface AccountLabels {
@@ -29,28 +41,41 @@ interface AccountLabels {
   saved: string;
   saveError: string;
   signOut: string;
+  moderation: string;
+  listingsTitle: string;
+  listingsEmpty: string;
+  listingOpen: string;
+  statuses: Record<OwnedListing['status'], string>;
 }
 
 export function AccountPanel({locale, labels}: {locale: AppLocale; labels: AccountLabels}) {
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [listings, setListings] = useState<OwnedListing[]>([]);
   const [state, setState] = useState<'loading' | 'ready' | 'auth' | 'error'>('loading');
   const [message, setMessage] = useState('');
   const router = useRouter();
 
   useEffect(() => {
-    fetch('/api/v1/profile', {cache: 'no-store'})
-      .then(async (response) => {
-        if (response.status === 401) return null;
-        if (!response.ok) throw new Error('profile failed');
-        return ((await response.json()) as {data: Profile}).data;
-      })
-      .then((data) => {
-        if (!data) return setState('auth');
-        setProfile(data);
+    void (async () => {
+      try {
+        const [profileResponse, listingsResponse] = await Promise.all([
+          fetch('/api/v1/profile', {cache: 'no-store'}),
+          fetch(`/api/v1/profile/listings?locale=${locale}`, {cache: 'no-store'})
+        ]);
+        if (profileResponse.status === 401) return setState('auth');
+        if (!profileResponse.ok || !listingsResponse.ok) throw new Error('account failed');
+        const [profileBody, listingsBody] = (await Promise.all([
+          profileResponse.json(),
+          listingsResponse.json()
+        ])) as [{data: Profile}, {data: OwnedListing[]}];
+        setProfile(profileBody.data);
+        setListings(listingsBody.data);
         setState('ready');
-      })
-      .catch(() => setState('error'));
-  }, []);
+      } catch {
+        setState('error');
+      }
+    })();
+  }, [locale]);
 
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -115,6 +140,39 @@ export function AccountPanel({locale, labels}: {locale: AppLocale; labels: Accou
       <button className="button" type="button" onClick={signOut}>
         {labels.signOut}
       </button>
+      {profile.staffRoles.length > 0 && (
+        <a className="button button-secondary" href={`/${locale}/moderation`}>
+          {labels.moderation}
+        </a>
+      )}
+      <section className="account-listings" aria-labelledby="account-listings-title">
+        <h2 id="account-listings-title">{labels.listingsTitle}</h2>
+        {listings.length === 0 ? (
+          <p>{labels.listingsEmpty}</p>
+        ) : (
+          <div className="account-listing-grid">
+            {listings.map((item) => (
+              <article key={item.id}>
+                <div>
+                  <span>
+                    {item.categoryName} · {item.locationName}
+                  </span>
+                  <h3>{item.title}</h3>
+                </div>
+                <strong className={`listing-status listing-status-${item.status}`}>
+                  {labels.statuses[item.status]}
+                </strong>
+                {item.status === 'rejected' && item.publicExplanation && (
+                  <p className="notice notice-error">{item.publicExplanation}</p>
+                )}
+                {item.status === 'active' && (
+                  <a href={`/${locale}/listings/${item.id}`}>{labels.listingOpen}</a>
+                )}
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
     </div>
   );
 }

@@ -7,6 +7,7 @@
 - managed Railway PostgreSQL with persistent volume/backups;
 - a small Typesense service with persistent volume;
 - external SMS/email providers behind adapters;
+- an owner-verified first staff-role grant performed through controlled database operations; no privileged account is seeded;
 - GitHub Actions for checks and controlled deployment.
 
 This shape avoids Kubernetes and vendor-specific domain logic. All stateful components have export/rebuild paths.

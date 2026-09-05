@@ -45,6 +45,29 @@ export const user = pgTable(
   ]
 );
 
+export const staffRole = pgEnum('staff_role', ['moderator', 'admin', 'owner']);
+
+export const userRole = pgTable(
+  'user_role',
+  {
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => user.id, {onDelete: 'cascade'}),
+    role: staffRole('role').notNull(),
+    grantedBy: uuid('granted_by').references(() => user.id, {onDelete: 'restrict'}),
+    grantedAt: timestamp('granted_at', {withTimezone: true}).defaultNow().notNull(),
+    expiresAt: timestamp('expires_at', {withTimezone: true})
+  },
+  (table) => [
+    primaryKey({columns: [table.userId, table.role]}),
+    index('user_role_role_expiry_idx').on(table.role, table.expiresAt),
+    check(
+      'user_role_expiry_after_grant',
+      sql`${table.expiresAt} is null or ${table.expiresAt} > ${table.grantedAt}`
+    )
+  ]
+);
+
 export const session = pgTable(
   'session',
   {
@@ -644,6 +667,74 @@ export const listingStatusHistory = pgTable(
   },
   (table) => [
     index('listing_status_history_listing_created_idx').on(table.listingId, table.createdAt)
+  ]
+);
+
+export const moderationCaseStatus = pgEnum('moderation_case_status', [
+  'open',
+  'approved',
+  'rejected'
+]);
+export const moderationRiskBand = pgEnum('moderation_risk_band', [
+  'unassessed',
+  'low',
+  'medium',
+  'high'
+]);
+export const moderationActionType = pgEnum('moderation_action_type', ['approve', 'reject']);
+
+export const moderationCase = pgTable(
+  'moderation_case',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    listingId: uuid('listing_id')
+      .notNull()
+      .references(() => listing.id, {onDelete: 'restrict'}),
+    status: moderationCaseStatus('status').default('open').notNull(),
+    priority: smallint('priority').default(0).notNull(),
+    riskBand: moderationRiskBand('risk_band').default('unassessed').notNull(),
+    policyVersion: varchar('policy_version', {length: 80}).notNull(),
+    assignedTo: uuid('assigned_to').references(() => user.id, {onDelete: 'restrict'}),
+    openedAt: timestamp('opened_at', {withTimezone: true}).defaultNow().notNull(),
+    resolvedAt: timestamp('resolved_at', {withTimezone: true}),
+    ...timestamps
+  },
+  (table) => [
+    uniqueIndex('moderation_case_listing_unique').on(table.listingId),
+    index('moderation_case_queue_idx').on(table.status, table.priority, table.openedAt),
+    index('moderation_case_assignee_idx').on(table.assignedTo, table.status, table.updatedAt),
+    check('moderation_case_priority_range', sql`${table.priority} between 0 and 1000`),
+    check(
+      'moderation_case_resolution_consistent',
+      sql`(${table.status} = 'open' and ${table.resolvedAt} is null) or (${table.status} <> 'open' and ${table.resolvedAt} is not null)`
+    )
+  ]
+);
+
+export const moderationAction = pgTable(
+  'moderation_action',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    caseId: uuid('case_id')
+      .notNull()
+      .references(() => moderationCase.id, {onDelete: 'restrict'}),
+    actorId: uuid('actor_id')
+      .notNull()
+      .references(() => user.id, {onDelete: 'restrict'}),
+    action: moderationActionType('action').notNull(),
+    reasonCode: varchar('reason_code', {length: 80}).notNull(),
+    publicExplanation: varchar('public_explanation', {length: 500}),
+    internalNote: text('internal_note'),
+    createdAt: timestamp('created_at', {withTimezone: true}).defaultNow().notNull()
+  },
+  (table) => [
+    index('moderation_action_case_created_idx').on(table.caseId, table.createdAt),
+    index('moderation_action_actor_created_idx').on(table.actorId, table.createdAt),
+    check('moderation_action_reason_code_format', sql`${table.reasonCode} ~ '^[a-z0-9_]{3,80}$'`),
+    check(
+      'moderation_action_rejection_has_explanation',
+      sql`${table.action} <> 'reject' or (${table.publicExplanation} is not null and length(btrim(${table.publicExplanation})) >= 10)`
+    )
   ]
 );
 

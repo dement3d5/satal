@@ -1,7 +1,7 @@
-import {eq} from 'drizzle-orm';
+import {and, eq, gt, isNull, or} from 'drizzle-orm';
 
 import type {DatabaseClient} from '@/server/db/client';
-import {user} from '@/server/db/schema';
+import {user, userRole} from '@/server/db/schema';
 import {AppError} from '@/server/errors/app-error';
 
 export async function getOwnProfile(db: DatabaseClient, actorId: string) {
@@ -19,7 +19,20 @@ export async function getOwnProfile(db: DatabaseClient, actorId: string) {
     .where(eq(user.id, actorId))
     .limit(1);
   if (!row) throw new AppError('NOT_FOUND', 'Profile was not found', 404);
-  return {...row, createdAt: row.createdAt.toISOString()};
+  const roles = await db
+    .select({role: userRole.role})
+    .from(userRole)
+    .where(
+      and(
+        eq(userRole.userId, actorId),
+        or(isNull(userRole.expiresAt), gt(userRole.expiresAt, new Date()))
+      )
+    );
+  return {
+    ...row,
+    staffRoles: roles.map(({role}) => role),
+    createdAt: row.createdAt.toISOString()
+  };
 }
 
 export async function updateOwnProfile(db: DatabaseClient, actorId: string, name: string) {
