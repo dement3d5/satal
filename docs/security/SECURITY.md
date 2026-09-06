@@ -14,6 +14,8 @@ Use capability-based RBAC for user, shop owner, moderator, support, admin and ow
 
 Favorites and saved searches never accept an owner ID from the client. The actor comes from the validated session, cross-owner saved-search mutations return `NOT_FOUND`, and private responses use `no-store`. Favorite reads re-check active listing visibility so a stale relationship cannot expose removed content. Integration coverage exercises these ownership boundaries.
 
+Listing reports and appeals also derive the actor exclusively from the session. Reports require an active listing owned by another user, are unique per reporter/listing and are limited to ten new targets per rolling hour under a serialized actor lock. Appeals require the listing seller and return `NOT_FOUND` across the ownership boundary. Staff report/appeal decisions verify a live role and prohibit acting on the reviewer's own listing inside the locking transaction.
+
 ## Web/API controls
 
 Validate server-side, escape output, apply CSP/security headers, CSRF defenses where cookies authorize mutations, strict CORS/trusted origins, request size/time limits and SSRF-safe outbound clients. Return safe errors with correlation IDs.

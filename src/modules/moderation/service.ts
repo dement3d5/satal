@@ -4,6 +4,8 @@ import type {DatabaseClient} from '@/server/db/client';
 import {
   categoryTranslation,
   listing,
+  listingAppeal,
+  listingAppealAction,
   listingStatusHistory,
   locationTranslation,
   moderationAction,
@@ -22,7 +24,7 @@ import {
   type StaffRole
 } from './domain';
 
-type QueryExecutor = Pick<DatabaseClient, 'select'>;
+export type QueryExecutor = Pick<DatabaseClient, 'select'>;
 
 export async function listModerationQueue(
   db: DatabaseClient,
@@ -170,17 +172,45 @@ export async function getOwnListingReview(db: DatabaseClient, actorId: string, l
       status: listing.status,
       caseStatus: moderationCase.status,
       resolvedAt: moderationCase.resolvedAt,
-      reasonCode: moderationAction.reasonCode,
-      publicExplanation: moderationAction.publicExplanation
+      caseId: moderationCase.id
     })
     .from(listing)
     .innerJoin(moderationCase, eq(moderationCase.listingId, listing.id))
-    .leftJoin(moderationAction, eq(moderationAction.caseId, moderationCase.id))
     .where(and(eq(listing.id, listingId), eq(listing.sellerId, actorId)))
-    .orderBy(desc(moderationAction.createdAt))
     .limit(1);
   if (!row) throw new AppError('NOT_FOUND', 'Listing review was not found', 404);
-  return {...row, resolvedAt: row.resolvedAt?.toISOString() ?? null};
+  const [lastAction] = await db
+    .select({
+      id: moderationAction.id,
+      reasonCode: moderationAction.reasonCode,
+      publicExplanation: moderationAction.publicExplanation
+    })
+    .from(moderationAction)
+    .where(eq(moderationAction.caseId, row.caseId))
+    .orderBy(desc(moderationAction.createdAt), desc(moderationAction.id))
+    .limit(1);
+  const [appeal] = lastAction
+    ? await db
+        .select({
+          id: listingAppeal.id,
+          status: listingAppeal.status,
+          statement: listingAppeal.statement,
+          publicResponse: listingAppealAction.publicResponse
+        })
+        .from(listingAppeal)
+        .leftJoin(listingAppealAction, eq(listingAppealAction.appealId, listingAppeal.id))
+        .where(eq(listingAppeal.moderationActionId, lastAction.id))
+        .limit(1)
+    : [];
+  return {
+    listingId: row.listingId,
+    status: row.status,
+    caseStatus: row.caseStatus,
+    resolvedAt: row.resolvedAt?.toISOString() ?? null,
+    reasonCode: lastAction?.reasonCode ?? null,
+    publicExplanation: lastAction?.publicExplanation ?? null,
+    appeal: appeal ?? null
+  };
 }
 
 export async function listOwnListings(
@@ -195,9 +225,7 @@ export async function listOwnListings(
       status: listing.status,
       updatedAt: listing.updatedAt,
       categoryName: categoryTranslation.name,
-      locationName: locationTranslation.name,
-      reasonCode: moderationAction.reasonCode,
-      publicExplanation: moderationAction.publicExplanation
+      locationName: locationTranslation.name
     })
     .from(listing)
     .innerJoin(
@@ -214,16 +242,78 @@ export async function listOwnListings(
         eq(locationTranslation.locale, query.locale)
       )
     )
-    .leftJoin(moderationCase, eq(moderationCase.listingId, listing.id))
-    .leftJoin(moderationAction, eq(moderationAction.caseId, moderationCase.id))
     .where(eq(listing.sellerId, actorId))
     .orderBy(desc(listing.updatedAt), desc(listing.id))
     .limit(query.limit);
 
-  return rows.map((row) => ({...row, updatedAt: row.updatedAt.toISOString()}));
+  if (!rows.length) return [];
+  const cases = await db
+    .select({id: moderationCase.id, listingId: moderationCase.listingId})
+    .from(moderationCase)
+    .where(
+      inArray(
+        moderationCase.listingId,
+        rows.map((row) => row.id)
+      )
+    );
+  const caseListing = new Map(cases.map((item) => [item.id, item.listingId]));
+  const actions = cases.length
+    ? await db
+        .select({
+          id: moderationAction.id,
+          caseId: moderationAction.caseId,
+          reasonCode: moderationAction.reasonCode,
+          publicExplanation: moderationAction.publicExplanation
+        })
+        .from(moderationAction)
+        .where(
+          inArray(
+            moderationAction.caseId,
+            cases.map((item) => item.id)
+          )
+        )
+        .orderBy(desc(moderationAction.createdAt), desc(moderationAction.id))
+    : [];
+  const actionByListing = new Map<
+    string,
+    {id: string; reasonCode: string; publicExplanation: string | null}
+  >();
+  for (const action of actions) {
+    const targetListingId = caseListing.get(action.caseId);
+    if (targetListingId && !actionByListing.has(targetListingId))
+      actionByListing.set(targetListingId, action);
+  }
+  const latestActionIds = [...actionByListing.values()].map((item) => item.id);
+  const appeals = latestActionIds.length
+    ? await db
+        .select({
+          id: listingAppeal.id,
+          moderationActionId: listingAppeal.moderationActionId,
+          status: listingAppeal.status,
+          publicResponse: listingAppealAction.publicResponse
+        })
+        .from(listingAppeal)
+        .leftJoin(listingAppealAction, eq(listingAppealAction.appealId, listingAppeal.id))
+        .where(inArray(listingAppeal.moderationActionId, latestActionIds))
+    : [];
+  const appealByAction = new Map(appeals.map((item) => [item.moderationActionId, item]));
+
+  return rows.map((row) => {
+    const action = actionByListing.get(row.id);
+    const appeal = action ? appealByAction.get(action.id) : undefined;
+    return {
+      ...row,
+      updatedAt: row.updatedAt.toISOString(),
+      reasonCode: action?.reasonCode ?? null,
+      publicExplanation: action?.publicExplanation ?? null,
+      appealId: appeal?.id ?? null,
+      appealStatus: appeal?.status ?? null,
+      appealPublicResponse: appeal?.publicResponse ?? null
+    };
+  });
 }
 
-async function requireModerationCapability(
+export async function requireModerationCapability(
   db: QueryExecutor,
   actorId: string,
   capability: ModerationCapability

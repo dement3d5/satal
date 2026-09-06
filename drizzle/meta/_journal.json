@@ -57,6 +57,13 @@
       "when": 1788537569789,
       "tag": "0007_chunky_living_lightning",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1788618571140,
+      "tag": "0008_perpetual_jackal",
+      "breakpoints": true
     }
   ]
 }

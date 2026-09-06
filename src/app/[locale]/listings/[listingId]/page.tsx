@@ -8,6 +8,7 @@ import {ContactButton} from '@/modules/identity/ui/contact-button';
 import type {AppLocale} from '@/i18n/routing';
 import {getPublicListing} from '@/modules/listings/public-listing-service';
 import {formatPrice} from '@/modules/listings/ui/format';
+import {ReportListing} from '@/modules/moderation/ui/report-listing';
 import {getDatabase} from '@/server/db/client';
 import {AppError} from '@/server/errors/app-error';
 import {parseUuid} from '@/server/http/params';
@@ -126,6 +127,32 @@ export default async function ListingPage({params}: PageProps) {
               limit: t('contactLimit'),
               error: t('contactError'),
               privacy: t('contactPrivacy')
+            }}
+          />
+          <ReportListing
+            listingId={item.id}
+            locale={locale}
+            labels={{
+              action: t('reportAction'),
+              title: t('reportTitle'),
+              reason: t('reportReason'),
+              details: t('reportDetails'),
+              detailsHint: t('reportDetailsHint'),
+              submit: t('reportSubmit'),
+              submitting: t('reportSubmitting'),
+              received: t('reportReceived'),
+              signIn: t('reportSignIn'),
+              limit: t('reportLimit'),
+              error: t('reportError'),
+              reasons: {
+                fraud: t('reportReasons.fraud'),
+                wrong_category: t('reportReasons.wrongCategory'),
+                prohibited_item: t('reportReasons.prohibitedItem'),
+                duplicate: t('reportReasons.duplicate'),
+                misleading_price: t('reportReasons.misleadingPrice'),
+                stale_listing: t('reportReasons.staleListing'),
+                other: t('reportReasons.other')
+              }
             }}
           />
         </aside>

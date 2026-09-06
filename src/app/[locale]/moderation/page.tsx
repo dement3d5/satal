@@ -31,6 +31,8 @@ export default async function ModerationPage({params}: {params: Promise<{locale:
           seller: t('seller'),
           risk: t('risk'),
           riskUnassessed: t('riskUnassessed'),
+          newListingsTitle: t('newListingsTitle'),
+          newListingsEmpty: t('newListingsEmpty'),
           approve: t('approve'),
           approving: t('approving'),
           rejectTitle: t('rejectTitle'),
@@ -39,6 +41,21 @@ export default async function ModerationPage({params}: {params: Promise<{locale:
           explanationHint: t('explanationHint'),
           reject: t('reject'),
           rejecting: t('rejecting'),
+          reportsTitle: t('reportsTitle'),
+          reportsEmpty: t('reportsEmpty'),
+          reportDetails: t('reportDetails'),
+          reportDismiss: t('reportDismiss'),
+          reportRemoveTitle: t('reportRemoveTitle'),
+          reportRemove: t('reportRemove'),
+          appealsTitle: t('appealsTitle'),
+          appealsEmpty: t('appealsEmpty'),
+          appealOriginalDecision: t('appealOriginalDecision'),
+          appealStatement: t('appealStatement'),
+          appealAccept: t('appealAccept'),
+          appealRejectTitle: t('appealRejectTitle'),
+          appealResponse: t('appealResponse'),
+          appealResponseHint: t('appealResponseHint'),
+          appealReject: t('appealReject'),
           actionError: t('actionError'),
           reasons: {
             prohibited_item: t('reasons.prohibitedItem'),
@@ -47,6 +64,15 @@ export default async function ModerationPage({params}: {params: Promise<{locale:
             wrong_category: t('reasons.wrongCategory'),
             insufficient_information: t('reasons.insufficientInformation'),
             policy_other: t('reasons.other')
+          },
+          reportReasons: {
+            fraud: t('reportReasons.fraud'),
+            wrong_category: t('reportReasons.wrongCategory'),
+            prohibited_item: t('reportReasons.prohibitedItem'),
+            duplicate: t('reportReasons.duplicate'),
+            misleading_price: t('reportReasons.misleadingPrice'),
+            stale_listing: t('reportReasons.staleListing'),
+            other: t('reportReasons.other')
           }
         }}
       />

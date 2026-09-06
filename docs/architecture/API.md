@@ -68,3 +68,11 @@ Better Auth owns `/api/auth/*`, credential hashing, database sessions, HttpOnly 
 `GET /api/v1/moderation/cases?locale=az|ru|en&limit=30` returns a minimal localized queue DTO only to users with a live staff role. It excludes seller email, phone, internal risk evidence and credentials. `POST /api/v1/moderation/cases/{caseId}/decision` accepts a validated approve/reject union. Rejection requires a bounded public explanation; authorization, self-review and current case/listing state are rechecked inside the transaction.
 
 `GET /api/v1/listings/{listingId}/review` is seller-owner only and returns the current review state plus the safe rejection explanation. Cross-owner identifiers return `NOT_FOUND`. All moderation and owner-review responses are private and `no-store`.
+
+## Reports and appeals
+
+`GET|POST /api/v1/listings/{listingId}/reports` reads or idempotently creates the current actor's report. Creation requires a session, an active listing owned by somebody else and a validated reason/details union. A reporter may create ten new reports per rolling hour and only one report for a given listing. The API never accepts a reporter ID and never exposes other reporters or internal staff notes.
+
+`GET|POST /api/v1/listings/{listingId}/appeals` is seller-owner only. An appeal must target the latest concrete rejection, accepts a bounded seller statement and is idempotent for that rejection. A cross-owner listing returns `NOT_FOUND`; a listing outside the rejected lifecycle returns a conflict.
+
+`GET /api/v1/moderation/reports` and `GET /api/v1/moderation/appeals` return minimal localized staff queues. `POST /api/v1/moderation/reports/{reportId}/decision` dismisses a report or removes the still-active listing. `POST /api/v1/moderation/appeals/{appealId}/decision` rejects with a required public response or accepts by returning the listing to `pending_review`. Every endpoint rechecks a live staff grant, lifecycle and self-review rule inside the transaction. All responses are private and `no-store`.

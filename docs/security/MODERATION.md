@@ -16,11 +16,11 @@ Thresholds and rules are versioned/configurable. Signals may include account age
 
 The owner-facing queue prioritizes cases with reason summaries and evidence references. Actions require a reason and create audit records. Rejected users receive a comprehensible, non-sensitive explanation plus edit/resubmit and appeal paths where applicable.
 
-The current queue enforces explicit, optionally expiring PostgreSQL role grants, rejects self-review, locks a case before deciding it and never returns contact or internal-note fields to the browser unnecessarily. There is no public role-management endpoint and no privileged seed user. Reopen, appeal, assignment and evidence workflows remain later additions.
+The current workspace enforces explicit, optionally expiring PostgreSQL role grants, rejects self-review, locks each case/report/appeal before deciding it and never returns contact or internal-note fields to the browser unnecessarily. There is no public role-management endpoint and no privileged seed user. Seller appeals preserve the original rejection and append a separate decision; acceptance only reopens review. Assignment, evidence and broader enforcement workflows remain later additions.
 
 ## Reports and chat safety
 
-Reports support fraud, wrong category, prohibited item, duplicate, misleading price, stale listing and other. Chat safety combines URLs, payment language, account/reputation and repeated patterns; users can block and report conversations/messages.
+Listing reports support fraud, wrong category, prohibited item, duplicate, misleading price, stale listing and other. Only authenticated non-sellers may report active listings; one reporter/listing relationship plus a serialized ten-per-hour limit reduces retry duplication and basic flooding. Staff may dismiss or confirm a report. Confirmation atomically removes the listing and resolves every open report without exposing reporter identities to the seller. Chat safety remains a later slice and will combine URLs, payment language, account/reputation and repeated patterns; users will be able to block and report conversations/messages.
 
 ## Policy dependency
 

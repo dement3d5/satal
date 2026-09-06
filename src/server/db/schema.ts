@@ -738,6 +738,145 @@ export const moderationAction = pgTable(
   ]
 );
 
+export const listingReportReason = pgEnum('listing_report_reason', [
+  'fraud',
+  'wrong_category',
+  'prohibited_item',
+  'duplicate',
+  'misleading_price',
+  'stale_listing',
+  'other'
+]);
+export const listingReportStatus = pgEnum('listing_report_status', [
+  'open',
+  'dismissed',
+  'resolved'
+]);
+export const listingReportActionType = pgEnum('listing_report_action_type', [
+  'dismiss',
+  'remove_listing'
+]);
+
+export const listingReport = pgTable(
+  'listing_report',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    listingId: uuid('listing_id')
+      .notNull()
+      .references(() => listing.id, {onDelete: 'restrict'}),
+    reporterId: uuid('reporter_id')
+      .notNull()
+      .references(() => user.id, {onDelete: 'restrict'}),
+    reason: listingReportReason('reason').notNull(),
+    details: varchar('details', {length: 1000}),
+    status: listingReportStatus('status').default('open').notNull(),
+    resolvedAt: timestamp('resolved_at', {withTimezone: true}),
+    ...timestamps
+  },
+  (table) => [
+    uniqueIndex('listing_report_reporter_listing_unique').on(table.reporterId, table.listingId),
+    index('listing_report_queue_idx').on(table.status, table.createdAt, table.id),
+    index('listing_report_listing_status_idx').on(table.listingId, table.status, table.createdAt),
+    index('listing_report_reporter_created_idx').on(table.reporterId, table.createdAt),
+    check(
+      'listing_report_details_length',
+      sql`${table.details} is null or length(btrim(${table.details})) between 10 and 1000`
+    ),
+    check(
+      'listing_report_resolution_consistent',
+      sql`(${table.status} = 'open' and ${table.resolvedAt} is null) or (${table.status} <> 'open' and ${table.resolvedAt} is not null)`
+    )
+  ]
+);
+
+export const listingReportAction = pgTable(
+  'listing_report_action',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    reportId: uuid('report_id')
+      .notNull()
+      .references(() => listingReport.id, {onDelete: 'restrict'}),
+    actorId: uuid('actor_id')
+      .notNull()
+      .references(() => user.id, {onDelete: 'restrict'}),
+    action: listingReportActionType('action').notNull(),
+    internalNote: varchar('internal_note', {length: 2000}),
+    createdAt: timestamp('created_at', {withTimezone: true}).defaultNow().notNull()
+  },
+  (table) => [
+    uniqueIndex('listing_report_action_report_unique').on(table.reportId),
+    index('listing_report_action_actor_created_idx').on(table.actorId, table.createdAt)
+  ]
+);
+
+export const listingAppealStatus = pgEnum('listing_appeal_status', [
+  'open',
+  'accepted',
+  'rejected'
+]);
+export const listingAppealActionType = pgEnum('listing_appeal_action_type', ['accept', 'reject']);
+
+export const listingAppeal = pgTable(
+  'listing_appeal',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    listingId: uuid('listing_id')
+      .notNull()
+      .references(() => listing.id, {onDelete: 'restrict'}),
+    moderationActionId: uuid('moderation_action_id')
+      .notNull()
+      .references(() => moderationAction.id, {onDelete: 'restrict'}),
+    appellantId: uuid('appellant_id')
+      .notNull()
+      .references(() => user.id, {onDelete: 'restrict'}),
+    statement: varchar('statement', {length: 1000}).notNull(),
+    status: listingAppealStatus('status').default('open').notNull(),
+    resolvedAt: timestamp('resolved_at', {withTimezone: true}),
+    ...timestamps
+  },
+  (table) => [
+    uniqueIndex('listing_appeal_moderation_action_unique').on(table.moderationActionId),
+    uniqueIndex('listing_appeal_one_open_per_listing_unique')
+      .on(table.listingId)
+      .where(sql`${table.status} = 'open'`),
+    index('listing_appeal_queue_idx').on(table.status, table.createdAt, table.id),
+    index('listing_appeal_appellant_created_idx').on(table.appellantId, table.createdAt),
+    check(
+      'listing_appeal_statement_length',
+      sql`length(btrim(${table.statement})) between 20 and 1000`
+    ),
+    check(
+      'listing_appeal_resolution_consistent',
+      sql`(${table.status} = 'open' and ${table.resolvedAt} is null) or (${table.status} <> 'open' and ${table.resolvedAt} is not null)`
+    )
+  ]
+);
+
+export const listingAppealAction = pgTable(
+  'listing_appeal_action',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    appealId: uuid('appeal_id')
+      .notNull()
+      .references(() => listingAppeal.id, {onDelete: 'restrict'}),
+    actorId: uuid('actor_id')
+      .notNull()
+      .references(() => user.id, {onDelete: 'restrict'}),
+    action: listingAppealActionType('action').notNull(),
+    publicResponse: varchar('public_response', {length: 500}),
+    internalNote: varchar('internal_note', {length: 2000}),
+    createdAt: timestamp('created_at', {withTimezone: true}).defaultNow().notNull()
+  },
+  (table) => [
+    uniqueIndex('listing_appeal_action_appeal_unique').on(table.appealId),
+    index('listing_appeal_action_actor_created_idx').on(table.actorId, table.createdAt),
+    check(
+      'listing_appeal_rejection_has_response',
+      sql`${table.action} <> 'reject' or (${table.publicResponse} is not null and length(btrim(${table.publicResponse})) >= 10)`
+    )
+  ]
+);
+
 export const favoriteListing = pgTable(
   'favorite_listing',
   {

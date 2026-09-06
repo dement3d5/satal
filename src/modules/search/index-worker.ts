@@ -1,4 +1,4 @@
-import {and, eq, isNull, lte, or, sql} from 'drizzle-orm';
+import {and, eq, inArray, isNull, lte, or, sql} from 'drizzle-orm';
 
 import type {DatabaseClient} from '@/server/db/client';
 import {outboxEvent} from '@/server/db/schema';
@@ -28,7 +28,7 @@ export async function processNextSearchEvent(
           isNull(outboxEvent.processedAt),
           lte(outboxEvent.availableAt, now),
           eq(outboxEvent.aggregateType, 'listing'),
-          eq(outboxEvent.eventType, 'listing.published'),
+          inArray(outboxEvent.eventType, ['listing.published', 'listing.removed']),
           or(isNull(outboxEvent.leasedAt), lte(outboxEvent.leasedAt, leaseExpiredAt))
         )
       )

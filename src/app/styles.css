@@ -202,6 +202,10 @@ select:focus-visible {
   background: transparent;
   border-color: var(--color-border);
 }
+.button-danger {
+  color: white;
+  background: var(--color-danger);
+}
 .header-sell {
   min-height: 2.6rem;
   padding: 0.55rem 0.9rem;
@@ -923,6 +927,10 @@ h1 {
   color: var(--color-warm-text);
   background: var(--color-warm);
 }
+.notice-success {
+  color: var(--color-accent-dark);
+  background: var(--color-accent-soft);
+}
 .notice svg,
 .privacy-note svg {
   width: 1.4rem;
@@ -1415,6 +1423,59 @@ h1 {
   opacity: 0.55;
 }
 
+.report-listing {
+  margin-top: 0.6rem;
+  padding-top: 0.8rem;
+  border-top: 1px solid var(--color-border);
+}
+
+.report-listing summary,
+.listing-appeal summary {
+  color: var(--color-muted);
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.report-listing form,
+.listing-appeal form {
+  display: grid;
+  gap: 0.7rem;
+  margin-top: 0.8rem;
+}
+
+.report-listing label,
+.listing-appeal label {
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.report-listing select,
+.report-listing textarea,
+.listing-appeal textarea {
+  width: 100%;
+  padding: 0.7rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: white;
+  color: var(--color-text);
+}
+
+.report-listing textarea,
+.listing-appeal textarea {
+  min-height: 6rem;
+  resize: vertical;
+}
+
+.seller-card .report-listing button {
+  margin-top: 0;
+  color: var(--color-text);
+  background: var(--color-surface-soft);
+  opacity: 1;
+}
+
 @media (max-width: 62rem) {
   .listing-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1738,6 +1799,11 @@ h1 {
   font-weight: 700;
 }
 
+.listing-appeal {
+  padding-top: 0.7rem;
+  border-top: 1px solid var(--color-border);
+}
+
 .listing-status {
   width: fit-content;
   padding: 0.35rem 0.55rem;
@@ -1847,9 +1913,19 @@ h1 {
   padding-bottom: 4rem;
 }
 
+.moderation-workspace {
+  display: grid;
+  gap: 2rem;
+}
+
 .moderation-queue {
   display: grid;
   gap: 1rem;
+}
+
+.moderation-queue > h2 {
+  margin: 0;
+  font-size: 1.35rem;
 }
 
 .moderation-card {
@@ -1874,7 +1950,8 @@ h1 {
   color: var(--color-muted);
 }
 
-.moderation-card h2 {
+.moderation-card h2,
+.moderation-card h3 {
   margin: 0.25rem 0 0;
   font-size: 1.2rem;
 }

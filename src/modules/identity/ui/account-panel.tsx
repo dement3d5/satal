@@ -24,6 +24,9 @@ interface OwnedListing {
   locationName: string;
   reasonCode: string | null;
   publicExplanation: string | null;
+  appealId: string | null;
+  appealStatus: 'open' | 'accepted' | 'rejected' | null;
+  appealPublicResponse: string | null;
 }
 
 interface AccountLabels {
@@ -45,6 +48,16 @@ interface AccountLabels {
   listingsTitle: string;
   listingsEmpty: string;
   listingOpen: string;
+  appealAction: string;
+  appealTitle: string;
+  appealHint: string;
+  appealSubmit: string;
+  appealSubmitting: string;
+  appealOpen: string;
+  appealAccepted: string;
+  appealRejected: string;
+  appealResponse: string;
+  appealError: string;
   statuses: Record<OwnedListing['status'], string>;
 }
 
@@ -53,6 +66,8 @@ export function AccountPanel({locale, labels}: {locale: AppLocale; labels: Accou
   const [listings, setListings] = useState<OwnedListing[]>([]);
   const [state, setState] = useState<'loading' | 'ready' | 'auth' | 'error'>('loading');
   const [message, setMessage] = useState('');
+  const [pendingAppeal, setPendingAppeal] = useState<string | null>(null);
+  const [appealError, setAppealError] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -103,6 +118,40 @@ export function AccountPanel({locale, labels}: {locale: AppLocale; labels: Accou
       router.refresh();
     } catch {
       setState('error');
+    }
+  }
+
+  async function appeal(event: FormEvent<HTMLFormElement>, listingId: string) {
+    event.preventDefault();
+    const statement = String(new FormData(event.currentTarget).get('statement') ?? '');
+    setPendingAppeal(listingId);
+    setAppealError(null);
+    try {
+      const response = await fetch(`/api/v1/listings/${listingId}/appeals`, {
+        method: 'POST',
+        headers: {'content-type': 'application/json'},
+        body: JSON.stringify({statement})
+      });
+      if (!response.ok) return setAppealError(listingId);
+      const body = (await response.json()) as {
+        data: {id: string; status: 'open' | 'accepted' | 'rejected'};
+      };
+      setListings((current) =>
+        current.map((item) =>
+          item.id === listingId
+            ? {
+                ...item,
+                appealId: body.data.id,
+                appealStatus: body.data.status,
+                appealPublicResponse: null
+              }
+            : item
+        )
+      );
+    } catch {
+      setAppealError(listingId);
+    } finally {
+      setPendingAppeal(null);
     }
   }
 
@@ -164,6 +213,45 @@ export function AccountPanel({locale, labels}: {locale: AppLocale; labels: Accou
                 </strong>
                 {item.status === 'rejected' && item.publicExplanation && (
                   <p className="notice notice-error">{item.publicExplanation}</p>
+                )}
+                {item.appealPublicResponse && (
+                  <p className="notice">
+                    <strong>{labels.appealResponse}</strong> {item.appealPublicResponse}
+                  </p>
+                )}
+                {item.status === 'rejected' && item.appealStatus === null && (
+                  <details className="listing-appeal">
+                    <summary>{labels.appealAction}</summary>
+                    <form onSubmit={(event) => appeal(event, item.id)}>
+                      <label>
+                        {labels.appealTitle}
+                        <textarea
+                          name="statement"
+                          required
+                          minLength={20}
+                          maxLength={1000}
+                          placeholder={labels.appealHint}
+                        />
+                      </label>
+                      <button className="button" disabled={pendingAppeal === item.id} type="submit">
+                        {pendingAppeal === item.id ? labels.appealSubmitting : labels.appealSubmit}
+                      </button>
+                    </form>
+                  </details>
+                )}
+                {item.appealStatus === 'open' && (
+                  <p className="notice notice-warm">{labels.appealOpen}</p>
+                )}
+                {item.appealStatus === 'accepted' && (
+                  <p className="notice notice-success">{labels.appealAccepted}</p>
+                )}
+                {item.appealStatus === 'rejected' && (
+                  <p className="notice notice-error">{labels.appealRejected}</p>
+                )}
+                {appealError === item.id && (
+                  <p className="notice notice-error" role="alert">
+                    {labels.appealError}
+                  </p>
                 )}
                 {item.status === 'active' && (
                   <a href={`/${locale}/listings/${item.id}`}>{labels.listingOpen}</a>

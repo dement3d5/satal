@@ -2,7 +2,7 @@
 
 Satal is an Azerbaijan-first multilingual classifieds marketplace. The product optimizes for a short path from arrival to a relevant listing, category-aware search, trustworthy seller interactions, and low-complexity operation during MVP.
 
-Phase 2 and the Phase 3 marketplace, media and search foundations are complete. The repository contains no production-ready SMS, email, storage, payment or hosting integration. Typesense has a real adapter but still requires owner-provided service credentials and deployment verification; disabled providers fail closed instead of simulating success.
+Phase 2, the Phase 3 marketplace foundation and the first Phase 4 trust slice are complete. The repository contains no production-ready SMS, email, storage, payment or hosting integration. Typesense has a real adapter but still requires owner-provided service credentials and deployment verification; disabled providers fail closed instead of simulating success.
 
 ## Foundation
 
@@ -20,6 +20,7 @@ Phase 2 and the Phase 3 marketplace, media and search foundations are complete. 
 - owner-only favorites and reusable saved searches with localized UI and normalized PostgreSQL query snapshots.
 - Better Auth email/password sessions, localized account/profile UI with the seller's listing states, and audited access to verified seller phone contacts.
 - PostgreSQL-backed staff roles, pending-review listing submission and an audited localized moderation queue.
+- owner-safe listing reports and seller appeals with rate limits, staff queues, audited decisions and lifecycle-safe review reopening.
 
 ## Requirements
 

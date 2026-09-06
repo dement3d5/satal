@@ -30,4 +30,8 @@ The first visual listing flow lives at `/{locale}/sell` and is intentionally mob
 
 Authenticated sessions receive a PostgreSQL-backed draft and debounced optimistic autosave. Without a session, the same schema can be previewed locally, but the interface explicitly states that it is not persisted. Approximate location is selected through the geography hierarchy and the interface explains that a private seller's exact address is not public.
 
-Search, phone sign-in, media upload and publication controls are visibly non-operational until their dedicated milestones. The UI does not simulate successful integration for those boundaries.
+Search, media upload and publication now have real application boundaries; phone OTP remains visibly unavailable until a verified provider is connected. The UI does not simulate successful external integrations.
+
+## Trust interactions
+
+An authenticated non-seller can report an active listing from its seller card without seeing or supplying ownership identifiers. The form uses a short fixed reason list, optional bounded context and clear authenticated/rate-limited/error/success states. Seller rejection details live with the seller's own listing in the account. One compact appeal form preserves the statement after validation and shows open, accepted and rejected outcomes plus the safe staff response. Staff see new listings, user reports and seller appeals as separate queue sections so each decision has an explicit consequence.

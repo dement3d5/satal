@@ -42,7 +42,9 @@ Phase 3 moderation boundaries now include explicit staff roles, a localized owne
 
 ## Phase 4 — trust and communication
 
-Chat, notification center, ratings, reports, appeals, explainable risk signals, bans and broader audit operations. The core listing moderation queue and decision boundary already exist from Phase 3.
+In progress. The first trust milestone adds authenticated reports on active listings, seller appeals tied to concrete rejection actions, distinct staff queues, audited report/appeal decisions and safe reopening into `pending_review`. Confirmed reports remove listings from PostgreSQL visibility and emit a search-removal event; accepted appeals never publish automatically.
+
+Remaining: conversation-scoped chat and blocks, notification center/preferences/delivery, ratings after a qualified interaction, explainable risk signals, bans/enforcement, report/appeal operational metrics and broader audit tools.
 
 ## Phase 5 — shops
 

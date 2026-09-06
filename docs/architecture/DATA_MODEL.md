@@ -101,3 +101,14 @@ Better Auth owns `user`, `account`, `session` and `verification`. Credential acc
 - `listing_media`: publication attachment/order copied in the publication transaction.
 
 The lifecycle is `pending_upload → quarantined → processing → ready`, with terminal `rejected` and `deleted` states. PostgreSQL is authoritative for ownership, attachment and readiness; object storage contains opaque bytes and cannot make an asset public by itself. Unique order/cover constraints prevent ambiguous presentation, and an asset can belong to only one draft/listing aggregate in the current MVP. Publishing copies attachment references even when processing is pending, so an asynchronous worker can expose verified variants later without mutating the listing snapshot.
+
+### Reports and appeals
+
+- `listing_report`: reporter/listing relationship, bounded reason/details, explicit `open|dismissed|resolved` lifecycle and resolution timestamp;
+- `listing_report_action`: one append-only staff dismissal/removal audit per resolved report;
+- `listing_appeal`: seller statement tied to the exact rejecting `moderation_action`, with `open|accepted|rejected` lifecycle;
+- `listing_appeal_action`: one append-only staff decision with a seller-safe public response and optional private note.
+
+A user can create at most one report per listing. Application rules require the listing to be active, reject self-reporting, serialize each reporter's writes and enforce ten new reports per rolling hour. The unique reporter/listing index makes retries idempotent. Confirming a violation locks the target, changes the listing from `active` to `removed`, resolves all open reports for the listing, writes one action per report, appends listing history and emits `listing.removed` atomically.
+
+An appeal is unique per rejection action, and a partial unique index allows only one open appeal per listing. Application rules require the current seller, a rejected listing/case and a concrete rejecting action. Acceptance changes the listing from `rejected` to `pending_review`, increments its version and reopens the existing moderation case at elevated priority; it does not publish. Prior decisions remain immutable. Staff cannot decide reports or appeals concerning their own listing.

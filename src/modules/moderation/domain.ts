@@ -1,12 +1,39 @@
 import {AppError} from '@/server/errors/app-error';
 
 export type StaffRole = 'moderator' | 'admin' | 'owner';
-export type ModerationCapability = 'queue:read' | 'decision:write';
+export type ModerationCapability =
+  | 'queue:read'
+  | 'decision:write'
+  | 'reports:read'
+  | 'reports:decide'
+  | 'appeals:read'
+  | 'appeals:decide';
 
 const capabilities: Record<StaffRole, ReadonlySet<ModerationCapability>> = {
-  moderator: new Set(['queue:read', 'decision:write']),
-  admin: new Set(['queue:read', 'decision:write']),
-  owner: new Set(['queue:read', 'decision:write'])
+  moderator: new Set([
+    'queue:read',
+    'decision:write',
+    'reports:read',
+    'reports:decide',
+    'appeals:read',
+    'appeals:decide'
+  ]),
+  admin: new Set([
+    'queue:read',
+    'decision:write',
+    'reports:read',
+    'reports:decide',
+    'appeals:read',
+    'appeals:decide'
+  ]),
+  owner: new Set([
+    'queue:read',
+    'decision:write',
+    'reports:read',
+    'reports:decide',
+    'appeals:read',
+    'appeals:decide'
+  ])
 };
 
 export function hasModerationCapability(
