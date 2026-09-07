@@ -79,6 +79,9 @@ interface ModerationLabels {
   appealResponse: string;
   appealResponseHint: string;
   appealReject: string;
+  actionAuth: string;
+  actionForbidden: string;
+  actionConflict: string;
   actionError: string;
   reasons: Record<string, string>;
   reportReasons: Record<string, string>;
@@ -99,6 +102,13 @@ export function ModerationDashboard({
   );
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+
+  function actionErrorFor(response: Response) {
+    if (response.status === 401) return labels.actionAuth;
+    if (response.status === 403) return labels.actionForbidden;
+    if (response.status === 404 || response.status === 409) return labels.actionConflict;
+    return labels.actionError;
+  }
 
   useEffect(() => {
     void (async () => {
@@ -134,7 +144,14 @@ export function ModerationDashboard({
         headers: {'content-type': 'application/json'},
         body: JSON.stringify(payload)
       });
-      if (!response.ok) throw new Error('decision failed');
+      if (!response.ok) {
+        if (response.status === 401) setState('auth');
+        if ([403, 404, 409].includes(response.status)) {
+          setItems((current) => current.filter((item) => item.caseId !== caseId));
+        }
+        setActionError(actionErrorFor(response));
+        return;
+      }
       setItems((current) => current.filter((item) => item.caseId !== caseId));
     } catch {
       setActionError(labels.actionError);
@@ -153,7 +170,14 @@ export function ModerationDashboard({
         headers: {'content-type': 'application/json'},
         body: JSON.stringify({action})
       });
-      if (!response.ok) throw new Error('decision failed');
+      if (!response.ok) {
+        if (response.status === 401) setState('auth');
+        if ([403, 404, 409].includes(response.status)) {
+          setReports((current) => current.filter((item) => item.reportId !== reportId));
+        }
+        setActionError(actionErrorFor(response));
+        return;
+      }
       const body = (await response.json()) as {data: {listingId: string}};
       setReports((current) =>
         action === 'remove_listing'
@@ -177,7 +201,14 @@ export function ModerationDashboard({
         headers: {'content-type': 'application/json'},
         body: JSON.stringify(payload)
       });
-      if (!response.ok) throw new Error('decision failed');
+      if (!response.ok) {
+        if (response.status === 401) setState('auth');
+        if ([403, 404, 409].includes(response.status)) {
+          setAppeals((current) => current.filter((item) => item.appealId !== appealId));
+        }
+        setActionError(actionErrorFor(response));
+        return;
+      }
       setAppeals((current) => current.filter((item) => item.appealId !== appealId));
     } catch {
       setActionError(labels.actionError);

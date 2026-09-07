@@ -76,6 +76,11 @@ integration('moderation persistence and permissions', () => {
           reasonCode: 'policy_compliant'
         })
       ).rejects.toMatchObject({code: 'FORBIDDEN'});
+      await expect(
+        listModerationQueue(db, sellerId, {locale: 'en', limit: 30})
+      ).resolves.not.toEqual(
+        expect.arrayContaining([expect.objectContaining({caseId, listingId})])
+      );
       await expect(listModerationQueue(db, reviewerId, {locale: 'en', limit: 30})).resolves.toEqual(
         expect.arrayContaining([expect.objectContaining({caseId, listingId})])
       );

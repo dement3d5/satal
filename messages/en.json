@@ -317,6 +317,9 @@
     "appealResponse": "Response to seller",
     "appealResponseHint": "Explain the final decision briefly and clearly.",
     "appealReject": "Reject appeal",
+    "actionAuth": "Your session ended. Sign in again and retry the action.",
+    "actionForbidden": "This listing cannot be reviewed from the current account: it belongs to you or your permissions changed. The card was removed from the queue.",
+    "actionConflict": "The listing already changed or was reviewed. The card was removed from the queue.",
     "actionError": "The decision could not be saved. Refresh the queue and try again.",
     "reasons": {
       "prohibitedItem": "Prohibited item",

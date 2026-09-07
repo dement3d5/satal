@@ -317,6 +317,9 @@
     "appealResponse": "Satıcıya cavab",
     "appealResponseHint": "Yekun qərarı qısa və aydın izah edin.",
     "appealReject": "Apellyasiyanı rədd et",
+    "actionAuth": "Sessiya başa çatıb. Yenidən daxil olun və əməliyyatı təkrarlayın.",
+    "actionForbidden": "Bu elanı cari hesabla yoxlamaq olmaz: elan sizə məxsusdur və ya icazələr dəyişib. Kart növbədən çıxarıldı.",
+    "actionConflict": "Elan artıq dəyişdirilib və ya yoxlanılıb. Kart növbədən çıxarıldı.",
     "actionError": "Qərarı saxlamaq mümkün olmadı. Növbəni yeniləyib yenidən cəhd edin.",
     "reasons": {
       "prohibitedItem": "Qadağan olunmuş məhsul",

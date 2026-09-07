@@ -16,7 +16,7 @@ Thresholds and rules are versioned/configurable. Signals may include account age
 
 The owner-facing queue prioritizes cases with reason summaries and evidence references. Actions require a reason and create audit records. Rejected users receive a comprehensible, non-sensitive explanation plus edit/resubmit and appeal paths where applicable.
 
-The current workspace enforces explicit, optionally expiring PostgreSQL role grants, rejects self-review, locks each case/report/appeal before deciding it and never returns contact or internal-note fields to the browser unnecessarily. There is no public role-management endpoint and no privileged seed user. Seller appeals preserve the original rejection and append a separate decision; acceptance only reopens review. Assignment, evidence and broader enforcement workflows remain later additions.
+The current workspace enforces explicit, optionally expiring PostgreSQL role grants, rejects self-review, excludes a staff member's own listings from every decision queue, locks each case/report/appeal before deciding it and never returns contact or internal-note fields to the browser unnecessarily. There is no public role-management endpoint and no privileged seed user. Seller appeals preserve the original rejection and append a separate decision; acceptance only reopens review. Assignment, evidence and broader enforcement workflows remain later additions.
 
 ## Reports and chat safety
 

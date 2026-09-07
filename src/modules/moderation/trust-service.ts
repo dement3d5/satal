@@ -1,4 +1,4 @@
-import {and, asc, count, desc, eq, gte, inArray, sql} from 'drizzle-orm';
+import {and, asc, count, desc, eq, gte, inArray, ne, sql} from 'drizzle-orm';
 
 import type {DatabaseClient} from '@/server/db/client';
 import {
@@ -163,7 +163,13 @@ export async function listModerationReports(
         eq(locationTranslation.locale, query.locale)
       )
     )
-    .where(and(eq(listingReport.status, 'open'), eq(listing.status, 'active')))
+    .where(
+      and(
+        eq(listingReport.status, 'open'),
+        eq(listing.status, 'active'),
+        ne(listing.sellerId, actorId)
+      )
+    )
     .orderBy(asc(listingReport.createdAt), asc(listingReport.id))
     .limit(query.limit);
   return rows.map((row) => ({...row, createdAt: row.createdAt.toISOString()}));
@@ -410,7 +416,13 @@ export async function listModerationAppeals(
         eq(locationTranslation.locale, query.locale)
       )
     )
-    .where(and(eq(listingAppeal.status, 'open'), eq(listing.status, 'rejected')))
+    .where(
+      and(
+        eq(listingAppeal.status, 'open'),
+        eq(listing.status, 'rejected'),
+        ne(listing.sellerId, actorId)
+      )
+    )
     .orderBy(asc(listingAppeal.createdAt), asc(listingAppeal.id))
     .limit(query.limit);
   return rows.map((row) => ({...row, createdAt: row.createdAt.toISOString()}));

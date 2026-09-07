@@ -1,4 +1,4 @@
-import {and, asc, desc, eq, gt, inArray, isNull, or, sql} from 'drizzle-orm';
+import {and, asc, desc, eq, gt, inArray, isNull, ne, or, sql} from 'drizzle-orm';
 
 import type {DatabaseClient} from '@/server/db/client';
 import {
@@ -64,7 +64,13 @@ export async function listModerationQueue(
         eq(locationTranslation.locale, query.locale)
       )
     )
-    .where(and(eq(moderationCase.status, 'open'), eq(listing.status, 'pending_review')))
+    .where(
+      and(
+        eq(moderationCase.status, 'open'),
+        eq(listing.status, 'pending_review'),
+        ne(listing.sellerId, actorId)
+      )
+    )
     .orderBy(desc(moderationCase.priority), asc(moderationCase.openedAt), asc(moderationCase.id))
     .limit(query.limit);
 

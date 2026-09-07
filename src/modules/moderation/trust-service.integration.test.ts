@@ -116,6 +116,11 @@ integration('reports and appeals persistence and permissions', () => {
         listModerationReports(db, reporterId, {locale: 'en', limit: 30})
       ).rejects.toMatchObject({code: 'FORBIDDEN'});
       await expect(
+        listModerationReports(db, sellerId, {locale: 'en', limit: 30})
+      ).resolves.not.toEqual(
+        expect.arrayContaining([expect.objectContaining({reportId: first.id})])
+      );
+      await expect(
         listModerationReports(db, reviewerId, {locale: 'en', limit: 30})
       ).resolves.toEqual(expect.arrayContaining([expect.objectContaining({reportId: first.id})]));
       await expect(
@@ -257,6 +262,11 @@ integration('reports and appeals persistence and permissions', () => {
       await expect(
         listModerationAppeals(db, ordinaryId, {locale: 'en', limit: 30})
       ).rejects.toMatchObject({code: 'FORBIDDEN'});
+      await expect(
+        listModerationAppeals(db, sellerId, {locale: 'en', limit: 30})
+      ).resolves.not.toEqual(
+        expect.arrayContaining([expect.objectContaining({appealId: acceptedAppeal.id})])
+      );
       await expect(
         listModerationAppeals(db, reviewerId, {locale: 'en', limit: 30})
       ).resolves.toEqual(

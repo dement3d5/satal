@@ -56,6 +56,9 @@ export default async function ModerationPage({params}: {params: Promise<{locale:
           appealResponse: t('appealResponse'),
           appealResponseHint: t('appealResponseHint'),
           appealReject: t('appealReject'),
+          actionAuth: t('actionAuth'),
+          actionForbidden: t('actionForbidden'),
+          actionConflict: t('actionConflict'),
           actionError: t('actionError'),
           reasons: {
             prohibited_item: t('reasons.prohibitedItem'),
