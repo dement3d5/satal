@@ -47,6 +47,14 @@ export default async function ModerationPage({params}: {params: Promise<{locale:
           reportDismiss: t('reportDismiss'),
           reportRemoveTitle: t('reportRemoveTitle'),
           reportRemove: t('reportRemove'),
+          messageReportsTitle: t('messageReportsTitle'),
+          messageReportsEmpty: t('messageReportsEmpty'),
+          messageReportSender: t('messageReportSender'),
+          messageReportContent: t('messageReportContent'),
+          messageReportDetails: t('messageReportDetails'),
+          messageReportDismiss: t('messageReportDismiss'),
+          messageReportCloseTitle: t('messageReportCloseTitle'),
+          messageReportClose: t('messageReportClose'),
           appealsTitle: t('appealsTitle'),
           appealsEmpty: t('appealsEmpty'),
           appealOriginalDecision: t('appealOriginalDecision'),
@@ -76,6 +84,14 @@ export default async function ModerationPage({params}: {params: Promise<{locale:
             misleading_price: t('reportReasons.misleadingPrice'),
             stale_listing: t('reportReasons.staleListing'),
             other: t('reportReasons.other')
+          },
+          messageReportReasons: {
+            spam: t('messageReportReasons.spam'),
+            fraud: t('messageReportReasons.fraud'),
+            harassment: t('messageReportReasons.harassment'),
+            prohibited_content: t('messageReportReasons.prohibitedContent'),
+            personal_data: t('messageReportReasons.personalData'),
+            other: t('messageReportReasons.other')
           }
         }}
       />

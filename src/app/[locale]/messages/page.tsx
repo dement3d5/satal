@@ -43,11 +43,29 @@ export default async function MessagesPage({
           sending: t('sending'),
           rateLimit: t('rateLimit'),
           unavailable: t('unavailable'),
+          closedByModeration: t('closedByModeration'),
           block: t('block'),
           unblock: t('unblock'),
           blockedByYou: t('blockedByYou'),
           blockedByOther: t('blockedByOther'),
-          safety: t('safety')
+          safety: t('safety'),
+          report: t('report'),
+          reportReason: t('reportReason'),
+          reportDetails: t('reportDetails'),
+          reportDetailsHint: t('reportDetailsHint'),
+          reportSubmit: t('reportSubmit'),
+          reporting: t('reporting'),
+          reportSuccess: t('reportSuccess'),
+          reportRateLimit: t('reportRateLimit'),
+          reportError: t('reportError'),
+          reportReasons: {
+            spam: t('reportReasons.spam'),
+            fraud: t('reportReasons.fraud'),
+            harassment: t('reportReasons.harassment'),
+            prohibited_content: t('reportReasons.prohibitedContent'),
+            personal_data: t('reportReasons.personalData'),
+            other: t('reportReasons.other')
+          }
         }}
       />
     </main>

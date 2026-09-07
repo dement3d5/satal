@@ -17,4 +17,4 @@ Persist a recipient-owned `notification` projection and one `notification_delive
 
 ## Consequences
 
-PostgreSQL remains authoritative for conversation history, unread state, blocks and delivery intent. Participant authorization is simple and testable, duplicate sends are prevented, and realtime/provider outages cannot lose committed messages. The model intentionally does not support unrelated direct messages, group chat, message editing or deletion. Conversation/message reports, staff evidence access, external delivery workers and production realtime remain separate privacy- and operations-reviewed milestones.
+PostgreSQL remains authoritative for conversation history, unread state, blocks and delivery intent. Participant authorization is simple and testable, duplicate sends are prevented, and realtime/provider outages cannot lose committed messages. The model intentionally does not support unrelated direct messages, group chat, message editing or deletion. Message-scoped reports and narrow staff evidence access are added by ADR 0011; external delivery workers and production realtime remain separate privacy- and operations-reviewed milestones.

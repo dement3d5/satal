@@ -117,6 +117,8 @@ An appeal is unique per rejection action, and a partial unique index allows only
 
 - `conversation`: one listing/buyer aggregate with seller identity constrained to the listing, lifecycle, monotonic last-message sequence and separate buyer/seller read cursors;
 - `conversation_message`: immutable ordered text messages with a unique `(conversation, sender, client_message_id)` retry key;
+- `message_report`: one reporter/message relationship with bounded reason/context and an explicit `open|dismissed|resolved` lifecycle;
+- `message_report_action`: one append-only staff dismissal/conversation-closure audit per resolved report;
 - `user_block`: directed blocker/blocked relationship; either direction disables new messages without deleting history;
 - `notification_preference`: per-user/event channel choices, defaulting chat to in-app only;
 - `notification`: private recipient-owned event projection tied to the concrete message, conversation and listing;
@@ -125,3 +127,5 @@ An appeal is unique per rejection action, and a partial unique index allows only
 Conversation rows are unique by listing and buyer, require distinct participants and use integer sequences so unread counts and pagination do not depend on timestamp precision. Starting requires an active PostgreSQL listing and its seller is never supplied by the client. Reads authorize either recorded participant and cross-participant IDs return `NOT_FOUND`. New messages lock the actor and conversation, enforce a rolling rate bound, permit sold-listing follow-up, reject other inactive states and honor blocks in both directions. Idempotent retries may still return the already-persisted message after a later block or lifecycle change.
 
 Message persistence advances the sender's read cursor and creates recipient notification/delivery records plus `chat.message_sent` in the same transaction. In-app delivery is immediately durable; email and push schema/ports exist but cannot be enabled through the API until verified providers are configured. Notification records are unique per recipient/message and are never public or indexed in search.
+
+Only the recorded recipient can report a concrete message, and one reporter/message unique index makes retries idempotent. Reporter writes are serialized and limited to ten new message reports per rolling hour. Staff queues expose only the reported message, listing context, sender display name, bounded reason/context and timestamps; they omit reporter identity and unrelated history. A participant cannot review their own conversation. Confirming a violation locks the conversation, closes it, resolves every open report for its messages, appends one action per report and emits `chat.conversation_closed` atomically. Global account enforcement remains a separate reviewed model.

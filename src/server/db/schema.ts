@@ -1053,6 +1053,76 @@ export const conversationMessage = pgTable(
   ]
 );
 
+export const messageReportReason = pgEnum('message_report_reason', [
+  'spam',
+  'fraud',
+  'harassment',
+  'prohibited_content',
+  'personal_data',
+  'other'
+]);
+export const messageReportStatus = pgEnum('message_report_status', [
+  'open',
+  'dismissed',
+  'resolved'
+]);
+export const messageReportActionType = pgEnum('message_report_action_type', [
+  'dismiss',
+  'close_conversation'
+]);
+
+export const messageReport = pgTable(
+  'message_report',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    messageId: uuid('message_id')
+      .notNull()
+      .references(() => conversationMessage.id, {onDelete: 'restrict'}),
+    reporterId: uuid('reporter_id')
+      .notNull()
+      .references(() => user.id, {onDelete: 'restrict'}),
+    reason: messageReportReason('reason').notNull(),
+    details: varchar('details', {length: 1000}),
+    status: messageReportStatus('status').default('open').notNull(),
+    resolvedAt: timestamp('resolved_at', {withTimezone: true}),
+    ...timestamps
+  },
+  (table) => [
+    uniqueIndex('message_report_reporter_message_unique').on(table.reporterId, table.messageId),
+    index('message_report_queue_idx').on(table.status, table.createdAt, table.id),
+    index('message_report_message_status_idx').on(table.messageId, table.status, table.createdAt),
+    index('message_report_reporter_created_idx').on(table.reporterId, table.createdAt),
+    check(
+      'message_report_details_length',
+      sql`${table.details} is null or length(btrim(${table.details})) between 10 and 1000`
+    ),
+    check(
+      'message_report_resolution_consistent',
+      sql`(${table.status} = 'open' and ${table.resolvedAt} is null) or (${table.status} <> 'open' and ${table.resolvedAt} is not null)`
+    )
+  ]
+);
+
+export const messageReportAction = pgTable(
+  'message_report_action',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    reportId: uuid('report_id')
+      .notNull()
+      .references(() => messageReport.id, {onDelete: 'restrict'}),
+    actorId: uuid('actor_id')
+      .notNull()
+      .references(() => user.id, {onDelete: 'restrict'}),
+    action: messageReportActionType('action').notNull(),
+    internalNote: varchar('internal_note', {length: 2000}),
+    createdAt: timestamp('created_at', {withTimezone: true}).defaultNow().notNull()
+  },
+  (table) => [
+    uniqueIndex('message_report_action_report_unique').on(table.reportId),
+    index('message_report_action_actor_created_idx').on(table.actorId, table.createdAt)
+  ]
+);
+
 export const userBlock = pgTable(
   'user_block',
   {

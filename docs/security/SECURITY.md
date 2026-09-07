@@ -18,6 +18,8 @@ Listing reports and appeals also derive the actor exclusively from the session. 
 
 Conversation APIs derive the actor from the session and resolve the other participant only from the PostgreSQL conversation. Starting a thread derives its seller from the active listing, rejects self-contact and creates at most one conversation per listing/buyer. Every read, send, read-cursor update and block operation rechecks participant membership; cross-participant IDs return `NOT_FOUND`. Either-direction blocks stop new messages but do not erase evidence/history. Actor-row serialization and a rolling per-sender bound reduce basic flooding, while client-generated UUIDs make retries idempotent.
 
+Message reports verify the conversation/message relationship and allow only the recipient to report an immutable message. The server derives the reporter, serializes actor writes, enforces one report per reporter/message plus a rolling limit, and returns `NOT_FOUND` outside the participant boundary. Staff queue DTOs omit reporter identity and unrelated chat history. Staff who participated in the conversation cannot read its report through the queue or decide it. A confirmed report closes only that conversation and produces append-only actions; account bans require the separate enforcement model.
+
 Notifications are recipient-owned server projections; clients cannot choose a recipient, actor, listing or message reference. A notification read update includes the current recipient in its predicate. External email/push preferences cannot be enabled until a verified provider exists, preventing a disabled adapter from simulating delivery.
 
 ## Web/API controls
@@ -34,7 +36,7 @@ The implemented ingress requires draft ownership, an exact declared size and SHA
 
 Collect minimum data. Never publish email, IP, device identifiers, exact private address, internal risk state or private account data. Define retention/export/deletion before launch. Azerbaijan privacy/e-commerce obligations require qualified legal review before production.
 
-Chat text and notification metadata are private personal data. They are excluded from public pages, search indexes and logs. Production requires retention/export/deletion rules, staff-access policy and a lawful moderation/report workflow before message review is introduced.
+Chat text and notification metadata are private personal data. They are excluded from public pages, search indexes and logs. Staff access is limited to the concrete content of open message reports and is protected by a live capability plus self-review exclusion. Production still requires legally reviewed retention/export/deletion periods, access monitoring and an incident process before launch.
 
 An authenticated buyer may request the verified phone of a different seller only for an active listing. The exact number is returned in a private non-cacheable response, never embedded in public HTML, search, logs or the contact audit. Per-buyer access is recorded and bounded to reduce harvesting; data retention and seller visibility controls require launch review.
 

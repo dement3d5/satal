@@ -308,6 +308,14 @@
     "reportDismiss": "Şikayəti rədd et",
     "reportRemoveTitle": "Pozuntunu təsdiqlə",
     "reportRemove": "Elanı sil",
+    "messageReportsTitle": "Mesaj şikayətləri",
+    "messageReportsEmpty": "Yeni mesaj şikayəti yoxdur.",
+    "messageReportSender": "Mesajın müəllifi",
+    "messageReportContent": "Şikayət edilən mesaj",
+    "messageReportDetails": "İstifadəçi izahı",
+    "messageReportDismiss": "Şikayəti rədd et",
+    "messageReportCloseTitle": "Çat pozuntusunu təsdiqlə",
+    "messageReportClose": "Dialoqu bağla",
     "appealsTitle": "Satıcı apellyasiyaları",
     "appealsEmpty": "Yeni apellyasiya yoxdur.",
     "appealOriginalDecision": "İlkin qərar",
@@ -318,8 +326,8 @@
     "appealResponseHint": "Yekun qərarı qısa və aydın izah edin.",
     "appealReject": "Apellyasiyanı rədd et",
     "actionAuth": "Sessiya başa çatıb. Yenidən daxil olun və əməliyyatı təkrarlayın.",
-    "actionForbidden": "Bu elanı cari hesabla yoxlamaq olmaz: elan sizə məxsusdur və ya icazələr dəyişib. Kart növbədən çıxarıldı.",
-    "actionConflict": "Elan artıq dəyişdirilib və ya yoxlanılıb. Kart növbədən çıxarıldı.",
+    "actionForbidden": "Bu materialı cari hesabla yoxlamaq olmaz: o sizinlə bağlıdır və ya icazələr dəyişib. Kart növbədən çıxarıldı.",
+    "actionConflict": "Material artıq dəyişdirilib və ya yoxlanılıb. Kart növbədən çıxarıldı.",
     "actionError": "Qərarı saxlamaq mümkün olmadı. Növbəni yeniləyib yenidən cəhd edin.",
     "reasons": {
       "prohibitedItem": "Qadağan olunmuş məhsul",
@@ -337,6 +345,14 @@
       "misleadingPrice": "Yanlış qiymət",
       "staleListing": "Aktual olmayan elan",
       "other": "Digər səbəb"
+    },
+    "messageReportReasons": {
+      "spam": "Spam",
+      "fraud": "Dələduzluq və ya təhlükəli ödəniş",
+      "harassment": "Təhqir və ya təhdid",
+      "prohibitedContent": "Qadağan olunmuş məzmun",
+      "personalData": "Şəxsi məlumatların yayılması",
+      "other": "Digər"
     }
   },
   "chat": {
@@ -359,11 +375,29 @@
     "sending": "Göndərilir...",
     "rateLimit": "Mesajları çox sürətlə göndərirsiniz. Bir qədər gözləyin.",
     "unavailable": "Bu dialoq hazırda yeni mesaj qəbul etmir.",
+    "closedByModeration": "Dialoq iştirakçı şikayəti yoxlanıldıqdan sonra bağlanıb. Tarixçə əlçatan qalır; bu, hesabın bloklanması demək deyil.",
     "block": "İstifadəçini blokla",
     "unblock": "Blokdan çıxar",
     "blockedByYou": "Bu istifadəçini bloklamısınız. Davam etmək üçün blokdan çıxarın.",
     "blockedByOther": "İştirakçılardan birinin bloklaması səbəbindən mesajlaşma əlçatan deyil.",
-    "safety": "Kart məlumatlarını, şifrələri və təsdiq kodlarını heç vaxt göndərməyin."
+    "safety": "Kart məlumatlarını, şifrələri və təsdiq kodlarını heç vaxt göndərməyin.",
+    "report": "Mesajdan şikayət et",
+    "reportReason": "Səbəb",
+    "reportDetails": "Əlavə məlumat (məcburi deyil)",
+    "reportDetailsHint": "Parol, ödəniş məlumatı və başqa məxfi məlumatları yazmayın. Digər səbəb üçün izah əlavə edin.",
+    "reportSubmit": "Şikayəti göndər",
+    "reporting": "Göndərilir...",
+    "reportSuccess": "Şikayət göndərildi",
+    "reportRateLimit": "Həddindən çox şikayət göndərmisiniz. Daha sonra yenidən cəhd edin.",
+    "reportError": "Şikayəti göndərmək mümkün olmadı. İzahı yoxlayıb yenidən cəhd edin.",
+    "reportReasons": {
+      "spam": "Spam",
+      "fraud": "Dələduzluq və ya təhlükəli ödəniş",
+      "harassment": "Təhqir və ya təhdid",
+      "prohibitedContent": "Qadağan olunmuş məzmun",
+      "personalData": "Şəxsi məlumatların yayılması",
+      "other": "Digər"
+    }
   },
   "notifications": {
     "accountLink": "Hesab",

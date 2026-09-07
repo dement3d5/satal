@@ -6,6 +6,7 @@ describe('moderation authorization and lifecycle', () => {
   it('grants moderation capabilities only to explicit staff roles', () => {
     expect(hasModerationCapability([], 'queue:read')).toBe(false);
     expect(hasModerationCapability(['moderator'], 'decision:write')).toBe(true);
+    expect(hasModerationCapability(['moderator'], 'message-reports:decide')).toBe(true);
     expect(() => assertModerationCapability([], 'queue:read')).toThrowError(
       expect.objectContaining({code: 'FORBIDDEN'})
     );

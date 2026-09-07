@@ -183,6 +183,7 @@ export async function listConversations(
     const readSequence = role === 'buyer' ? row.buyerReadSequence : row.sellerReadSequence;
     return {
       id: row.id,
+      status: row.status,
       listingId: row.listingId,
       listingTitle: row.listingTitle,
       listingStatus: row.listingStatus,

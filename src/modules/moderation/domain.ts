@@ -7,7 +7,9 @@ export type ModerationCapability =
   | 'reports:read'
   | 'reports:decide'
   | 'appeals:read'
-  | 'appeals:decide';
+  | 'appeals:decide'
+  | 'message-reports:read'
+  | 'message-reports:decide';
 
 const capabilities: Record<StaffRole, ReadonlySet<ModerationCapability>> = {
   moderator: new Set([
@@ -16,7 +18,9 @@ const capabilities: Record<StaffRole, ReadonlySet<ModerationCapability>> = {
     'reports:read',
     'reports:decide',
     'appeals:read',
-    'appeals:decide'
+    'appeals:decide',
+    'message-reports:read',
+    'message-reports:decide'
   ]),
   admin: new Set([
     'queue:read',
@@ -24,7 +28,9 @@ const capabilities: Record<StaffRole, ReadonlySet<ModerationCapability>> = {
     'reports:read',
     'reports:decide',
     'appeals:read',
-    'appeals:decide'
+    'appeals:decide',
+    'message-reports:read',
+    'message-reports:decide'
   ]),
   owner: new Set([
     'queue:read',
@@ -32,7 +38,9 @@ const capabilities: Record<StaffRole, ReadonlySet<ModerationCapability>> = {
     'reports:read',
     'reports:decide',
     'appeals:read',
-    'appeals:decide'
+    'appeals:decide',
+    'message-reports:read',
+    'message-reports:decide'
   ])
 };
 

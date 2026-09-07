@@ -7,6 +7,7 @@ import type {AppLocale} from '@/i18n/routing';
 
 interface ConversationItem {
   id: string;
+  status: 'open' | 'closed';
   listingId: string;
   listingTitle: string;
   listingStatus: string;
@@ -44,11 +45,22 @@ interface ChatLabels {
   sending: string;
   rateLimit: string;
   unavailable: string;
+  closedByModeration: string;
   block: string;
   unblock: string;
   blockedByYou: string;
   blockedByOther: string;
   safety: string;
+  report: string;
+  reportReason: string;
+  reportDetails: string;
+  reportDetailsHint: string;
+  reportSubmit: string;
+  reporting: string;
+  reportSuccess: string;
+  reportRateLimit: string;
+  reportError: string;
+  reportReasons: Record<string, string>;
 }
 
 export function ChatInbox({
@@ -67,6 +79,8 @@ export function ChatInbox({
   const [body, setBody] = useState('');
   const [state, setState] = useState<'loading' | 'ready' | 'auth' | 'error'>('loading');
   const [sending, setSending] = useState(false);
+  const [reportingMessageId, setReportingMessageId] = useState<string | null>(null);
+  const [reportedMessageIds, setReportedMessageIds] = useState<Set<string>>(() => new Set());
   const [feedback, setFeedback] = useState('');
 
   const selected = useMemo(
@@ -184,6 +198,38 @@ export function ChatInbox({
     await loadConversations();
   }
 
+  async function reportMessage(event: FormEvent<HTMLFormElement>, messageId: string) {
+    event.preventDefault();
+    if (!selected || reportingMessageId) return;
+    const form = event.currentTarget;
+    const data = new FormData(form);
+    const details = String(data.get('details') ?? '').trim();
+    setReportingMessageId(messageId);
+    setFeedback('');
+    try {
+      const response = await fetch(
+        `/api/v1/conversations/${selected.id}/messages/${messageId}/reports`,
+        {
+          method: 'POST',
+          headers: {'content-type': 'application/json'},
+          body: JSON.stringify({
+            reason: String(data.get('reason') ?? ''),
+            ...(details ? {details} : {})
+          })
+        }
+      );
+      if (response.status === 429) return setFeedback(labels.reportRateLimit);
+      if (!response.ok) return setFeedback(labels.reportError);
+      setReportedMessageIds((current) => new Set(current).add(messageId));
+      setFeedback(labels.reportSuccess);
+      form.reset();
+    } catch {
+      setFeedback(labels.reportError);
+    } finally {
+      setReportingMessageId(null);
+    }
+  }
+
   if (state === 'loading') return <p>{labels.loading}</p>;
   if (state === 'auth')
     return (
@@ -215,6 +261,7 @@ export function ChatInbox({
             key={item.id}
             onClick={() => {
               setSelectedId(item.id);
+              setReportedMessageIds(new Set());
               setFeedback('');
             }}
           >
@@ -266,14 +313,59 @@ export function ChatInbox({
                     new Date(item.createdAt)
                   )}
                 </time>
+                {!item.sentByMe && selected.status === 'open' && (
+                  <details className="message-report">
+                    <summary>
+                      {reportedMessageIds.has(item.id) ? labels.reportSuccess : labels.report}
+                    </summary>
+                    {!reportedMessageIds.has(item.id) && (
+                      <form onSubmit={(event) => void reportMessage(event, item.id)}>
+                        <label>
+                          {labels.reportReason}
+                          <select name="reason" defaultValue="spam" required>
+                            {Object.entries(labels.reportReasons).map(([value, label]) => (
+                              <option key={value} value={value}>
+                                {label}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                        <label>
+                          {labels.reportDetails}
+                          <textarea
+                            name="details"
+                            minLength={10}
+                            maxLength={1000}
+                            placeholder={labels.reportDetailsHint}
+                          />
+                        </label>
+                        <button
+                          className="button button-quiet"
+                          type="submit"
+                          disabled={reportingMessageId !== null}
+                        >
+                          {reportingMessageId === item.id ? labels.reporting : labels.reportSubmit}
+                        </button>
+                      </form>
+                    )}
+                  </details>
+                )}
               </article>
             ))}
           </div>
-          {selected.blockedByYou && <p className="chat-state-note">{labels.blockedByYou}</p>}
-          {selected.blockedByOther && <p className="chat-state-note">{labels.blockedByOther}</p>}
-          {!selected.blockedByYou && !selected.blockedByOther && !selected.canSend && (
-            <p className="chat-state-note">{labels.unavailable}</p>
+          {selected.status === 'closed' && (
+            <p className="chat-state-note">{labels.closedByModeration}</p>
           )}
+          {selected.status === 'open' && selected.blockedByYou && (
+            <p className="chat-state-note">{labels.blockedByYou}</p>
+          )}
+          {selected.status === 'open' && selected.blockedByOther && (
+            <p className="chat-state-note">{labels.blockedByOther}</p>
+          )}
+          {selected.status === 'open' &&
+            !selected.blockedByYou &&
+            !selected.blockedByOther &&
+            !selected.canSend && <p className="chat-state-note">{labels.unavailable}</p>}
           <form className="message-composer" onSubmit={send}>
             <textarea
               value={body}

@@ -22,6 +22,7 @@ Phase 2, the Phase 3 marketplace foundation and the Phase 4 trust/communication 
 - PostgreSQL-backed staff roles, pending-review listing submission and an audited localized moderation queue.
 - owner-safe listing reports and seller appeals with rate limits, staff queues, audited decisions and lifecycle-safe review reopening.
 - listing-scoped buyer/seller conversations, idempotent text messages, read cursors, participant blocks and private in-app notifications/preferences.
+- participant-only message reports, a least-privilege staff queue and audited conversation closure for confirmed chat violations.
 
 ## Requirements
 

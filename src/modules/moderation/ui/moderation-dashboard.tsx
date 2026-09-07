@@ -44,6 +44,19 @@ interface AppealQueueItem {
   locationName: string;
 }
 
+interface MessageReportQueueItem {
+  reportId: string;
+  messageId: string;
+  conversationId: string;
+  listingId: string;
+  listingTitle: string;
+  messageBody: string;
+  senderName: string;
+  reason: string;
+  details: string | null;
+  createdAt: string;
+}
+
 interface ModerationLabels {
   loading: string;
   auth: string;
@@ -70,6 +83,14 @@ interface ModerationLabels {
   reportDismiss: string;
   reportRemoveTitle: string;
   reportRemove: string;
+  messageReportsTitle: string;
+  messageReportsEmpty: string;
+  messageReportSender: string;
+  messageReportContent: string;
+  messageReportDetails: string;
+  messageReportDismiss: string;
+  messageReportCloseTitle: string;
+  messageReportClose: string;
   appealsTitle: string;
   appealsEmpty: string;
   appealOriginalDecision: string;
@@ -85,6 +106,7 @@ interface ModerationLabels {
   actionError: string;
   reasons: Record<string, string>;
   reportReasons: Record<string, string>;
+  messageReportReasons: Record<string, string>;
 }
 
 export function ModerationDashboard({
@@ -96,6 +118,7 @@ export function ModerationDashboard({
 }) {
   const [items, setItems] = useState<QueueItem[]>([]);
   const [reports, setReports] = useState<ReportQueueItem[]>([]);
+  const [messageReports, setMessageReports] = useState<MessageReportQueueItem[]>([]);
   const [appeals, setAppeals] = useState<AppealQueueItem[]>([]);
   const [state, setState] = useState<'loading' | 'ready' | 'auth' | 'forbidden' | 'error'>(
     'loading'
@@ -116,16 +139,23 @@ export function ModerationDashboard({
         const responses = await Promise.all([
           fetch(`/api/v1/moderation/cases?locale=${locale}`, {cache: 'no-store'}),
           fetch(`/api/v1/moderation/reports?locale=${locale}`, {cache: 'no-store'}),
+          fetch(`/api/v1/moderation/message-reports?locale=${locale}`, {cache: 'no-store'}),
           fetch(`/api/v1/moderation/appeals?locale=${locale}`, {cache: 'no-store'})
         ]);
         if (responses.some((response) => response.status === 401)) return setState('auth');
         if (responses.some((response) => response.status === 403)) return setState('forbidden');
         if (responses.some((response) => !response.ok)) throw new Error('queue failed');
-        const [caseBody, reportBody, appealBody] = (await Promise.all(
+        const [caseBody, reportBody, messageReportBody, appealBody] = (await Promise.all(
           responses.map((response) => response.json())
-        )) as [{data: QueueItem[]}, {data: ReportQueueItem[]}, {data: AppealQueueItem[]}];
+        )) as [
+          {data: QueueItem[]},
+          {data: ReportQueueItem[]},
+          {data: MessageReportQueueItem[]},
+          {data: AppealQueueItem[]}
+        ];
         setItems(caseBody.data);
         setReports(reportBody.data);
+        setMessageReports(messageReportBody.data);
         setAppeals(appealBody.data);
         setState('ready');
       } catch {
@@ -217,6 +247,37 @@ export function ModerationDashboard({
     }
   }
 
+  async function decideMessageReport(reportId: string, action: 'dismiss' | 'close_conversation') {
+    const key = `message-report:${reportId}`;
+    setPendingAction(key);
+    setActionError(null);
+    try {
+      const response = await fetch(`/api/v1/moderation/message-reports/${reportId}/decision`, {
+        method: 'POST',
+        headers: {'content-type': 'application/json'},
+        body: JSON.stringify({action})
+      });
+      if (!response.ok) {
+        if (response.status === 401) setState('auth');
+        if ([403, 404, 409].includes(response.status)) {
+          setMessageReports((current) => current.filter((item) => item.reportId !== reportId));
+        }
+        setActionError(actionErrorFor(response));
+        return;
+      }
+      const body = (await response.json()) as {data: {conversationId: string}};
+      setMessageReports((current) =>
+        action === 'close_conversation'
+          ? current.filter((item) => item.conversationId !== body.data.conversationId)
+          : current.filter((item) => item.reportId !== reportId)
+      );
+    } catch {
+      setActionError(labels.actionError);
+    } finally {
+      setPendingAction(null);
+    }
+  }
+
   function rejectCase(event: FormEvent<HTMLFormElement>, caseId: string) {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
@@ -251,7 +312,12 @@ export function ModerationDashboard({
     );
   if (state === 'forbidden') return <p role="alert">{labels.forbidden}</p>;
   if (state === 'error') return <p role="alert">{labels.error}</p>;
-  if (items.length === 0 && reports.length === 0 && appeals.length === 0)
+  if (
+    items.length === 0 &&
+    reports.length === 0 &&
+    messageReports.length === 0 &&
+    appeals.length === 0
+  )
     return (
       <div className="empty-state">
         <p>{labels.empty}</p>
@@ -380,6 +446,55 @@ export function ModerationDashboard({
                   </button>
                 </details>
                 <Link href={`/${locale}/listings/${report.listingId}`}>↗</Link>
+              </div>
+            </article>
+          );
+        })}
+      </QueueSection>
+
+      <QueueSection title={labels.messageReportsTitle} empty={labels.messageReportsEmpty}>
+        {messageReports.map((report) => {
+          const pending = pendingAction === `message-report:${report.reportId}`;
+          return (
+            <article className="moderation-card" key={report.reportId}>
+              <header>
+                <div>
+                  <span>{report.listingTitle}</span>
+                  <h3>{labels.messageReportContent}</h3>
+                </div>
+                <span className="status-chip">
+                  {labels.messageReportReasons[report.reason] ?? report.reason}
+                </span>
+              </header>
+              <p className="moderation-message-quote">{report.messageBody}</p>
+              <small>
+                {labels.messageReportSender}: {report.senderName}
+              </small>
+              {report.details && (
+                <p>
+                  <strong>{labels.messageReportDetails}:</strong> {report.details}
+                </p>
+              )}
+              <div className="moderation-actions">
+                <button
+                  className="button"
+                  disabled={pending}
+                  onClick={() => void decideMessageReport(report.reportId, 'dismiss')}
+                  type="button"
+                >
+                  {labels.messageReportDismiss}
+                </button>
+                <details>
+                  <summary>{labels.messageReportCloseTitle}</summary>
+                  <button
+                    className="button button-danger"
+                    disabled={pending}
+                    onClick={() => void decideMessageReport(report.reportId, 'close_conversation')}
+                    type="button"
+                  >
+                    {labels.messageReportClose}
+                  </button>
+                </details>
               </div>
             </article>
           );

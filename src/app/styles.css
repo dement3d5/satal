@@ -1956,6 +1956,14 @@ h1 {
   font-size: 1.2rem;
 }
 
+.moderation-message-quote {
+  padding: 0.8rem 0.9rem;
+  border-left: 3px solid var(--color-border);
+  background: var(--color-surface);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
 .status-chip {
   flex: none;
   padding: 0.35rem 0.55rem;
@@ -2224,6 +2232,54 @@ h1 {
   margin: 0.35rem 0;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
+}
+
+.message-report {
+  margin-top: 0.45rem;
+  color: var(--color-muted);
+  font-size: 0.78rem;
+}
+
+.message-report summary {
+  width: fit-content;
+  cursor: pointer;
+}
+
+.message-report form {
+  display: grid;
+  gap: 0.6rem;
+  min-width: min(20rem, 70vw);
+  margin-top: 0.65rem;
+  padding-top: 0.65rem;
+  border-top: 1px solid var(--color-border);
+}
+
+.message-report label {
+  display: grid;
+  gap: 0.3rem;
+  color: var(--color-text);
+  font-weight: 700;
+}
+
+.message-report select,
+.message-report textarea {
+  width: 100%;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.6rem;
+  background: white;
+  color: var(--color-text);
+  font: inherit;
+}
+
+.message-report textarea {
+  min-height: 4.5rem;
+  resize: vertical;
+}
+
+.message-report .button {
+  justify-self: start;
+  margin: 0;
 }
 
 .message-composer {

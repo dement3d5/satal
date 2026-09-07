@@ -46,7 +46,9 @@ In progress. The first trust milestone adds authenticated reports on active list
 
 The communication milestone adds one buyer/seller conversation per listing, persisted idempotent text messages, sequence-based read state, bidirectional participant blocks and private in-app notification records/preferences. Provider-neutral delivery records and outbox events are ready for later verified email/push adapters; disabled external channels fail closed.
 
-Remaining: message/conversation reporting, production realtime delivery, ratings after a qualified interaction, explainable risk signals, bans/enforcement, report/appeal operational metrics and broader audit tools.
+The chat-safety milestone adds participant-only reports on immutable messages, a least-privilege staff queue, self-review exclusion and audited conversation closure. Confirming a violation resolves every open report for that conversation but deliberately does not create a global user ban.
+
+Remaining: production realtime delivery, ratings after a qualified interaction, explainable risk signals, bans/enforcement, report/appeal operational metrics and broader audit tools.
 
 ## Phase 5 — shops
 

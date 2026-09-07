@@ -308,6 +308,14 @@
     "reportDismiss": "Dismiss report",
     "reportRemoveTitle": "Confirm violation",
     "reportRemove": "Remove listing",
+    "messageReportsTitle": "Message reports",
+    "messageReportsEmpty": "There are no new message reports.",
+    "messageReportSender": "Message sender",
+    "messageReportContent": "Reported message",
+    "messageReportDetails": "Reporter context",
+    "messageReportDismiss": "Dismiss report",
+    "messageReportCloseTitle": "Confirm chat violation",
+    "messageReportClose": "Close conversation",
     "appealsTitle": "Seller appeals",
     "appealsEmpty": "There are no new appeals.",
     "appealOriginalDecision": "Original decision",
@@ -318,8 +326,8 @@
     "appealResponseHint": "Explain the final decision briefly and clearly.",
     "appealReject": "Reject appeal",
     "actionAuth": "Your session ended. Sign in again and retry the action.",
-    "actionForbidden": "This listing cannot be reviewed from the current account: it belongs to you or your permissions changed. The card was removed from the queue.",
-    "actionConflict": "The listing already changed or was reviewed. The card was removed from the queue.",
+    "actionForbidden": "This item cannot be reviewed from the current account: it is connected to you or your permissions changed. The card was removed from the queue.",
+    "actionConflict": "The item already changed or was reviewed. The card was removed from the queue.",
     "actionError": "The decision could not be saved. Refresh the queue and try again.",
     "reasons": {
       "prohibitedItem": "Prohibited item",
@@ -337,6 +345,14 @@
       "misleadingPrice": "Misleading price",
       "staleListing": "Stale listing",
       "other": "Other reason"
+    },
+    "messageReportReasons": {
+      "spam": "Spam",
+      "fraud": "Fraud or unsafe payment",
+      "harassment": "Harassment or threats",
+      "prohibitedContent": "Prohibited content",
+      "personalData": "Exposed personal data",
+      "other": "Other"
     }
   },
   "chat": {
@@ -359,11 +375,29 @@
     "sending": "Sending...",
     "rateLimit": "You are sending messages too quickly. Please wait a moment.",
     "unavailable": "This conversation is not accepting new messages.",
+    "closedByModeration": "This conversation was closed after a participant report was reviewed. Its history remains available; this does not mean the account was banned.",
     "block": "Block user",
     "unblock": "Unblock user",
     "blockedByYou": "You blocked this user. Unblock them to continue.",
     "blockedByOther": "Messaging is unavailable because of a participant block.",
-    "safety": "Never send card details, passwords or verification codes."
+    "safety": "Never send card details, passwords or verification codes.",
+    "report": "Report message",
+    "reportReason": "Reason",
+    "reportDetails": "Additional context (optional)",
+    "reportDetailsHint": "Do not include passwords, payment details or other secrets. Details are required for Other.",
+    "reportSubmit": "Send report",
+    "reporting": "Sending...",
+    "reportSuccess": "Reported",
+    "reportRateLimit": "You have sent too many reports. Please try again later.",
+    "reportError": "The report could not be sent. Check the details and try again.",
+    "reportReasons": {
+      "spam": "Spam",
+      "fraud": "Fraud or unsafe payment",
+      "harassment": "Harassment or threats",
+      "prohibitedContent": "Prohibited content",
+      "personalData": "Exposed personal data",
+      "other": "Other"
+    }
   },
   "notifications": {
     "accountLink": "Account",
