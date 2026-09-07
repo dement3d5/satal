@@ -10,6 +10,7 @@ import type {AppLocale} from '@/i18n/routing';
 import {getPublicListing} from '@/modules/listings/public-listing-service';
 import {formatPrice} from '@/modules/listings/ui/format';
 import {ReportListing} from '@/modules/moderation/ui/report-listing';
+import {getPublicReputationSummary} from '@/modules/reputation/service';
 import {getDatabase} from '@/server/db/client';
 import {AppError} from '@/server/errors/app-error';
 import {parseUuid} from '@/server/http/params';
@@ -40,6 +41,7 @@ export default async function ListingPage({params}: PageProps) {
     if (error instanceof AppError && error.code === 'NOT_FOUND') notFound();
     throw error;
   }
+  const reputation = await getPublicReputationSummary(getDatabase(), item.sellerId);
 
   return (
     <main className="page-shell">
@@ -116,7 +118,14 @@ export default async function ListingPage({params}: PageProps) {
             }}
           />
           <span>{t('sellerLabel')}</span>
-          <strong>{item.sellerName}</strong>
+          <a className="seller-profile-link" href={`/${locale}/users/${item.sellerId}`}>
+            <strong>{item.sellerName}</strong>
+            <small>
+              {reputation.count > 0
+                ? `${reputation.average.toFixed(1)} ★ · ${t('sellerReviews', {count: reputation.count})}`
+                : t('sellerNoReviews')}
+            </small>
+          </a>
           <ContactButton
             listingId={item.id}
             locale={locale}

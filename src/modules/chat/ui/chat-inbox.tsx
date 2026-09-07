@@ -17,6 +17,18 @@ interface ConversationItem {
   unreadCount: number;
   blockedByYou: boolean;
   blockedByOther: boolean;
+  canQualify: boolean;
+  interaction: {
+    id: string;
+    qualifiedAt: string;
+    review: {
+      id: string;
+      rating: number;
+      body: string | null;
+      revealAt: string;
+      visible: boolean;
+    } | null;
+  } | null;
   canSend: boolean;
 }
 
@@ -61,6 +73,25 @@ interface ChatLabels {
   reportRateLimit: string;
   reportError: string;
   reportReasons: Record<string, string>;
+  qualificationAction: string;
+  qualificationTitle: string;
+  qualificationExplanation: string;
+  qualificationConfirm: string;
+  qualifying: string;
+  qualificationSuccess: string;
+  qualificationUnavailable: string;
+  reviewTitle: string;
+  reviewExplanation: string;
+  reviewRating: string;
+  reviewBody: string;
+  reviewBodyHint: string;
+  reviewSubmit: string;
+  reviewing: string;
+  reviewSaved: string;
+  reviewPending: string;
+  reviewVisible: string;
+  reviewConflict: string;
+  reviewError: string;
 }
 
 export function ChatInbox({
@@ -79,6 +110,8 @@ export function ChatInbox({
   const [body, setBody] = useState('');
   const [state, setState] = useState<'loading' | 'ready' | 'auth' | 'error'>('loading');
   const [sending, setSending] = useState(false);
+  const [qualifying, setQualifying] = useState(false);
+  const [reviewing, setReviewing] = useState(false);
   const [reportingMessageId, setReportingMessageId] = useState<string | null>(null);
   const [reportedMessageIds, setReportedMessageIds] = useState<Set<string>>(() => new Set());
   const [feedback, setFeedback] = useState('');
@@ -230,6 +263,55 @@ export function ChatInbox({
     }
   }
 
+  async function qualifyInteraction() {
+    if (!selected || !selected.canQualify || qualifying) return;
+    setQualifying(true);
+    setFeedback('');
+    try {
+      const response = await fetch(`/api/v1/conversations/${selected.id}/interaction`, {
+        method: 'POST'
+      });
+      if (response.status === 403 || response.status === 409)
+        return setFeedback(labels.qualificationUnavailable);
+      if (!response.ok) return setFeedback(labels.error);
+      await loadConversations();
+      setFeedback(labels.qualificationSuccess);
+    } catch {
+      setFeedback(labels.error);
+    } finally {
+      setQualifying(false);
+    }
+  }
+
+  async function submitReview(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!selected?.interaction || selected.interaction.review || reviewing) return;
+    const form = event.currentTarget;
+    const data = new FormData(form);
+    const body = String(data.get('body') ?? '').trim();
+    setReviewing(true);
+    setFeedback('');
+    try {
+      const response = await fetch(`/api/v1/interactions/${selected.interaction.id}/reviews`, {
+        method: 'POST',
+        headers: {'content-type': 'application/json'},
+        body: JSON.stringify({
+          rating: Number(data.get('rating')),
+          ...(body ? {body} : {})
+        })
+      });
+      if (response.status === 409) return setFeedback(labels.reviewConflict);
+      if (!response.ok) return setFeedback(labels.reviewError);
+      await loadConversations();
+      setFeedback(labels.reviewSaved);
+      form.reset();
+    } catch {
+      setFeedback(labels.reviewError);
+    } finally {
+      setReviewing(false);
+    }
+  }
+
   if (state === 'loading') return <p>{labels.loading}</p>;
   if (state === 'auth')
     return (
@@ -287,9 +369,15 @@ export function ChatInbox({
           <header>
             <div>
               <strong>{selected.otherParticipant.name}</strong>
-              <Link href={`/${locale}/listings/${selected.listingId}`}>
-                {labels.listing}: {selected.listingTitle}
-              </Link>
+              {selected.listingStatus === 'active' ? (
+                <Link href={`/${locale}/listings/${selected.listingId}`}>
+                  {labels.listing}: {selected.listingTitle}
+                </Link>
+              ) : (
+                <span>
+                  {labels.listing}: {selected.listingTitle}
+                </span>
+              )}
             </div>
             <button className="button button-quiet" type="button" onClick={toggleBlock}>
               {selected.blockedByYou ? labels.unblock : labels.block}
@@ -366,6 +454,65 @@ export function ChatInbox({
             !selected.blockedByYou &&
             !selected.blockedByOther &&
             !selected.canSend && <p className="chat-state-note">{labels.unavailable}</p>}
+          {selected.canQualify && (
+            <details className="interaction-card">
+              <summary>{labels.qualificationAction}</summary>
+              <h3>{labels.qualificationTitle}</h3>
+              <p>{labels.qualificationExplanation}</p>
+              <button
+                className="button button-primary"
+                type="button"
+                disabled={qualifying}
+                onClick={() => void qualifyInteraction()}
+              >
+                {qualifying ? labels.qualifying : labels.qualificationConfirm}
+              </button>
+            </details>
+          )}
+          {selected.interaction && (
+            <section className="interaction-card" aria-labelledby="interaction-review-title">
+              <h3 id="interaction-review-title">{labels.reviewTitle}</h3>
+              <p>{labels.reviewExplanation}</p>
+              {selected.interaction.review ? (
+                <div className="review-result">
+                  <strong aria-label={`${selected.interaction.review.rating}/5`}>
+                    {'★'.repeat(selected.interaction.review.rating)}
+                    {'☆'.repeat(5 - selected.interaction.review.rating)}
+                  </strong>
+                  <span>
+                    {selected.interaction.review.visible
+                      ? labels.reviewVisible
+                      : labels.reviewPending}
+                  </span>
+                </div>
+              ) : (
+                <form onSubmit={(event) => void submitReview(event)}>
+                  <label>
+                    {labels.reviewRating}
+                    <select name="rating" defaultValue="5" required>
+                      {[5, 4, 3, 2, 1].map((rating) => (
+                        <option key={rating} value={rating}>
+                          {rating} / 5
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label>
+                    {labels.reviewBody}
+                    <textarea
+                      name="body"
+                      minLength={10}
+                      maxLength={1000}
+                      placeholder={labels.reviewBodyHint}
+                    />
+                  </label>
+                  <button className="button" type="submit" disabled={reviewing}>
+                    {reviewing ? labels.reviewing : labels.reviewSubmit}
+                  </button>
+                </form>
+              )}
+            </section>
+          )}
           <form className="message-composer" onSubmit={send}>
             <textarea
               value={body}

@@ -88,3 +88,11 @@ Better Auth owns `/api/auth/*`, credential hashing, database sessions, HttpOnly 
 `GET /api/v1/moderation/message-reports` returns only the minimum reported-message context to live staff who did not participate in the conversation. `POST /api/v1/moderation/message-reports/{reportId}/decision` dismisses one report or atomically closes the conversation and resolves every open report attached to its messages. The decision does not ban an account. Responses are private and `no-store`.
 
 `PUT|DELETE /api/v1/blocks/{userId}` creates/removes a directed block only for a user with whom the actor shares a conversation. `GET /api/v1/notifications` returns private in-app records and unread count; `PATCH /api/v1/notifications/{notificationId}` performs an owner-only read transition. `GET|PATCH /api/v1/notification-preferences` reads or changes chat delivery preferences. Email/push enablement returns service unavailable until a verified adapter exists. Every response is private and `no-store`.
+
+## Qualified interactions and reputation
+
+`POST /api/v1/conversations/{conversationId}/interaction` is seller-only. It requires an open conversation, an active listing and at least one persisted message from each participant. It idempotently records that exact buyer/seller interaction, changes the listing to `sold`, appends lifecycle history and emits `listing.sold` in one transaction. A buyer, outsider or conversation selected for another sale cannot supply or replace participant identities.
+
+`POST /api/v1/interactions/{interactionId}/reviews` allows either recorded participant to submit one rating from 1–5 and optional bounded text about the other participant. Author and subject are server-derived. An identical retry returns the stored review; attempting to change a submitted review returns conflict. Responses are private and `no-store`.
+
+`GET /api/v1/users/{userId}/reputation` is public and returns only the display name, account age, rating aggregate and revealed reviews. A review remains absent from this response until the counterpart submits or its 14-day reveal date passes. Email, phone, conversation content and pending review existence are never exposed.

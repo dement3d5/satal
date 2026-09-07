@@ -65,7 +65,26 @@ export default async function MessagesPage({
             prohibited_content: t('reportReasons.prohibitedContent'),
             personal_data: t('reportReasons.personalData'),
             other: t('reportReasons.other')
-          }
+          },
+          qualificationAction: t('qualificationAction'),
+          qualificationTitle: t('qualificationTitle'),
+          qualificationExplanation: t('qualificationExplanation'),
+          qualificationConfirm: t('qualificationConfirm'),
+          qualifying: t('qualifying'),
+          qualificationSuccess: t('qualificationSuccess'),
+          qualificationUnavailable: t('qualificationUnavailable'),
+          reviewTitle: t('reviewTitle'),
+          reviewExplanation: t('reviewExplanation'),
+          reviewRating: t('reviewRating'),
+          reviewBody: t('reviewBody'),
+          reviewBodyHint: t('reviewBodyHint'),
+          reviewSubmit: t('reviewSubmit'),
+          reviewing: t('reviewing'),
+          reviewSaved: t('reviewSaved'),
+          reviewPending: t('reviewPending'),
+          reviewVisible: t('reviewVisible'),
+          reviewConflict: t('reviewConflict'),
+          reviewError: t('reviewError')
         }}
       />
     </main>

@@ -40,6 +40,7 @@ export interface PublicListingAttribute {
 
 export interface PublicListingDetail extends PublicListingCard {
   description: string;
+  sellerId: string;
   sellerName: string;
   attributes: PublicListingAttribute[];
 }
@@ -163,6 +164,7 @@ export async function getPublicListing(
       currency: listing.currency,
       categoryName: categoryTranslation.name,
       locationName: locationTranslation.name,
+      sellerId: user.id,
       sellerName: user.name,
       publishedAt: listing.publishedAt
     })
@@ -251,6 +253,7 @@ export async function getPublicListing(
   return {
     ...toCard(row, covers.get(listingId) ?? null),
     description: row.description,
+    sellerId: row.sellerId,
     sellerName: row.sellerName,
     attributes: [
       ...scalarRows.map((item) => ({

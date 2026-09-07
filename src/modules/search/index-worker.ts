@@ -28,7 +28,7 @@ export async function processNextSearchEvent(
           isNull(outboxEvent.processedAt),
           lte(outboxEvent.availableAt, now),
           eq(outboxEvent.aggregateType, 'listing'),
-          inArray(outboxEvent.eventType, ['listing.published', 'listing.removed']),
+          inArray(outboxEvent.eventType, ['listing.published', 'listing.removed', 'listing.sold']),
           or(isNull(outboxEvent.leasedAt), lte(outboxEvent.leasedAt, leaseExpiredAt))
         )
       )

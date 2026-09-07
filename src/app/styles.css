@@ -1413,6 +1413,14 @@ h1 {
 .seller-card strong {
   font-size: 1.2rem;
 }
+.seller-profile-link {
+  display: grid;
+  gap: 0.2rem;
+  color: inherit;
+}
+.seller-profile-link:hover strong {
+  color: var(--color-accent-dark);
+}
 .seller-card button {
   min-height: 3rem;
   margin-top: 0.4rem;
@@ -2164,7 +2172,7 @@ h1 {
 
 .message-panel {
   display: grid;
-  grid-template-rows: auto auto minmax(20rem, 1fr) auto auto;
+  grid-template-rows: auto auto minmax(20rem, 1fr);
   min-width: 0;
 }
 
@@ -2182,7 +2190,8 @@ h1 {
   gap: 0.25rem;
 }
 
-.message-panel > header a {
+.message-panel > header a,
+.message-panel > header span {
   color: var(--color-muted);
   font-size: 0.85rem;
 }
@@ -2305,6 +2314,115 @@ h1 {
   margin: 0;
   padding: 0.8rem 1.2rem;
   background: #fff4ce;
+}
+
+.interaction-card {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 1rem 1.2rem;
+  border-top: 1px solid var(--color-border);
+  background: #f4f8f5;
+}
+
+.interaction-card summary {
+  width: fit-content;
+  color: var(--color-accent-dark);
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.interaction-card h3,
+.interaction-card p {
+  margin: 0;
+}
+
+.interaction-card p,
+.review-result span {
+  color: var(--color-muted);
+  font-size: 0.86rem;
+  line-height: 1.5;
+}
+
+.interaction-card form,
+.interaction-card label,
+.review-result {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.interaction-card select,
+.interaction-card textarea {
+  width: 100%;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: white;
+  color: var(--color-text);
+  font: inherit;
+}
+
+.interaction-card textarea {
+  min-height: 5rem;
+  resize: vertical;
+}
+
+.interaction-card .button {
+  justify-self: start;
+  margin: 0;
+}
+
+.review-result strong,
+.reputation-score,
+.reputation-reviews article span {
+  color: #ad7400;
+  letter-spacing: 0.08em;
+}
+
+.reputation-page {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.reputation-profile-card,
+.reputation-reviews {
+  padding: clamp(1.2rem, 3vw, 2rem);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: white;
+}
+
+.reputation-profile-card h1,
+.reputation-profile-card p,
+.reputation-reviews h2 {
+  margin-top: 0;
+}
+
+.reputation-reviews {
+  display: grid;
+  gap: 0;
+}
+
+.reputation-reviews article {
+  display: grid;
+  gap: 0.65rem;
+  padding: 1rem 0;
+  border-top: 1px solid var(--color-border);
+}
+
+.reputation-reviews article > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.reputation-reviews article p,
+.reputation-reviews article small {
+  margin: 0;
+}
+
+.reputation-reviews article small {
+  color: var(--color-muted);
 }
 
 .notification-layout {

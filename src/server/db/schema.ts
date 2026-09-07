@@ -1003,6 +1003,12 @@ export const conversation = pgTable(
       foreignColumns: [listing.id, listing.sellerId],
       name: 'conversation_listing_seller_fk'
     }).onDelete('restrict'),
+    unique('conversation_identity_unique').on(
+      table.id,
+      table.listingId,
+      table.buyerId,
+      table.sellerId
+    ),
     uniqueIndex('conversation_listing_buyer_unique').on(table.listingId, table.buyerId),
     index('conversation_buyer_recent_idx').on(table.buyerId, table.lastMessageAt, table.id),
     index('conversation_seller_recent_idx').on(table.sellerId, table.lastMessageAt, table.id),
@@ -1050,6 +1056,97 @@ export const conversationMessage = pgTable(
       'conversation_message_body_length',
       sql`char_length(btrim(${table.body})) between 1 and 2000`
     )
+  ]
+);
+
+export const reviewStatus = pgEnum('review_status', ['active', 'hidden']);
+
+export const qualifiedInteraction = pgTable(
+  'qualified_interaction',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    listingId: uuid('listing_id')
+      .notNull()
+      .references(() => listing.id, {onDelete: 'restrict'}),
+    conversationId: uuid('conversation_id').notNull(),
+    buyerId: uuid('buyer_id')
+      .notNull()
+      .references(() => user.id, {onDelete: 'restrict'}),
+    sellerId: uuid('seller_id')
+      .notNull()
+      .references(() => user.id, {onDelete: 'restrict'}),
+    qualifiedBy: uuid('qualified_by')
+      .notNull()
+      .references(() => user.id, {onDelete: 'restrict'}),
+    qualifiedAt: timestamp('qualified_at', {withTimezone: true}).defaultNow().notNull(),
+    createdAt: timestamp('created_at', {withTimezone: true}).defaultNow().notNull()
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.conversationId, table.listingId, table.buyerId, table.sellerId],
+      foreignColumns: [
+        conversation.id,
+        conversation.listingId,
+        conversation.buyerId,
+        conversation.sellerId
+      ],
+      name: 'qualified_interaction_conversation_identity_fk'
+    }).onDelete('restrict'),
+    uniqueIndex('qualified_interaction_listing_unique').on(table.listingId),
+    uniqueIndex('qualified_interaction_conversation_unique').on(table.conversationId),
+    index('qualified_interaction_buyer_recent_idx').on(table.buyerId, table.qualifiedAt),
+    index('qualified_interaction_seller_recent_idx').on(table.sellerId, table.qualifiedAt),
+    check(
+      'qualified_interaction_participants_distinct',
+      sql`${table.buyerId} <> ${table.sellerId}`
+    ),
+    check(
+      'qualified_interaction_qualified_by_seller',
+      sql`${table.qualifiedBy} = ${table.sellerId}`
+    )
+  ]
+);
+
+export const userReview = pgTable(
+  'user_review',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    interactionId: uuid('interaction_id')
+      .notNull()
+      .references(() => qualifiedInteraction.id, {onDelete: 'restrict'}),
+    authorId: uuid('author_id')
+      .notNull()
+      .references(() => user.id, {onDelete: 'restrict'}),
+    subjectId: uuid('subject_id')
+      .notNull()
+      .references(() => user.id, {onDelete: 'restrict'}),
+    rating: smallint('rating').notNull(),
+    body: varchar('body', {length: 1000}),
+    status: reviewStatus('status').default('active').notNull(),
+    revealAt: timestamp('reveal_at', {withTimezone: true}).notNull(),
+    hiddenAt: timestamp('hidden_at', {withTimezone: true}),
+    ...timestamps
+  },
+  (table) => [
+    uniqueIndex('user_review_interaction_author_unique').on(table.interactionId, table.authorId),
+    index('user_review_subject_visibility_idx').on(
+      table.subjectId,
+      table.status,
+      table.revealAt,
+      table.createdAt
+    ),
+    index('user_review_author_recent_idx').on(table.authorId, table.createdAt),
+    check('user_review_rating_range', sql`${table.rating} between 1 and 5`),
+    check('user_review_participants_distinct', sql`${table.authorId} <> ${table.subjectId}`),
+    check(
+      'user_review_body_length',
+      sql`${table.body} is null or char_length(btrim(${table.body})) between 10 and 1000`
+    ),
+    check(
+      'user_review_hidden_consistent',
+      sql`(${table.status} = 'active' and ${table.hiddenAt} is null) or (${table.status} = 'hidden' and ${table.hiddenAt} is not null)`
+    ),
+    check('user_review_reveal_after_creation', sql`${table.revealAt} >= ${table.createdAt}`)
   ]
 );
 

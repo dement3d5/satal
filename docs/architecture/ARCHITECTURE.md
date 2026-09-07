@@ -18,6 +18,7 @@ Next.js App Router renders public SEO pages and application UI. Versioned route 
 - **search**: query contracts, indexing, facets, suggestions and saved searches;
 - **favorites/recommendations**: explicit saves and explainable scoring;
 - **chat**: listing-scoped conversations, messages, read state and blocks;
+- **reputation**: qualified interactions, bilateral reviews and public rating projections;
 - **notifications**: preferences, in-app records and provider delivery;
 - **moderation/risk**: reports, configurable signals, queues, actions and appeals;
 - **promotions/payments**: promotion entitlements, provider-neutral attempts and webhooks;
@@ -41,6 +42,8 @@ The `moderation` boundary owns staff capabilities, listing/message report and ap
 
 The `chat` boundary owns listing-scoped buyer/seller conversations, message sequencing, participant authorization, read cursors, rate limits and blocks. Starting a conversation requires an active listing and a non-seller actor; an existing conversation remains readable after lifecycle changes, while new messages are limited to active or sold listings and are denied if either participant has blocked the other. Confirmed message-report enforcement uses the existing `closed` conversation lifecycle while preserving readable evidence. The `notifications` boundary owns private recipient records, per-event preferences and provider-neutral delivery rows. A message, conversation cursor update, notification/delivery record and outbox event are committed atomically; no client-supplied participant or recipient identity is trusted.
 
+The `reputation` boundary qualifies an interaction only when the listing seller chooses a concrete open buyer conversation after both participants have sent a message. The transaction locks the conversation and listing, records one immutable interaction, changes the listing from `active` to `sold`, appends lifecycle history and emits `listing.sold`. Each participant may then submit one immutable rating/review whose subject is derived from the interaction. Public profiles aggregate only reviews revealed by a counterpart submission or the 14-day blind-review deadline.
+
 ## Background work
 
 Use a PostgreSQL job/outbox table with leases, retry policy and `FOR UPDATE SKIP LOCKED`. This is sufficient for early volume and avoids Redis/queue operations. Introduce a dedicated queue only after measured contention or throughput demands it.
@@ -63,4 +66,4 @@ Messages are persisted before delivery and the current client refreshes from pri
 
 The media boundary now authorizes owner-only, short-lived uploads, stores originals under server-generated quarantine keys and verifies the byte length, SHA-256 digest and file signature before recording them as quarantined. Draft ordering and cover selection remain PostgreSQL state and are copied to the published listing transactionally. Quarantined originals are never public. The worker uses a real image decoder, rejects oversized/animated/unsupported input, applies orientation, strips source metadata through re-encoding and creates bounded WebP thumbnail/card/detail variants before changing an asset to `ready`. Production worker scheduling and the R2 adapter remain deployment responsibilities; R2 deliberately fails closed until configured and verified.
 
-Search is implemented behind `SearchGateway`: Typesense is a derived, versioned collection fed by leased PostgreSQL outbox work, while an indexed PostgreSQL query path provides degraded availability. Both paths validate category attribute applicability and hydrate authoritative active listing cards. The index worker consumes both `listing.published` and `listing.removed`; PostgreSQL visibility remains authoritative during any index delay. Shops and payments remain outside this milestone.
+Search is implemented behind `SearchGateway`: Typesense is a derived, versioned collection fed by leased PostgreSQL outbox work, while an indexed PostgreSQL query path provides degraded availability. Both paths validate category attribute applicability and hydrate authoritative active listing cards. The index worker consumes `listing.published`, `listing.removed` and `listing.sold`; PostgreSQL visibility remains authoritative during any index delay. Shops and payments remain outside this milestone.

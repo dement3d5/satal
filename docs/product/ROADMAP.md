@@ -48,7 +48,9 @@ The communication milestone adds one buyer/seller conversation per listing, pers
 
 The chat-safety milestone adds participant-only reports on immutable messages, a least-privilege staff queue, self-review exclusion and audited conversation closure. Confirming a violation resolves every open report for that conversation but deliberately does not create a global user ban.
 
-Remaining: production realtime delivery, ratings after a qualified interaction, explainable risk signals, bans/enforcement, report/appeal operational metrics and broader audit tools.
+The reputation milestone adds seller-confirmed qualified interactions after a bidirectional conversation, an atomic `active → sold` transition, one immutable bilateral review per participant and public reputation profiles. Reviews remain mutually blind until both sides submit or the first review reaches its 14-day reveal date.
+
+Remaining: production realtime delivery, explainable risk signals, bans/enforcement, review-report moderation, report/appeal operational metrics and broader audit tools.
 
 ## Phase 5 — shops
 

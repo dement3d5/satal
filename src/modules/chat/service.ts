@@ -9,8 +9,10 @@ import {
   notificationDelivery,
   notificationPreference,
   outboxEvent,
+  qualifiedInteraction,
   user,
-  userBlock
+  userBlock,
+  userReview
 } from '@/server/db/schema';
 import {AppError} from '@/server/errors/app-error';
 
@@ -155,21 +157,64 @@ export async function listConversations(
   const otherIds = [
     ...new Set(rows.map((row) => (row.buyerId === actorId ? row.sellerId : row.buyerId)))
   ];
-  const people = otherIds.length
-    ? await db.select({id: user.id, name: user.name}).from(user).where(inArray(user.id, otherIds))
-    : [];
-  const names = new Map(people.map((person) => [person.id, person.name]));
-  const blocks = otherIds.length
-    ? await db
-        .select({blockerId: userBlock.blockerId, blockedId: userBlock.blockedId})
-        .from(userBlock)
-        .where(
-          or(
-            and(eq(userBlock.blockerId, actorId), inArray(userBlock.blockedId, otherIds)),
-            and(eq(userBlock.blockedId, actorId), inArray(userBlock.blockerId, otherIds))
+  const conversationIds = rows.map((row) => row.id);
+  const listingIds = [...new Set(rows.map((row) => row.listingId))];
+  const [people, blocks, interactions, messageAuthors] = await Promise.all([
+    otherIds.length
+      ? db.select({id: user.id, name: user.name}).from(user).where(inArray(user.id, otherIds))
+      : [],
+    otherIds.length
+      ? db
+          .select({blockerId: userBlock.blockerId, blockedId: userBlock.blockedId})
+          .from(userBlock)
+          .where(
+            or(
+              and(eq(userBlock.blockerId, actorId), inArray(userBlock.blockedId, otherIds)),
+              and(eq(userBlock.blockedId, actorId), inArray(userBlock.blockerId, otherIds))
+            )
           )
-        )
+      : [],
+    listingIds.length
+      ? db
+          .select()
+          .from(qualifiedInteraction)
+          .where(inArray(qualifiedInteraction.listingId, listingIds))
+      : [],
+    conversationIds.length
+      ? db
+          .select({
+            conversationId: conversationMessage.conversationId,
+            senderId: conversationMessage.senderId
+          })
+          .from(conversationMessage)
+          .where(inArray(conversationMessage.conversationId, conversationIds))
+          .groupBy(conversationMessage.conversationId, conversationMessage.senderId)
+      : []
+  ]);
+  const names = new Map(people.map((person) => [person.id, person.name]));
+  const interactionIds = interactions.map((item) => item.id);
+  const reviews = interactionIds.length
+    ? await db.select().from(userReview).where(inArray(userReview.interactionId, interactionIds))
     : [];
+  const interactionByConversation = new Map(
+    interactions.map((interaction) => [interaction.conversationId, interaction])
+  );
+  const interactionByListing = new Map(
+    interactions.map((interaction) => [interaction.listingId, interaction])
+  );
+  const messageAuthorKeys = new Set(
+    messageAuthors.map((item) => `${item.conversationId}:${item.senderId}`)
+  );
+  const ownReviewByInteraction = new Map(
+    reviews
+      .filter((review) => review.authorId === actorId)
+      .map((review) => [review.interactionId, review])
+  );
+  const activeCounterpartReviewInteractions = new Set(
+    reviews
+      .filter((review) => review.authorId !== actorId && review.status === 'active')
+      .map((review) => review.interactionId)
+  );
 
   return rows.map((row) => {
     const role = row.buyerId === actorId ? ('buyer' as const) : ('seller' as const);
@@ -181,6 +226,8 @@ export async function listConversations(
       (block) => block.blockerId === otherId && block.blockedId === actorId
     );
     const readSequence = role === 'buyer' ? row.buyerReadSequence : row.sellerReadSequence;
+    const interaction = interactionByConversation.get(row.id);
+    const ownReview = interaction ? ownReviewByInteraction.get(interaction.id) : undefined;
     return {
       id: row.id,
       status: row.status,
@@ -200,6 +247,31 @@ export async function listConversations(
       unreadCount: Math.max(0, row.lastMessageSequence - readSequence),
       blockedByYou,
       blockedByOther,
+      canQualify:
+        role === 'seller' &&
+        row.status === 'open' &&
+        row.listingStatus === 'active' &&
+        !interactionByListing.has(row.listingId) &&
+        messageAuthorKeys.has(`${row.id}:${row.buyerId}`) &&
+        messageAuthorKeys.has(`${row.id}:${row.sellerId}`),
+      interaction: interaction
+        ? {
+            id: interaction.id,
+            qualifiedAt: interaction.qualifiedAt.toISOString(),
+            review: ownReview
+              ? {
+                  id: ownReview.id,
+                  rating: ownReview.rating,
+                  body: ownReview.body,
+                  revealAt: ownReview.revealAt.toISOString(),
+                  visible:
+                    ownReview.status === 'active' &&
+                    (activeCounterpartReviewInteractions.has(interaction.id) ||
+                      ownReview.revealAt <= new Date())
+                }
+              : null
+          }
+        : null,
       canSend:
         row.status === 'open' &&
         (row.listingStatus === 'active' || row.listingStatus === 'sold') &&
