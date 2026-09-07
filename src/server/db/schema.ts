@@ -552,6 +552,7 @@ export const listing = pgTable(
   },
   (table) => [
     uniqueIndex('listing_source_draft_unique').on(table.sourceDraftId),
+    uniqueIndex('listing_id_seller_unique').on(table.id, table.sellerId),
     index('listing_public_feed_idx').on(table.status, table.publishedAt, table.id),
     index('listing_category_feed_idx').on(
       table.categoryId,
@@ -972,6 +973,185 @@ export const listingContactAccess = pgTable(
     check(
       'listing_contact_access_time_order',
       sql`${table.firstAccessedAt} <= ${table.lastAccessedAt}`
+    )
+  ]
+);
+
+export const conversationStatus = pgEnum('conversation_status', ['open', 'closed']);
+
+export const conversation = pgTable(
+  'conversation',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    listingId: uuid('listing_id').notNull(),
+    buyerId: uuid('buyer_id')
+      .notNull()
+      .references(() => user.id, {onDelete: 'restrict'}),
+    sellerId: uuid('seller_id')
+      .notNull()
+      .references(() => user.id, {onDelete: 'restrict'}),
+    status: conversationStatus('status').default('open').notNull(),
+    lastMessageSequence: integer('last_message_sequence').default(0).notNull(),
+    buyerReadSequence: integer('buyer_read_sequence').default(0).notNull(),
+    sellerReadSequence: integer('seller_read_sequence').default(0).notNull(),
+    lastMessageAt: timestamp('last_message_at', {withTimezone: true}),
+    ...timestamps
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.listingId, table.sellerId],
+      foreignColumns: [listing.id, listing.sellerId],
+      name: 'conversation_listing_seller_fk'
+    }).onDelete('restrict'),
+    uniqueIndex('conversation_listing_buyer_unique').on(table.listingId, table.buyerId),
+    index('conversation_buyer_recent_idx').on(table.buyerId, table.lastMessageAt, table.id),
+    index('conversation_seller_recent_idx').on(table.sellerId, table.lastMessageAt, table.id),
+    check('conversation_participants_distinct', sql`${table.buyerId} <> ${table.sellerId}`),
+    check(
+      'conversation_sequence_non_negative',
+      sql`${table.lastMessageSequence} >= 0 and ${table.buyerReadSequence} >= 0 and ${table.sellerReadSequence} >= 0`
+    ),
+    check(
+      'conversation_read_sequences_bounded',
+      sql`${table.buyerReadSequence} <= ${table.lastMessageSequence} and ${table.sellerReadSequence} <= ${table.lastMessageSequence}`
+    ),
+    check(
+      'conversation_last_message_consistent',
+      sql`(${table.lastMessageSequence} = 0 and ${table.lastMessageAt} is null) or (${table.lastMessageSequence} > 0 and ${table.lastMessageAt} is not null)`
+    )
+  ]
+);
+
+export const conversationMessage = pgTable(
+  'conversation_message',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    conversationId: uuid('conversation_id')
+      .notNull()
+      .references(() => conversation.id, {onDelete: 'cascade'}),
+    sequence: integer('sequence').notNull(),
+    senderId: uuid('sender_id')
+      .notNull()
+      .references(() => user.id, {onDelete: 'restrict'}),
+    clientMessageId: uuid('client_message_id').notNull(),
+    body: varchar('body', {length: 2000}).notNull(),
+    createdAt: timestamp('created_at', {withTimezone: true}).defaultNow().notNull()
+  },
+  (table) => [
+    uniqueIndex('conversation_message_sequence_unique').on(table.conversationId, table.sequence),
+    uniqueIndex('conversation_message_client_unique').on(
+      table.conversationId,
+      table.senderId,
+      table.clientMessageId
+    ),
+    index('conversation_message_sender_recent_idx').on(table.senderId, table.createdAt),
+    check('conversation_message_sequence_positive', sql`${table.sequence} > 0`),
+    check(
+      'conversation_message_body_length',
+      sql`char_length(btrim(${table.body})) between 1 and 2000`
+    )
+  ]
+);
+
+export const userBlock = pgTable(
+  'user_block',
+  {
+    blockerId: uuid('blocker_id')
+      .notNull()
+      .references(() => user.id, {onDelete: 'cascade'}),
+    blockedId: uuid('blocked_id')
+      .notNull()
+      .references(() => user.id, {onDelete: 'cascade'}),
+    createdAt: timestamp('created_at', {withTimezone: true}).defaultNow().notNull()
+  },
+  (table) => [
+    primaryKey({columns: [table.blockerId, table.blockedId]}),
+    index('user_block_blocked_idx').on(table.blockedId, table.createdAt),
+    check('user_block_not_self', sql`${table.blockerId} <> ${table.blockedId}`)
+  ]
+);
+
+export const notificationType = pgEnum('notification_type', ['chat_message']);
+export const notificationChannel = pgEnum('notification_channel', ['in_app', 'email', 'push']);
+export const notificationDeliveryStatus = pgEnum('notification_delivery_status', [
+  'pending',
+  'processing',
+  'delivered',
+  'failed',
+  'skipped'
+]);
+
+export const notificationPreference = pgTable(
+  'notification_preference',
+  {
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => user.id, {onDelete: 'cascade'}),
+    type: notificationType('type').notNull(),
+    inAppEnabled: boolean('in_app_enabled').default(true).notNull(),
+    emailEnabled: boolean('email_enabled').default(false).notNull(),
+    pushEnabled: boolean('push_enabled').default(false).notNull(),
+    ...timestamps
+  },
+  (table) => [primaryKey({columns: [table.userId, table.type]})]
+);
+
+export const notification = pgTable(
+  'notification',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    recipientId: uuid('recipient_id')
+      .notNull()
+      .references(() => user.id, {onDelete: 'cascade'}),
+    type: notificationType('type').notNull(),
+    actorId: uuid('actor_id').references(() => user.id, {onDelete: 'restrict'}),
+    listingId: uuid('listing_id').references(() => listing.id, {onDelete: 'cascade'}),
+    conversationId: uuid('conversation_id').references(() => conversation.id, {
+      onDelete: 'cascade'
+    }),
+    messageId: uuid('message_id').references(() => conversationMessage.id, {onDelete: 'cascade'}),
+    readAt: timestamp('read_at', {withTimezone: true}),
+    createdAt: timestamp('created_at', {withTimezone: true}).defaultNow().notNull()
+  },
+  (table) => [
+    uniqueIndex('notification_recipient_message_unique').on(table.recipientId, table.messageId),
+    index('notification_recipient_unread_idx').on(table.recipientId, table.readAt, table.createdAt),
+    check(
+      'notification_chat_references_required',
+      sql`${table.type} <> 'chat_message' or (${table.actorId} is not null and ${table.listingId} is not null and ${table.conversationId} is not null and ${table.messageId} is not null)`
+    ),
+    check(
+      'notification_actor_not_recipient',
+      sql`${table.actorId} is null or ${table.actorId} <> ${table.recipientId}`
+    )
+  ]
+);
+
+export const notificationDelivery = pgTable(
+  'notification_delivery',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    notificationId: uuid('notification_id')
+      .notNull()
+      .references(() => notification.id, {onDelete: 'cascade'}),
+    channel: notificationChannel('channel').notNull(),
+    status: notificationDeliveryStatus('status').default('pending').notNull(),
+    attempts: integer('attempts').default(0).notNull(),
+    availableAt: timestamp('available_at', {withTimezone: true}).defaultNow().notNull(),
+    leasedAt: timestamp('leased_at', {withTimezone: true}),
+    leaseOwner: varchar('lease_owner', {length: 100}),
+    deliveredAt: timestamp('delivered_at', {withTimezone: true}),
+    providerMessageId: varchar('provider_message_id', {length: 240}),
+    lastError: varchar('last_error', {length: 240}),
+    ...timestamps
+  },
+  (table) => [
+    uniqueIndex('notification_delivery_channel_unique').on(table.notificationId, table.channel),
+    index('notification_delivery_pending_idx').on(table.status, table.availableAt, table.createdAt),
+    check('notification_delivery_attempts_non_negative', sql`${table.attempts} >= 0`),
+    check(
+      'notification_delivery_delivered_at_consistent',
+      sql`${table.status} <> 'delivered' or ${table.deliveredAt} is not null`
     )
   ]
 );

@@ -16,6 +16,10 @@ Favorites and saved searches never accept an owner ID from the client. The actor
 
 Listing reports and appeals also derive the actor exclusively from the session. Reports require an active listing owned by another user, are unique per reporter/listing and are limited to ten new targets per rolling hour under a serialized actor lock. Appeals require the listing seller and return `NOT_FOUND` across the ownership boundary. Staff report/appeal decisions verify a live role and prohibit acting on the reviewer's own listing inside the locking transaction.
 
+Conversation APIs derive the actor from the session and resolve the other participant only from the PostgreSQL conversation. Starting a thread derives its seller from the active listing, rejects self-contact and creates at most one conversation per listing/buyer. Every read, send, read-cursor update and block operation rechecks participant membership; cross-participant IDs return `NOT_FOUND`. Either-direction blocks stop new messages but do not erase evidence/history. Actor-row serialization and a rolling per-sender bound reduce basic flooding, while client-generated UUIDs make retries idempotent.
+
+Notifications are recipient-owned server projections; clients cannot choose a recipient, actor, listing or message reference. A notification read update includes the current recipient in its predicate. External email/push preferences cannot be enabled until a verified provider exists, preventing a disabled adapter from simulating delivery.
+
 ## Web/API controls
 
 Validate server-side, escape output, apply CSP/security headers, CSRF defenses where cookies authorize mutations, strict CORS/trusted origins, request size/time limits and SSRF-safe outbound clients. Return safe errors with correlation IDs.
@@ -29,6 +33,8 @@ The implemented ingress requires draft ownership, an exact declared size and SHA
 ## Privacy
 
 Collect minimum data. Never publish email, IP, device identifiers, exact private address, internal risk state or private account data. Define retention/export/deletion before launch. Azerbaijan privacy/e-commerce obligations require qualified legal review before production.
+
+Chat text and notification metadata are private personal data. They are excluded from public pages, search indexes and logs. Production requires retention/export/deletion rules, staff-access policy and a lawful moderation/report workflow before message review is introduced.
 
 An authenticated buyer may request the verified phone of a different seller only for an active listing. The exact number is returned in a private non-cacheable response, never embedded in public HTML, search, logs or the contact audit. Per-buyer access is recorded and bounded to reduce harvesting; data retention and seller visibility controls require launch review.
 

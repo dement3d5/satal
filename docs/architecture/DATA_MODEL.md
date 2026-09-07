@@ -112,3 +112,16 @@ The lifecycle is `pending_upload → quarantined → processing → ready`, with
 A user can create at most one report per listing. Application rules require the listing to be active, reject self-reporting, serialize each reporter's writes and enforce ten new reports per rolling hour. The unique reporter/listing index makes retries idempotent. Confirming a violation locks the target, changes the listing from `active` to `removed`, resolves all open reports for the listing, writes one action per report, appends listing history and emits `listing.removed` atomically.
 
 An appeal is unique per rejection action, and a partial unique index allows only one open appeal per listing. Application rules require the current seller, a rejected listing/case and a concrete rejecting action. Acceptance changes the listing from `rejected` to `pending_review`, increments its version and reopens the existing moderation case at elevated priority; it does not publish. Prior decisions remain immutable. Staff cannot decide reports or appeals concerning their own listing.
+
+### Conversations, blocks and notifications
+
+- `conversation`: one listing/buyer aggregate with seller identity constrained to the listing, lifecycle, monotonic last-message sequence and separate buyer/seller read cursors;
+- `conversation_message`: immutable ordered text messages with a unique `(conversation, sender, client_message_id)` retry key;
+- `user_block`: directed blocker/blocked relationship; either direction disables new messages without deleting history;
+- `notification_preference`: per-user/event channel choices, defaulting chat to in-app only;
+- `notification`: private recipient-owned event projection tied to the concrete message, conversation and listing;
+- `notification_delivery`: one provider-neutral row per notification/channel with status, lease, attempts and safe provider metadata.
+
+Conversation rows are unique by listing and buyer, require distinct participants and use integer sequences so unread counts and pagination do not depend on timestamp precision. Starting requires an active PostgreSQL listing and its seller is never supplied by the client. Reads authorize either recorded participant and cross-participant IDs return `NOT_FOUND`. New messages lock the actor and conversation, enforce a rolling rate bound, permit sold-listing follow-up, reject other inactive states and honor blocks in both directions. Idempotent retries may still return the already-persisted message after a later block or lifecycle change.
+
+Message persistence advances the sender's read cursor and creates recipient notification/delivery records plus `chat.message_sent` in the same transaction. In-app delivery is immediately durable; email and push schema/ports exist but cannot be enabled through the API until verified providers are configured. Notification records are unique per recipient/message and are never public or indexed in search.

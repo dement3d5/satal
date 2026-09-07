@@ -3,6 +3,7 @@ import {notFound} from 'next/navigation';
 import {getTranslations} from 'next-intl/server';
 
 import {SiteHeader} from '@/components/site-header';
+import {StartConversation} from '@/modules/chat/ui/start-conversation';
 import {FavoriteButton} from '@/modules/engagement/ui/favorite-button';
 import {ContactButton} from '@/modules/identity/ui/contact-button';
 import type {AppLocale} from '@/i18n/routing';
@@ -127,6 +128,22 @@ export default async function ListingPage({params}: PageProps) {
               limit: t('contactLimit'),
               error: t('contactError'),
               privacy: t('contactPrivacy')
+            }}
+          />
+          <StartConversation
+            listingId={item.id}
+            locale={locale}
+            labels={{
+              action: t('messageAction'),
+              title: t('messageTitle'),
+              placeholder: t('messagePlaceholder'),
+              send: t('messageSend'),
+              sending: t('messageSending'),
+              signIn: t('messageSignIn'),
+              unavailable: t('messageUnavailable'),
+              rateLimit: t('messageRateLimit'),
+              error: t('messageError'),
+              safety: t('messageSafety')
             }}
           />
           <ReportListing

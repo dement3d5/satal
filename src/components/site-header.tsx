@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import {getTranslations} from 'next-intl/server';
 
 import type {AppLocale} from '@/i18n/routing';
 
@@ -10,13 +11,14 @@ interface SiteHeaderProps {
   accountLabel: string;
 }
 
-export function SiteHeader({
+export async function SiteHeader({
   locale,
   languageLabel,
   sellLabel,
   savedLabel,
   accountLabel
 }: SiteHeaderProps) {
+  const navigation = await getTranslations('navigation');
   return (
     <header className="site-header">
       <Link className="brand" href={`/${locale}`} aria-label="Satal">
@@ -27,6 +29,14 @@ export function SiteHeader({
       </Link>
 
       <div className="header-actions">
+        <Link className="header-utility" href={`/${locale}/messages`}>
+          <span aria-hidden="true">✉</span>
+          <span>{navigation('messages')}</span>
+        </Link>
+        <Link className="header-utility" href={`/${locale}/notifications`}>
+          <span aria-hidden="true">●</span>
+          <span>{navigation('notifications')}</span>
+        </Link>
         <Link className="header-account" href={`/${locale}/account`} aria-label={accountLabel}>
           ◎
         </Link>

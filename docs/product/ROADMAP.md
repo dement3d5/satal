@@ -44,7 +44,9 @@ Phase 3 moderation boundaries now include explicit staff roles, a localized owne
 
 In progress. The first trust milestone adds authenticated reports on active listings, seller appeals tied to concrete rejection actions, distinct staff queues, audited report/appeal decisions and safe reopening into `pending_review`. Confirmed reports remove listings from PostgreSQL visibility and emit a search-removal event; accepted appeals never publish automatically.
 
-Remaining: conversation-scoped chat and blocks, notification center/preferences/delivery, ratings after a qualified interaction, explainable risk signals, bans/enforcement, report/appeal operational metrics and broader audit tools.
+The communication milestone adds one buyer/seller conversation per listing, persisted idempotent text messages, sequence-based read state, bidirectional participant blocks and private in-app notification records/preferences. Provider-neutral delivery records and outbox events are ready for later verified email/push adapters; disabled external channels fail closed.
+
+Remaining: message/conversation reporting, production realtime delivery, ratings after a qualified interaction, explainable risk signals, bans/enforcement, report/appeal operational metrics and broader audit tools.
 
 ## Phase 5 — shops
 

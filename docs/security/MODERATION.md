@@ -20,7 +20,9 @@ The current workspace enforces explicit, optionally expiring PostgreSQL role gra
 
 ## Reports and chat safety
 
-Listing reports support fraud, wrong category, prohibited item, duplicate, misleading price, stale listing and other. Only authenticated non-sellers may report active listings; one reporter/listing relationship plus a serialized ten-per-hour limit reduces retry duplication and basic flooding. Staff may dismiss or confirm a report. Confirmation atomically removes the listing and resolves every open report without exposing reporter identities to the seller. Chat safety remains a later slice and will combine URLs, payment language, account/reputation and repeated patterns; users will be able to block and report conversations/messages.
+Listing reports support fraud, wrong category, prohibited item, duplicate, misleading price, stale listing and other. Only authenticated non-sellers may report active listings; one reporter/listing relationship plus a serialized ten-per-hour limit reduces retry duplication and basic flooding. Staff may dismiss or confirm a report. Confirmation atomically removes the listing and resolves every open report without exposing reporter identities to the seller.
+
+Chat now has participant-only listing conversations, a per-sender rate bound and bidirectional blocks. Messages remain persisted after a block so users cannot erase the other participant's history. Message/conversation reporting and staff evidence access are deliberately not exposed yet; they require explicit reason contracts, least-privilege staff DTOs, retention policy and audit before release. Later explainable signals may consider URLs, payment language, account/reputation and repeated patterns, but no opaque keyword rule currently removes or bans a user.
 
 ## Policy dependency
 

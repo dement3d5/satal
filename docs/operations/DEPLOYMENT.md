@@ -28,6 +28,8 @@ The worker image can run `pnpm media:process` as a bounded one-shot media batch.
 
 Before opening public reporting, publish the reviewed marketplace policy and staff response procedure, monitor report/appeal age and volume, and define retention/export/deletion handling for free-text statements. Free-text must never be copied into logs or public listing/search projections. Staff roles remain owner-controlled and require stronger account protection before production.
 
+Before opening chat publicly, define message retention/export/deletion and lawful staff-access procedures, add conversation/message reporting, tune rate/abuse limits under load and monitor message/outbox age. The current client refreshes private PostgreSQL state; production realtime requires a separately authenticated WebSocket/SSE gateway that consumes `chat.message_sent` without bypassing service authorization. Email and push delivery must stay disabled until a least-privilege provider adapter, verified sender/domain, bounce/failure handling and end-to-end delivery test exist.
+
 Set `SEARCH_PROVIDER=typesense`, `TYPESENSE_URL` and a least-privilege `TYPESENSE_API_KEY` only after the service is reachable. Run `pnpm search:reindex` once to create and atomically attach the initial collection alias, then schedule `pnpm search:process` as a repeated bounded outbox drain. Alert on unprocessed event age, attempts and `last_error`. PostgreSQL remains usable in degraded mode, but this is not a substitute for monitoring and restoring Typesense.
 
 ## Reliability

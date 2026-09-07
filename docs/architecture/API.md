@@ -76,3 +76,11 @@ Better Auth owns `/api/auth/*`, credential hashing, database sessions, HttpOnly 
 `GET|POST /api/v1/listings/{listingId}/appeals` is seller-owner only. An appeal must target the latest concrete rejection, accepts a bounded seller statement and is idempotent for that rejection. A cross-owner listing returns `NOT_FOUND`; a listing outside the rejected lifecycle returns a conflict.
 
 `GET /api/v1/moderation/reports` and `GET /api/v1/moderation/appeals` return minimal localized staff queues. `POST /api/v1/moderation/reports/{reportId}/decision` dismisses a report or removes the still-active listing. `POST /api/v1/moderation/appeals/{appealId}/decision` rejects with a required public response or accepts by returning the listing to `pending_review`. Every endpoint rechecks a live staff grant, lifecycle and self-review rule inside the transaction. All responses are private and `no-store`.
+
+## Conversations, blocks and notifications
+
+`GET|POST /api/v1/conversations` lists the authenticated actor's listing conversations or starts/reuses one with an initial text message. The server derives the buyer from the session and seller from the active listing. Each mutation requires a UUID client message key; repeated delivery returns the original immutable message instead of duplicating it.
+
+`GET|POST /api/v1/conversations/{conversationId}/messages` exposes bounded sequence pagination or appends a message only to a recorded participant. `POST /api/v1/conversations/{conversationId}/read` advances only that participant's read cursor and marks matching in-app notifications read. Existing history remains available when a listing becomes inactive, but new messages require an open conversation, an active/sold listing and no block in either direction.
+
+`PUT|DELETE /api/v1/blocks/{userId}` creates/removes a directed block only for a user with whom the actor shares a conversation. `GET /api/v1/notifications` returns private in-app records and unread count; `PATCH /api/v1/notifications/{notificationId}` performs an owner-only read transition. `GET|PATCH /api/v1/notification-preferences` reads or changes chat delivery preferences. Email/push enablement returns service unavailable until a verified adapter exists. Every response is private and `no-store`.

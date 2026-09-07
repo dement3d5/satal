@@ -35,3 +35,7 @@ Search, media upload and publication now have real application boundaries; phone
 ## Trust interactions
 
 An authenticated non-seller can report an active listing from its seller card without seeing or supplying ownership identifiers. The form uses a short fixed reason list, optional bounded context and clear authenticated/rate-limited/error/success states. Seller rejection details live with the seller's own listing in the account. One compact appeal form preserves the statement after validation and shows open, accepted and rejected outcomes plus the safe staff response. Staff see new listings, user reports and seller appeals as separate queue sections so each decision has an explicit consequence.
+
+The listing seller card also starts a private conversation with one bounded text message. The inbox keeps the listing context visible, separates conversations from message history, shows unread state, preserves input on failures and explains rate/lifecycle/block outcomes without revealing which internal check failed. A participant can block or unblock the other from the conversation; history remains readable. The client refreshes persisted state while a production realtime transport remains pending.
+
+The notification center shows recipient-only message events, unread state and a direct route back to the conversation. In-app chat notifications can be disabled. Email and push controls remain visibly unavailable until real delivery providers are verified, so the interface never claims an external notification was sent.

@@ -39,13 +39,15 @@ The `identity` boundary delegates credentials, password hashing, sessions, secur
 
 The `moderation` boundary owns staff capabilities, listing/report/appeal queues and append-only decisions. Submission creates a `pending_review` listing and one open case in the publication transaction. A separate staff-authorized transaction locks the case, blocks self-review, records the decision and seller-safe explanation, changes PostgreSQL visibility and emits the existing `listing.published` event only after approval. Authenticated non-sellers may report an active listing through a bounded, idempotent relationship; staff can dismiss the report or atomically remove the listing and resolve every open report for it. A seller appeal targets one concrete rejection action. Accepting it reopens the same listing aggregate and moderation case in `pending_review`, preserving prior actions and requiring a fresh moderation decision. No privileged identity is seeded or assignable from a public API.
 
+The `chat` boundary owns listing-scoped buyer/seller conversations, message sequencing, participant authorization, read cursors, rate limits and blocks. Starting a conversation requires an active listing and a non-seller actor; an existing conversation remains readable after lifecycle changes, while new messages are limited to active or sold listings and are denied if either participant has blocked the other. The `notifications` boundary owns private recipient records, per-event preferences and provider-neutral delivery rows. A message, conversation cursor update, notification/delivery record and outbox event are committed atomically; no client-supplied participant or recipient identity is trusted.
+
 ## Background work
 
 Use a PostgreSQL job/outbox table with leases, retry policy and `FOR UPDATE SKIP LOCKED`. This is sufficient for early volume and avoids Redis/queue operations. Introduce a dedicated queue only after measured contention or throughput demands it.
 
 ## Realtime
 
-A WebSocket/Socket.IO gateway lives beside the web process initially. Messages are persisted before delivery. A single instance needs no broker; multi-instance coordination can later add PostgreSQL notifications or Redis after measurement.
+Messages are persisted before delivery and the current client refreshes from private APIs. The transactional `chat.message_sent` event is the handoff for a later WebSocket/SSE gateway; a single instance can consume it without a broker, while multi-instance coordination may add PostgreSQL notifications or Redis only after measurement. Realtime transport never becomes the source of truth.
 
 ## Dependency direction
 
@@ -61,4 +63,4 @@ A WebSocket/Socket.IO gateway lives beside the web process initially. Messages a
 
 The media boundary now authorizes owner-only, short-lived uploads, stores originals under server-generated quarantine keys and verifies the byte length, SHA-256 digest and file signature before recording them as quarantined. Draft ordering and cover selection remain PostgreSQL state and are copied to the published listing transactionally. Quarantined originals are never public. The worker uses a real image decoder, rejects oversized/animated/unsupported input, applies orientation, strips source metadata through re-encoding and creates bounded WebP thumbnail/card/detail variants before changing an asset to `ready`. Production worker scheduling and the R2 adapter remain deployment responsibilities; R2 deliberately fails closed until configured and verified.
 
-Search is implemented behind `SearchGateway`: Typesense is a derived, versioned collection fed by leased PostgreSQL outbox work, while an indexed PostgreSQL query path provides degraded availability. Both paths validate category attribute applicability and hydrate authoritative active listing cards. The index worker consumes both `listing.published` and `listing.removed`; PostgreSQL visibility remains authoritative during any index delay. Chat, shops and payments remain outside this milestone.
+Search is implemented behind `SearchGateway`: Typesense is a derived, versioned collection fed by leased PostgreSQL outbox work, while an indexed PostgreSQL query path provides degraded availability. Both paths validate category attribute applicability and hydrate authoritative active listing cards. The index worker consumes both `listing.published` and `listing.removed`; PostgreSQL visibility remains authoritative during any index delay. Shops and payments remain outside this milestone.

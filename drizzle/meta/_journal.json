@@ -64,6 +64,13 @@
       "when": 1788618571140,
       "tag": "0008_perpetual_jackal",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1788738813712,
+      "tag": "0009_rich_human_fly",
+      "breakpoints": true
     }
   ]
 }
