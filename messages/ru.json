@@ -1,7 +1,10 @@
 {
   "navigation": {
     "messages": "Сообщения",
-    "notifications": "Уведомления"
+    "notifications": "Уведомления",
+    "saved": "Избранное",
+    "signIn": "Войти",
+    "personalNavigation": "Личные разделы"
   },
   "home": {
     "accountLink": "Аккаунт",
@@ -347,6 +350,15 @@
     "messageReportDismiss": "Отклонить жалобу",
     "messageReportCloseTitle": "Подтвердить нарушение в чате",
     "messageReportClose": "Закрыть диалог",
+    "reviewReportsTitle": "Жалобы на отзывы",
+    "reviewReportsEmpty": "Новых жалоб на отзывы нет.",
+    "reviewReportAuthor": "Автор отзыва",
+    "reviewReportSubject": "О ком отзыв",
+    "reviewReportContent": "Отзыв с жалобой",
+    "reviewReportDetails": "Пояснение пользователя",
+    "reviewReportDismiss": "Отклонить жалобу",
+    "reviewReportHideTitle": "Подтвердить нарушение в отзыве",
+    "reviewReportHide": "Скрыть отзыв",
     "appealsTitle": "Апелляции продавцов",
     "appealsEmpty": "Новых апелляций нет.",
     "appealOriginalDecision": "Исходное решение",
@@ -376,6 +388,14 @@
       "misleadingPrice": "Неверная цена",
       "staleListing": "Неактуальное объявление",
       "other": "Другая причина"
+    },
+    "reviewReportReasons": {
+      "spam": "Спам",
+      "harassment": "Оскорбления или угрозы",
+      "personalData": "Публикация личных данных",
+      "irrelevant": "Не относится к сделке",
+      "prohibitedContent": "Запрещённый контент",
+      "other": "Другое"
     },
     "messageReportReasons": {
       "spam": "Спам",
@@ -458,6 +478,24 @@
     "noRating": "Пока нет рейтинга",
     "reviewsTitle": "Отзывы после подтверждённых взаимодействий",
     "reviewsEmpty": "У пользователя пока нет публичных отзывов.",
+    "reportAction": "Пожаловаться",
+    "reportTitle": "Сообщить о нарушении в отзыве",
+    "reportReason": "Причина",
+    "reportDetails": "Дополнительная информация (необязательно)",
+    "reportDetailsHint": "Не указывайте пароли и другие секреты. Для причины «Другое» добавьте пояснение.",
+    "reportSubmit": "Отправить жалобу",
+    "reporting": "Отправляем...",
+    "reportSuccess": "Жалоба отправлена",
+    "reportRateLimit": "Вы отправили слишком много жалоб. Попробуйте позже.",
+    "reportError": "Не удалось отправить жалобу. Проверьте пояснение и попробуйте снова.",
+    "reportReasons": {
+      "spam": "Спам",
+      "harassment": "Оскорбления или угрозы",
+      "personalData": "Публикация личных данных",
+      "irrelevant": "Не относится к сделке",
+      "prohibitedContent": "Запрещённый контент",
+      "other": "Другое"
+    },
     "ratingLabel": "Оценка: {rating} из 5"
   },
   "notifications": {

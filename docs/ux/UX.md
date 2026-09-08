@@ -12,6 +12,8 @@ Light neutral surfaces, near-black text, one calm accent, moderate radii, restra
 
 Desktop uses a prominent search/location header, direct category links, sidebar filters and list-first results. Mobile uses touch-sized controls, compact cards, a dedicated category view, filter sheet and sticky listing contact actions where appropriate. Do not merely shrink desktop CSS.
 
+The global header keeps discovery actions clear without exposing irrelevant private destinations. Guests see language selection, sign-in and the primary listing action; messages, saved items, notifications and the profile menu render only after the session is confirmed. The language menu preserves the current localized route, while compact icon labels and account actions remain keyboard accessible across breakpoints.
+
 ## Localization
 
 AZ is default; RU and EN are complete peers. Routes and metadata are localized. Translation keys, pluralization, dates, numbers and AZN formatting use a real i18n layer. User-generated listing content is stored separately and is not assumed translated.
@@ -43,6 +45,10 @@ Each received message has a compact, secondary report action with a fixed locali
 After both sides have messaged, the seller sees a deliberate confirmation for “sold to this buyer.” The copy explains that it marks the listing sold and cannot be undone in the current UI. Once confirmed, each participant sees one compact rating/review form in the conversation. Submitted feedback is immutable and the UI states whether it is still blind or already public. Seller cards link to a public profile that shows only revealed review aggregates and review content, never contact or conversation data.
 
 The notification center shows recipient-only message events, unread state and a direct route back to the conversation. In-app chat notifications can be disabled. Email and push controls remain visibly unavailable until real delivery providers are verified, so the interface never claims an external notification was sent.
+
+## Review reporting
+
+Authenticated readers other than the author get a compact report control beneath each public review. It uses a fixed localized reason list, optional bounded context and explicit success, rate-limit and error states. Staff see reported reviews in a separate queue with the author, subject and exact review content, but never reporter identity. The two decisions state their scope plainly: dismiss the report or hide the review.
 
 ## Account dashboard
 

@@ -1150,6 +1150,72 @@ export const userReview = pgTable(
   ]
 );
 
+export const reviewReportReason = pgEnum('review_report_reason', [
+  'spam',
+  'harassment',
+  'personal_data',
+  'irrelevant',
+  'prohibited_content',
+  'other'
+]);
+export const reviewReportStatus = pgEnum('review_report_status', ['open', 'dismissed', 'resolved']);
+export const reviewReportActionType = pgEnum('review_report_action_type', [
+  'dismiss',
+  'hide_review'
+]);
+
+export const reviewReport = pgTable(
+  'review_report',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    reviewId: uuid('review_id')
+      .notNull()
+      .references(() => userReview.id, {onDelete: 'restrict'}),
+    reporterId: uuid('reporter_id')
+      .notNull()
+      .references(() => user.id, {onDelete: 'restrict'}),
+    reason: reviewReportReason('reason').notNull(),
+    details: varchar('details', {length: 1000}),
+    status: reviewReportStatus('status').default('open').notNull(),
+    resolvedAt: timestamp('resolved_at', {withTimezone: true}),
+    ...timestamps
+  },
+  (table) => [
+    uniqueIndex('review_report_reporter_review_unique').on(table.reporterId, table.reviewId),
+    index('review_report_queue_idx').on(table.status, table.createdAt, table.id),
+    index('review_report_review_status_idx').on(table.reviewId, table.status, table.createdAt),
+    index('review_report_reporter_created_idx').on(table.reporterId, table.createdAt),
+    check(
+      'review_report_details_length',
+      sql`${table.details} is null or length(btrim(${table.details})) between 10 and 1000`
+    ),
+    check(
+      'review_report_resolution_consistent',
+      sql`(${table.status} = 'open' and ${table.resolvedAt} is null) or (${table.status} <> 'open' and ${table.resolvedAt} is not null)`
+    )
+  ]
+);
+
+export const reviewReportAction = pgTable(
+  'review_report_action',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    reportId: uuid('report_id')
+      .notNull()
+      .references(() => reviewReport.id, {onDelete: 'restrict'}),
+    actorId: uuid('actor_id')
+      .notNull()
+      .references(() => user.id, {onDelete: 'restrict'}),
+    action: reviewReportActionType('action').notNull(),
+    internalNote: varchar('internal_note', {length: 2000}),
+    createdAt: timestamp('created_at', {withTimezone: true}).defaultNow().notNull()
+  },
+  (table) => [
+    uniqueIndex('review_report_action_report_unique').on(table.reportId),
+    index('review_report_action_actor_created_idx').on(table.actorId, table.createdAt)
+  ]
+);
+
 export const messageReportReason = pgEnum('message_report_reason', [
   'spam',
   'fraud',

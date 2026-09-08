@@ -24,6 +24,10 @@ Reputation writes are limited to a seller-confirmed interaction tied to the exac
 
 Notifications are recipient-owned server projections; clients cannot choose a recipient, actor, listing or message reference. A notification read update includes the current recipient in its predicate. External email/push preferences cannot be enabled until a verified provider exists, preventing a disabled adapter from simulating delivery.
 
+## Review-report isolation
+
+Review reports accept only public active review IDs, reject author self-reporting, use an idempotent reporter/review relationship and enforce a serialized rolling rate limit. Staff DTOs omit reporter identity. A staff member who authored, received or reported the review is excluded from both queue and decision paths. A confirmed decision hides only the review, is append-only audited and does not create an account sanction.
+
 ## Web/API controls
 
 Validate server-side, escape output, apply CSP/security headers, CSRF defenses where cookies authorize mutations, strict CORS/trusted origins, request size/time limits and SSRF-safe outbound clients. Return safe errors with correlation IDs.

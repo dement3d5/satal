@@ -24,6 +24,8 @@ Listing reports support fraud, wrong category, prohibited item, duplicate, misle
 
 Chat has participant-only listing conversations, a per-sender rate bound and bidirectional blocks. Messages remain persisted after a block so users cannot erase the other participant's history. A recipient may report a concrete immutable message once using a bounded reason/context contract, with a serialized ten-per-hour limit. The staff queue exposes only that message and essential listing/sender context, excludes conversation participants, and records every dismissal or confirmed closure. Confirmation closes only the affected conversation and resolves its open reports; it does not ban either account. Later explainable signals may consider URLs, payment language, account/reputation and repeated patterns, but no opaque keyword rule currently removes or bans a user.
 
+Public review reports use spam, harassment, exposed personal data, irrelevant content, prohibited content and other as bounded reasons. Only authenticated non-authors may report a currently visible review. The independent staff queue omits reporter identity and excludes the review author, subject and every user who reported that review. Staff may dismiss one report or atomically hide the review and resolve all open reports for it. Hiding immediately removes the review from the public list and rating aggregate; it does not ban an account.
+
 ## Policy dependency
 
 Prohibited/restricted item categories are disabled until an Azerbaijan-specific policy is legally reviewed. The system must not invent law or expose internal detection rules to attackers.

@@ -3,6 +3,9 @@ import {getTranslations} from 'next-intl/server';
 
 import type {AppLocale} from '@/i18n/routing';
 
+import {HeaderIdentityActions} from './header-identity-actions';
+import {LanguageSwitcher} from './language-switcher';
+
 interface SiteHeaderProps {
   locale: AppLocale;
   languageLabel: string;
@@ -29,37 +32,25 @@ export async function SiteHeader({
       </Link>
 
       <div className="header-actions">
-        <Link className="header-utility" href={`/${locale}/messages`}>
-          <span aria-hidden="true">✉</span>
-          <span>{navigation('messages')}</span>
-        </Link>
-        <Link className="header-utility" href={`/${locale}/notifications`}>
-          <span aria-hidden="true">●</span>
-          <span>{navigation('notifications')}</span>
-        </Link>
-        <Link className="header-account" href={`/${locale}/account`} aria-label={accountLabel}>
-          ◎
-        </Link>
-        {savedLabel && (
-          <Link className="header-saved" href={`/${locale}/saved`}>
-            ♥ <span>{savedLabel}</span>
-          </Link>
-        )}
-        <nav className="language-nav" aria-label={languageLabel}>
-          {(['az', 'ru', 'en'] as const).map((item) => (
-            <Link
-              className={item === locale ? 'is-active' : undefined}
-              href={`/${item}`}
-              key={item}
-              lang={item}
-            >
-              {item.toUpperCase()}
-            </Link>
-          ))}
-        </nav>
-        <Link className="button button-primary header-sell" href={`/${locale}/sell`}>
+        <HeaderIdentityActions
+          locale={locale}
+          labels={{
+            messages: navigation('messages'),
+            notifications: navigation('notifications'),
+            saved: savedLabel ?? navigation('saved'),
+            account: accountLabel,
+            signIn: navigation('signIn'),
+            personalNavigation: navigation('personalNavigation')
+          }}
+        />
+        <LanguageSwitcher locale={locale} label={languageLabel} />
+        <Link
+          className="button button-primary header-sell"
+          href={`/${locale}/sell`}
+          aria-label={sellLabel}
+        >
           <PlusIcon />
-          {sellLabel}
+          <span>{sellLabel}</span>
         </Link>
       </div>
     </header>

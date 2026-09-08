@@ -50,7 +50,9 @@ The chat-safety milestone adds participant-only reports on immutable messages, a
 
 The reputation milestone adds seller-confirmed qualified interactions after a bidirectional conversation, an atomic `active → sold` transition, one immutable bilateral review per participant and public reputation profiles. Reviews remain mutually blind until both sides submit or the first review reaches its 14-day reveal date.
 
-Remaining: production realtime delivery, explainable risk signals, bans/enforcement, review-report moderation, report/appeal operational metrics and broader audit tools.
+The review-safety milestone adds authenticated reports on public reviews, idempotency and actor rate limits, an independent least-privilege staff queue, append-only decisions and atomic hiding from both the review list and rating aggregate. It deliberately does not infer an account ban from one review decision. The global header is now session-aware and keeps messages, saved items, notifications and profile navigation out of the guest experience.
+
+Remaining: production realtime delivery, explainable risk signals, bans/enforcement, report/appeal operational metrics and broader audit tools.
 
 ## Phase 5 — shops
 

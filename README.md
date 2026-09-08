@@ -24,6 +24,8 @@ Phase 2, the Phase 3 marketplace foundation and the Phase 4 trust/communication 
 - listing-scoped buyer/seller conversations, idempotent text messages, read cursors, participant blocks and private in-app notifications/preferences.
 - participant-only message reports, a least-privilege staff queue and audited conversation closure for confirmed chat violations.
 - seller-confirmed qualified interactions, atomic sold-listing transition, double-blind bilateral reviews and public reputation profiles.
+- authenticated public-review reports, independent staff review and audited removal from reputation aggregates.
+- an auth-aware responsive header that keeps account-only destinations out of the guest navigation.
 
 ## Requirements
 

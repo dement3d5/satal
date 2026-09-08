@@ -134,6 +134,10 @@ Only the recorded recipient can report a concrete message, and one reporter/mess
 
 - `qualified_interaction`: one seller-confirmed buyer/seller interaction per listing and conversation, tied by a composite foreign key to the exact conversation identities;
 - `user_review`: one immutable rating and optional bounded review per interaction author, with derived subject, moderation status and blind reveal timestamp.
+- `review_report`: one reporter/review relationship with bounded reason/context and `open|dismissed|resolved` lifecycle;
+- `review_report_action`: one append-only staff dismissal/hiding decision per resolved report.
+
+Only an authenticated user other than the review author may report a currently public, active review. One reporter/review unique index makes retries idempotent, while actor locking enforces ten new review reports per rolling hour. Staff queues omit reporter identity and exclude the review author, review subject and anyone who reported the same review. Dismissal resolves one report; confirmed abuse hides the review, resolves every open report for it, appends one action per report and emits `reputation.review_hidden` atomically. Public rating lists and aggregates share the active visibility predicate, so hidden reviews disappear immediately. Account-wide sanctions remain outside this aggregate.
 
 Only the recorded seller may qualify an open conversation for an active listing, and both participants must already have sent at least one message. The transaction locks the listing/conversation, creates the unique interaction, changes the listing to `sold`, sets `sold_at`, appends `listing_status_history` and emits `listing.sold`. The search worker treats that event as a removal; PostgreSQL remains the immediate visibility authority.
 

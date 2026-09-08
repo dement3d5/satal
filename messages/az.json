@@ -1,7 +1,10 @@
 {
   "navigation": {
     "messages": "Mesajlar",
-    "notifications": "Bildirişlər"
+    "notifications": "Bildirişlər",
+    "saved": "Seçilmişlər",
+    "signIn": "Daxil ol",
+    "personalNavigation": "Şəxsi bölmələr"
   },
   "home": {
     "accountLink": "Hesab",
@@ -347,6 +350,15 @@
     "messageReportDismiss": "Şikayəti rədd et",
     "messageReportCloseTitle": "Çat pozuntusunu təsdiqlə",
     "messageReportClose": "Dialoqu bağla",
+    "reviewReportsTitle": "Rəy şikayətləri",
+    "reviewReportsEmpty": "Yeni rəy şikayəti yoxdur.",
+    "reviewReportAuthor": "Rəyin müəllifi",
+    "reviewReportSubject": "Rəyin aid olduğu şəxs",
+    "reviewReportContent": "Şikayət edilən rəy",
+    "reviewReportDetails": "İstifadəçi izahı",
+    "reviewReportDismiss": "Şikayəti rədd et",
+    "reviewReportHideTitle": "Rəydə pozuntunu təsdiqlə",
+    "reviewReportHide": "Rəyi gizlət",
     "appealsTitle": "Satıcı apellyasiyaları",
     "appealsEmpty": "Yeni apellyasiya yoxdur.",
     "appealOriginalDecision": "İlkin qərar",
@@ -376,6 +388,14 @@
       "misleadingPrice": "Yanlış qiymət",
       "staleListing": "Aktual olmayan elan",
       "other": "Digər səbəb"
+    },
+    "reviewReportReasons": {
+      "spam": "Spam",
+      "harassment": "Təhqir və ya təhdid",
+      "personalData": "Şəxsi məlumatların yayılması",
+      "irrelevant": "Alqı-satqıya aid deyil",
+      "prohibitedContent": "Qadağan olunmuş məzmun",
+      "other": "Digər"
     },
     "messageReportReasons": {
       "spam": "Spam",
@@ -458,6 +478,24 @@
     "noRating": "Hələ reytinq yoxdur",
     "reviewsTitle": "Təsdiqlənmiş qarşılıqlı əlaqə rəyləri",
     "reviewsEmpty": "Bu istifadəçinin hələ açıq rəyi yoxdur.",
+    "reportAction": "Şikayət et",
+    "reportTitle": "Rəydə pozuntu barədə məlumat verin",
+    "reportReason": "Səbəb",
+    "reportDetails": "Əlavə məlumat (məcburi deyil)",
+    "reportDetailsHint": "Parol və başqa məxfi məlumatları yazmayın. «Digər» səbəbi üçün izah əlavə edin.",
+    "reportSubmit": "Şikayəti göndər",
+    "reporting": "Göndərilir...",
+    "reportSuccess": "Şikayət göndərildi",
+    "reportRateLimit": "Həddindən çox şikayət göndərmisiniz. Daha sonra yenidən cəhd edin.",
+    "reportError": "Şikayəti göndərmək mümkün olmadı. İzahı yoxlayıb yenidən cəhd edin.",
+    "reportReasons": {
+      "spam": "Spam",
+      "harassment": "Təhqir və ya təhdid",
+      "personalData": "Şəxsi məlumatların yayılması",
+      "irrelevant": "Alqı-satqıya aid deyil",
+      "prohibitedContent": "Qadağan olunmuş məzmun",
+      "other": "Digər"
+    },
     "ratingLabel": "Qiymət: 5 üzərindən {rating}"
   },
   "notifications": {

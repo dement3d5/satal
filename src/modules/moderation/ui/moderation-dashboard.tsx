@@ -57,6 +57,18 @@ interface MessageReportQueueItem {
   createdAt: string;
 }
 
+interface ReviewReportQueueItem {
+  reportId: string;
+  reviewId: string;
+  rating: number;
+  reviewBody: string | null;
+  authorName: string;
+  subjectName: string;
+  reason: string;
+  details: string | null;
+  createdAt: string;
+}
+
 interface ModerationLabels {
   loading: string;
   auth: string;
@@ -91,6 +103,15 @@ interface ModerationLabels {
   messageReportDismiss: string;
   messageReportCloseTitle: string;
   messageReportClose: string;
+  reviewReportsTitle: string;
+  reviewReportsEmpty: string;
+  reviewReportAuthor: string;
+  reviewReportSubject: string;
+  reviewReportContent: string;
+  reviewReportDetails: string;
+  reviewReportDismiss: string;
+  reviewReportHideTitle: string;
+  reviewReportHide: string;
   appealsTitle: string;
   appealsEmpty: string;
   appealOriginalDecision: string;
@@ -107,6 +128,7 @@ interface ModerationLabels {
   reasons: Record<string, string>;
   reportReasons: Record<string, string>;
   messageReportReasons: Record<string, string>;
+  reviewReportReasons: Record<string, string>;
 }
 
 export function ModerationDashboard({
@@ -119,6 +141,7 @@ export function ModerationDashboard({
   const [items, setItems] = useState<QueueItem[]>([]);
   const [reports, setReports] = useState<ReportQueueItem[]>([]);
   const [messageReports, setMessageReports] = useState<MessageReportQueueItem[]>([]);
+  const [reviewReports, setReviewReports] = useState<ReviewReportQueueItem[]>([]);
   const [appeals, setAppeals] = useState<AppealQueueItem[]>([]);
   const [state, setState] = useState<'loading' | 'ready' | 'auth' | 'forbidden' | 'error'>(
     'loading'
@@ -140,22 +163,24 @@ export function ModerationDashboard({
           fetch(`/api/v1/moderation/cases?locale=${locale}`, {cache: 'no-store'}),
           fetch(`/api/v1/moderation/reports?locale=${locale}`, {cache: 'no-store'}),
           fetch(`/api/v1/moderation/message-reports?locale=${locale}`, {cache: 'no-store'}),
+          fetch(`/api/v1/moderation/review-reports?locale=${locale}`, {cache: 'no-store'}),
           fetch(`/api/v1/moderation/appeals?locale=${locale}`, {cache: 'no-store'})
         ]);
         if (responses.some((response) => response.status === 401)) return setState('auth');
         if (responses.some((response) => response.status === 403)) return setState('forbidden');
         if (responses.some((response) => !response.ok)) throw new Error('queue failed');
-        const [caseBody, reportBody, messageReportBody, appealBody] = (await Promise.all(
-          responses.map((response) => response.json())
-        )) as [
-          {data: QueueItem[]},
-          {data: ReportQueueItem[]},
-          {data: MessageReportQueueItem[]},
-          {data: AppealQueueItem[]}
-        ];
+        const [caseBody, reportBody, messageReportBody, reviewReportBody, appealBody] =
+          (await Promise.all(responses.map((response) => response.json()))) as [
+            {data: QueueItem[]},
+            {data: ReportQueueItem[]},
+            {data: MessageReportQueueItem[]},
+            {data: ReviewReportQueueItem[]},
+            {data: AppealQueueItem[]}
+          ];
         setItems(caseBody.data);
         setReports(reportBody.data);
         setMessageReports(messageReportBody.data);
+        setReviewReports(reviewReportBody.data);
         setAppeals(appealBody.data);
         setState('ready');
       } catch {
@@ -278,6 +303,37 @@ export function ModerationDashboard({
     }
   }
 
+  async function decideReviewReport(reportId: string, action: 'dismiss' | 'hide_review') {
+    const key = `review-report:${reportId}`;
+    setPendingAction(key);
+    setActionError(null);
+    try {
+      const response = await fetch(`/api/v1/moderation/review-reports/${reportId}/decision`, {
+        method: 'POST',
+        headers: {'content-type': 'application/json'},
+        body: JSON.stringify({action})
+      });
+      if (!response.ok) {
+        if (response.status === 401) setState('auth');
+        if ([403, 404, 409].includes(response.status)) {
+          setReviewReports((current) => current.filter((item) => item.reportId !== reportId));
+        }
+        setActionError(actionErrorFor(response));
+        return;
+      }
+      const body = (await response.json()) as {data: {reviewId: string}};
+      setReviewReports((current) =>
+        action === 'hide_review'
+          ? current.filter((item) => item.reviewId !== body.data.reviewId)
+          : current.filter((item) => item.reportId !== reportId)
+      );
+    } catch {
+      setActionError(labels.actionError);
+    } finally {
+      setPendingAction(null);
+    }
+  }
+
   function rejectCase(event: FormEvent<HTMLFormElement>, caseId: string) {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
@@ -316,6 +372,7 @@ export function ModerationDashboard({
     items.length === 0 &&
     reports.length === 0 &&
     messageReports.length === 0 &&
+    reviewReports.length === 0 &&
     appeals.length === 0
   )
     return (
@@ -493,6 +550,61 @@ export function ModerationDashboard({
                     type="button"
                   >
                     {labels.messageReportClose}
+                  </button>
+                </details>
+              </div>
+            </article>
+          );
+        })}
+      </QueueSection>
+
+      <QueueSection title={labels.reviewReportsTitle} empty={labels.reviewReportsEmpty}>
+        {reviewReports.map((report) => {
+          const pending = pendingAction === `review-report:${report.reportId}`;
+          return (
+            <article className="moderation-card" key={report.reportId}>
+              <header>
+                <div>
+                  <span>
+                    {labels.reviewReportSubject}: {report.subjectName}
+                  </span>
+                  <h3>{labels.reviewReportContent}</h3>
+                </div>
+                <span className="status-chip">
+                  {labels.reviewReportReasons[report.reason] ?? report.reason}
+                </span>
+              </header>
+              <p className="moderation-message-quote">
+                {'★'.repeat(report.rating)}
+                {'☆'.repeat(5 - report.rating)}
+                {report.reviewBody ? ` — ${report.reviewBody}` : ''}
+              </p>
+              <small>
+                {labels.reviewReportAuthor}: {report.authorName}
+              </small>
+              {report.details && (
+                <p>
+                  <strong>{labels.reviewReportDetails}:</strong> {report.details}
+                </p>
+              )}
+              <div className="moderation-actions">
+                <button
+                  className="button"
+                  disabled={pending}
+                  onClick={() => void decideReviewReport(report.reportId, 'dismiss')}
+                  type="button"
+                >
+                  {labels.reviewReportDismiss}
+                </button>
+                <details>
+                  <summary>{labels.reviewReportHideTitle}</summary>
+                  <button
+                    className="button button-danger"
+                    disabled={pending}
+                    onClick={() => void decideReviewReport(report.reportId, 'hide_review')}
+                    type="button"
+                  >
+                    {labels.reviewReportHide}
                   </button>
                 </details>
               </div>

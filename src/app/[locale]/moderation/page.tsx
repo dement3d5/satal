@@ -55,6 +55,15 @@ export default async function ModerationPage({params}: {params: Promise<{locale:
           messageReportDismiss: t('messageReportDismiss'),
           messageReportCloseTitle: t('messageReportCloseTitle'),
           messageReportClose: t('messageReportClose'),
+          reviewReportsTitle: t('reviewReportsTitle'),
+          reviewReportsEmpty: t('reviewReportsEmpty'),
+          reviewReportAuthor: t('reviewReportAuthor'),
+          reviewReportSubject: t('reviewReportSubject'),
+          reviewReportContent: t('reviewReportContent'),
+          reviewReportDetails: t('reviewReportDetails'),
+          reviewReportDismiss: t('reviewReportDismiss'),
+          reviewReportHideTitle: t('reviewReportHideTitle'),
+          reviewReportHide: t('reviewReportHide'),
           appealsTitle: t('appealsTitle'),
           appealsEmpty: t('appealsEmpty'),
           appealOriginalDecision: t('appealOriginalDecision'),
@@ -92,6 +101,14 @@ export default async function ModerationPage({params}: {params: Promise<{locale:
             prohibited_content: t('messageReportReasons.prohibitedContent'),
             personal_data: t('messageReportReasons.personalData'),
             other: t('messageReportReasons.other')
+          },
+          reviewReportReasons: {
+            spam: t('reviewReportReasons.spam'),
+            harassment: t('reviewReportReasons.harassment'),
+            personal_data: t('reviewReportReasons.personalData'),
+            irrelevant: t('reviewReportReasons.irrelevant'),
+            prohibited_content: t('reviewReportReasons.prohibitedContent'),
+            other: t('reviewReportReasons.other')
           }
         }}
       />

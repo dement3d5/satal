@@ -1,7 +1,10 @@
 {
   "navigation": {
     "messages": "Messages",
-    "notifications": "Notifications"
+    "notifications": "Notifications",
+    "saved": "Saved",
+    "signIn": "Sign in",
+    "personalNavigation": "Personal navigation"
   },
   "home": {
     "accountLink": "Account",
@@ -347,6 +350,15 @@
     "messageReportDismiss": "Dismiss report",
     "messageReportCloseTitle": "Confirm chat violation",
     "messageReportClose": "Close conversation",
+    "reviewReportsTitle": "Review reports",
+    "reviewReportsEmpty": "There are no new review reports.",
+    "reviewReportAuthor": "Review author",
+    "reviewReportSubject": "Review subject",
+    "reviewReportContent": "Reported review",
+    "reviewReportDetails": "Reporter context",
+    "reviewReportDismiss": "Dismiss report",
+    "reviewReportHideTitle": "Confirm review violation",
+    "reviewReportHide": "Hide review",
     "appealsTitle": "Seller appeals",
     "appealsEmpty": "There are no new appeals.",
     "appealOriginalDecision": "Original decision",
@@ -376,6 +388,14 @@
       "misleadingPrice": "Misleading price",
       "staleListing": "Stale listing",
       "other": "Other reason"
+    },
+    "reviewReportReasons": {
+      "spam": "Spam",
+      "harassment": "Harassment or threats",
+      "personalData": "Exposed personal data",
+      "irrelevant": "Unrelated to the transaction",
+      "prohibitedContent": "Prohibited content",
+      "other": "Other"
     },
     "messageReportReasons": {
       "spam": "Spam",
@@ -458,6 +478,24 @@
     "noRating": "No rating yet",
     "reviewsTitle": "Verified interaction reviews",
     "reviewsEmpty": "This user has no public reviews yet.",
+    "reportAction": "Report",
+    "reportTitle": "Report a problem with this review",
+    "reportReason": "Reason",
+    "reportDetails": "Additional information (optional)",
+    "reportDetailsHint": "Do not include passwords or other secrets. Add context when choosing Other.",
+    "reportSubmit": "Send report",
+    "reporting": "Sending...",
+    "reportSuccess": "Report sent",
+    "reportRateLimit": "You sent too many reports. Try again later.",
+    "reportError": "The report could not be sent. Check the context and try again.",
+    "reportReasons": {
+      "spam": "Spam",
+      "harassment": "Harassment or threats",
+      "personalData": "Exposed personal data",
+      "irrelevant": "Unrelated to the transaction",
+      "prohibitedContent": "Prohibited content",
+      "other": "Other"
+    },
     "ratingLabel": "Rating: {rating} out of 5"
   },
   "notifications": {

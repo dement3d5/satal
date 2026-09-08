@@ -5,6 +5,7 @@ import {getTranslations} from 'next-intl/server';
 import {SiteHeader} from '@/components/site-header';
 import type {AppLocale} from '@/i18n/routing';
 import {getPublicReputation} from '@/modules/reputation/service';
+import {ReviewReportControl} from '@/modules/reputation/ui/review-report-control';
 import {getDatabase} from '@/server/db/client';
 import {AppError} from '@/server/errors/app-error';
 import {parseUuid} from '@/server/http/params';
@@ -80,6 +81,30 @@ export default async function PublicUserPage({params}: PageProps) {
                   new Date(review.createdAt)
                 )}
               </small>
+              <ReviewReportControl
+                reviewId={review.id}
+                authorId={review.authorId}
+                labels={{
+                  action: t('reportAction'),
+                  title: t('reportTitle'),
+                  reason: t('reportReason'),
+                  details: t('reportDetails'),
+                  detailsHint: t('reportDetailsHint'),
+                  submit: t('reportSubmit'),
+                  submitting: t('reporting'),
+                  received: t('reportSuccess'),
+                  limit: t('reportRateLimit'),
+                  error: t('reportError'),
+                  reasons: {
+                    spam: t('reportReasons.spam'),
+                    harassment: t('reportReasons.harassment'),
+                    personal_data: t('reportReasons.personalData'),
+                    irrelevant: t('reportReasons.irrelevant'),
+                    prohibited_content: t('reportReasons.prohibitedContent'),
+                    other: t('reportReasons.other')
+                  }
+                }}
+              />
             </article>
           ))
         )}

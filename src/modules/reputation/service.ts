@@ -1,4 +1,4 @@
-import {and, desc, eq, inArray, lte, or, sql} from 'drizzle-orm';
+import {and, desc, eq, inArray, or, sql} from 'drizzle-orm';
 
 import type {DatabaseClient} from '@/server/db/client';
 import {
@@ -19,6 +19,7 @@ import {
   assertInteractionConfirmer,
   reviewSubjectId
 } from './domain';
+import {publicReviewVisibility} from './visibility';
 
 const REVIEW_REVEAL_DELAY_MS = 14 * 24 * 60 * 60 * 1000;
 type DatabaseTransaction = Parameters<Parameters<DatabaseClient['transaction']>[0]>[0];
@@ -291,21 +292,6 @@ async function hasActiveCounterpartReview(
     )
     .limit(1);
   return Boolean(counterpart);
-}
-
-function publicReviewVisibility() {
-  const counterpartExists = sql<boolean>`exists (
-    select 1
-    from "user_review" as "counterpart_review"
-    where "counterpart_review"."interaction_id" = ${userReview.interactionId}
-      and "counterpart_review"."author_id" = ${userReview.subjectId}
-      and "counterpart_review"."subject_id" = ${userReview.authorId}
-      and "counterpart_review"."status" = 'active'
-  )`;
-  return and(
-    eq(userReview.status, 'active'),
-    or(lte(userReview.revealAt, new Date()), counterpartExists)
-  );
 }
 
 function serializeInteraction(row: typeof qualifiedInteraction.$inferSelect) {
