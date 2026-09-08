@@ -1,7 +1,7 @@
 'use client';
 
 import {useState, type FormEvent} from 'react';
-import {useRouter, useSearchParams} from 'next/navigation';
+import {useSearchParams} from 'next/navigation';
 
 import type {AppLocale} from '@/i18n/routing';
 
@@ -20,14 +20,16 @@ interface AuthLabels {
   genericError: string;
   phoneTitle: string;
   phoneUnavailable: string;
+  signedOut: string;
 }
 
 export function AuthForm({locale, labels}: {locale: AppLocale; labels: AuthLabels}) {
-  const [mode, setMode] = useState<'sign-in' | 'sign-up'>('sign-in');
+  const searchParams = useSearchParams();
+  const [mode, setMode] = useState<'sign-in' | 'sign-up'>(() =>
+    searchParams.get('mode') === 'sign-up' ? 'sign-up' : 'sign-in'
+  );
   const [message, setMessage] = useState('');
   const [pending, setPending] = useState(false);
-  const router = useRouter();
-  const searchParams = useSearchParams();
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -47,6 +49,7 @@ export function AuthForm({locale, labels}: {locale: AppLocale; labels: AuthLabel
         `/api/auth/${mode === 'sign-up' ? 'sign-up' : 'sign-in'}/email`,
         {
           method: 'POST',
+          credentials: 'same-origin',
           headers: {'content-type': 'application/json'},
           body: JSON.stringify(payload)
         }
@@ -64,8 +67,7 @@ export function AuthForm({locale, labels}: {locale: AppLocale; labels: AuthLabel
       }
       const requested = searchParams.get('returnTo');
       const destination = requested?.startsWith(`/${locale}/`) ? requested : `/${locale}/account`;
-      router.push(destination);
-      router.refresh();
+      window.location.replace(destination);
     } catch {
       setMessage(labels.genericError);
     } finally {
@@ -75,12 +77,20 @@ export function AuthForm({locale, labels}: {locale: AppLocale; labels: AuthLabel
 
   return (
     <div className="auth-card">
+      {searchParams.get('signedOut') === '1' && (
+        <p className="notice notice-success" role="status">
+          {labels.signedOut}
+        </p>
+      )}
       <div className="auth-tabs" role="tablist">
         <button
           type="button"
           role="tab"
           aria-selected={mode === 'sign-in'}
-          onClick={() => setMode('sign-in')}
+          onClick={() => {
+            setMode('sign-in');
+            setMessage('');
+          }}
         >
           {labels.signIn}
         </button>
@@ -88,7 +98,10 @@ export function AuthForm({locale, labels}: {locale: AppLocale; labels: AuthLabel
           type="button"
           role="tab"
           aria-selected={mode === 'sign-up'}
-          onClick={() => setMode('sign-up')}
+          onClick={() => {
+            setMode('sign-up');
+            setMessage('');
+          }}
         >
           {labels.signUp}
         </button>

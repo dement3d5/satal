@@ -7,6 +7,7 @@
   --color-border: #dfe6df;
   --color-accent: #176b4d;
   --color-accent-dark: #0e4f38;
+  --color-accent-strong: #0e4f38;
   --color-accent-soft: #e6f2ec;
   --color-warm: #f6efe1;
   --color-warm-text: #70551f;
@@ -1674,8 +1675,7 @@ h1 {
   padding-bottom: 4rem;
 }
 
-.auth-card,
-.account-panel {
+.auth-card {
   max-width: 40rem;
   padding: 1.4rem;
   border: 1px solid var(--color-border);
@@ -1755,13 +1755,201 @@ h1 {
 
 .account-panel {
   display: grid;
-  gap: 1rem;
+  gap: 1.25rem;
   max-width: none;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
-.account-panel > .auth-form,
-.account-panel > .button {
-  max-width: 40rem;
+.account-profile-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding: clamp(1.2rem, 3vw, 2rem);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: white;
+  box-shadow: var(--shadow-card);
+}
+
+.account-profile-main {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.account-avatar {
+  display: grid;
+  flex: 0 0 auto;
+  width: 4.5rem;
+  height: 4.5rem;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--color-accent-soft);
+  color: var(--color-accent-strong);
+  font-size: 1.35rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+}
+
+.account-profile-main h2,
+.account-profile-main p {
+  margin: 0;
+}
+
+.account-profile-main h2 {
+  margin-bottom: 0.3rem;
+  overflow-wrap: anywhere;
+  font-size: clamp(1.4rem, 3vw, 2rem);
+}
+
+.account-profile-main > div:last-child > p:last-of-type {
+  color: var(--color-muted);
+}
+
+.account-role-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.65rem;
+}
+
+.account-role-list span {
+  padding: 0.3rem 0.55rem;
+  border-radius: 999px;
+  background: var(--color-surface-muted);
+  color: var(--color-muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.account-profile-actions,
+.account-session-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.account-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
+.account-summary-grid article {
+  display: grid;
+  gap: 0.25rem;
+  min-height: 6.5rem;
+  align-content: center;
+  padding: 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.9rem;
+  background: white;
+}
+
+.account-summary-grid strong {
+  font-size: 1.45rem;
+}
+
+.account-summary-grid span {
+  color: var(--color-muted);
+  font-size: 0.85rem;
+}
+
+.account-shortcuts {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.account-shortcuts a {
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.8rem;
+  background: white;
+  color: var(--color-text);
+  text-align: center;
+  text-decoration: none;
+  font-weight: 750;
+}
+
+.account-shortcuts a:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent-strong);
+}
+
+.account-settings-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(17rem, 0.75fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.account-card {
+  padding: clamp(1.1rem, 2.5vw, 1.5rem);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: white;
+}
+
+.account-card-heading h2,
+.account-card-heading p {
+  margin: 0;
+}
+
+.account-card-heading p {
+  margin-top: 0.4rem;
+  color: var(--color-muted);
+  line-height: 1.5;
+}
+
+.account-profile-form {
+  margin: 0;
+}
+
+.account-profile-form > small {
+  margin-top: -0.55rem;
+  color: var(--color-muted);
+  line-height: 1.45;
+}
+
+.account-profile-form > small.is-verified {
+  color: #16734a;
+  font-weight: 750;
+}
+
+.account-profile-form .button {
+  justify-self: start;
+}
+
+.account-security-card {
+  display: grid;
+  gap: 1rem;
+}
+
+.account-current-session,
+.account-staff-access {
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.85rem;
+  border-radius: 0.75rem;
+  background: var(--color-surface-muted);
+}
+
+.account-current-session span,
+.account-staff-access span {
+  color: var(--color-muted);
+  font-size: 0.8rem;
+}
+
+.account-current-session strong,
+.account-staff-access strong {
+  overflow-wrap: anywhere;
+  font-size: 0.92rem;
 }
 
 .account-listings {
@@ -1827,6 +2015,48 @@ h1 {
 .listing-status-rejected,
 .listing-status-removed {
   color: #a63d31;
+}
+
+@media (max-width: 760px) {
+  .account-profile-hero {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .account-profile-actions,
+  .account-profile-actions .button {
+    width: 100%;
+  }
+
+  .account-summary-grid,
+  .account-shortcuts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .account-settings-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 440px) {
+  .account-profile-main {
+    align-items: flex-start;
+  }
+
+  .account-avatar {
+    width: 3.5rem;
+    height: 3.5rem;
+    font-size: 1rem;
+  }
+
+  .account-summary-grid,
+  .account-shortcuts {
+    grid-template-columns: 1fr;
+  }
+
+  .account-session-actions .button {
+    width: 100%;
+  }
 }
 
 .contact-action {

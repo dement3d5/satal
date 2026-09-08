@@ -35,7 +35,8 @@ export default async function AuthPage({params}: {params: Promise<{locale: AppLo
           duplicate: t('duplicate'),
           genericError: t('genericError'),
           phoneTitle: t('phoneTitle'),
-          phoneUnavailable: t('phoneUnavailable')
+          phoneUnavailable: t('phoneUnavailable'),
+          signedOut: t('signedOut')
         }}
       />
     </main>

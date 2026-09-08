@@ -4,7 +4,7 @@
 
 Better Auth is the initial session/auth framework with a phone-number plugin and provider adapter. Production SMS credentials/onboarding remain required. Store normalized E.164 phone data encrypted or access-restricted where practical; never expose it by default. Admin/owner require 2FA and stronger session controls.
 
-Sessions use secure HttpOnly cookies, rotation, revocation and active-session management. Passwords use a modern memory-hard hash through the auth framework. OTP requests and attempts receive per-number, per-session and network risk limits without relying on IP alone.
+Sessions use secure HttpOnly cookies, rotation and revocation. Browser sign-out is delegated to the official Better Auth client, deletes the database session, expires the session cookie and verifies loss of private API access before redirecting; account switching therefore cannot reuse stale client-rendered identity state. Passwords use a modern memory-hard hash through the auth framework. OTP requests and attempts receive per-number, per-session and network risk limits without relying on IP alone. A complete user-facing active-session/device management screen remains a later security milestone.
 
 Email/password is enabled as a functional account path through Better Auth; passwords never enter Satal tables or logs outside the framework's credential record. Phone OTP remains the preferred production path but fails closed while SMS is disabled. Email verification/reset and phone verification require real provider adapters and remain explicit launch prerequisites.
 

@@ -43,3 +43,9 @@ Each received message has a compact, secondary report action with a fixed locali
 After both sides have messaged, the seller sees a deliberate confirmation for “sold to this buyer.” The copy explains that it marks the listing sold and cannot be undone in the current UI. Once confirmed, each participant sees one compact rating/review form in the conversation. Submitted feedback is immutable and the UI states whether it is still blind or already public. Seller cards link to a public profile that shows only revealed review aggregates and review content, never contact or conversation data.
 
 The notification center shows recipient-only message events, unread state and a direct route back to the conversation. In-app chat notifications can be disabled. Email and push controls remain visibly unavailable until real delivery providers are verified, so the interface never claims an external notification was sent.
+
+## Account dashboard
+
+The localized account route is the user's home inside Satal rather than a bare identity form. It combines a recognizable profile header, account age and public reputation link with listing-status totals, direct access to messages, saved items, notifications and staff tools, and separate personal-data and session-security cards. Email and phone remain private and verification limitations are stated next to the relevant field.
+
+Sign-out uses Better Auth's browser client, waits for the server response and verifies that the private profile endpoint is unauthorized before leaving the page. A hard navigation then prevents stale React state from displaying the previous account. The explicit switch-account action ends the same server session and opens a clean sign-in/create-account screen with a localized completion message.

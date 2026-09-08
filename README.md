@@ -18,7 +18,7 @@ Phase 2, the Phase 3 marketplace foundation and the Phase 4 trust/communication 
 - owner-authorized image uploads, hostile-file quarantine, Sharp/libvips re-encoding and metadata-free responsive variants for local development.
 - localized URL-state search/filter UI, validated dynamic facets, a replaceable Typesense adapter/outbox indexer and indexed PostgreSQL degraded fallback.
 - owner-only favorites and reusable saved searches with localized UI and normalized PostgreSQL query snapshots.
-- Better Auth email/password sessions, localized account/profile UI with the seller's listing states, and audited access to verified seller phone contacts.
+- Better Auth email/password sessions with verified server-side sign-out, localized account dashboard and account switching, seller listing states, and audited access to verified seller phone contacts.
 - PostgreSQL-backed staff roles, pending-review listing submission and an audited localized moderation queue.
 - owner-safe listing reports and seller appeals with rate limits, staff queues, audited decisions and lifecycle-safe review reopening.
 - listing-scoped buyer/seller conversations, idempotent text messages, read cursors, participant blocks and private in-app notifications/preferences.
