@@ -52,7 +52,9 @@ The reputation milestone adds seller-confirmed qualified interactions after a bi
 
 The review-safety milestone adds authenticated reports on public reviews, idempotency and actor rate limits, an independent least-privilege staff queue, append-only decisions and atomic hiding from both the review list and rating aggregate. It deliberately does not infer an account ban from one review decision. The global header is now session-aware and keeps messages, saved items, notifications and profile navigation out of the guest experience.
 
-Remaining: production realtime delivery, explainable risk signals, bans/enforcement, report/appeal operational metrics and broader audit tools.
+The moderation-operations milestone adds a versioned explainable listing assessment, normalized privacy-safe signal summaries, priority-aware staff review and an `admin`/`owner` operations panel with current queue counts, bounded decision metrics and a safe cross-queue audit projection. Signals never auto-enforce and every listing still requires manual approval.
+
+Remaining: production realtime delivery, legally reviewed bans/enforcement, richer workload/SLA metrics and broader evidence-access audit tools.
 
 ## Phase 5 — shops
 

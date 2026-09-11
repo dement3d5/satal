@@ -10,6 +10,7 @@ import {
   locationTranslation,
   moderationAction,
   moderationCase,
+  moderationCaseSignal,
   outboxEvent,
   user,
   userRole
@@ -38,6 +39,7 @@ export async function listModerationQueue(
       listingId: listing.id,
       priority: moderationCase.priority,
       riskBand: moderationCase.riskBand,
+      policyVersion: moderationCase.policyVersion,
       openedAt: moderationCase.openedAt,
       title: listing.title,
       description: listing.description,
@@ -74,9 +76,36 @@ export async function listModerationQueue(
     .orderBy(desc(moderationCase.priority), asc(moderationCase.openedAt), asc(moderationCase.id))
     .limit(query.limit);
 
+  const signals = rows.length
+    ? await db
+        .select({
+          caseId: moderationCaseSignal.caseId,
+          code: moderationCaseSignal.code,
+          weight: moderationCaseSignal.weight
+        })
+        .from(moderationCaseSignal)
+        .where(
+          inArray(
+            moderationCaseSignal.caseId,
+            rows.map((row) => row.caseId)
+          )
+        )
+        .orderBy(desc(moderationCaseSignal.weight), asc(moderationCaseSignal.code))
+    : [];
+  const signalsByCase = new Map<
+    string,
+    Array<{code: (typeof signals)[number]['code']; weight: number}>
+  >();
+  for (const signal of signals) {
+    const existing = signalsByCase.get(signal.caseId) ?? [];
+    existing.push({code: signal.code, weight: signal.weight});
+    signalsByCase.set(signal.caseId, existing);
+  }
+
   return rows.map((row) => ({
     ...row,
-    openedAt: row.openedAt.toISOString()
+    openedAt: row.openedAt.toISOString(),
+    signals: signalsByCase.get(row.caseId) ?? []
   }));
 }
 

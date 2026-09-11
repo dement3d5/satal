@@ -59,7 +59,8 @@ integration('listing submission moderation boundary', () => {
       );
 
       const [persisted] = await client!`
-        select l.status, l.published_at, mc.status as case_status, mc.policy_version
+        select l.status, l.published_at, mc.id as case_id, mc.status as case_status,
+               mc.policy_version, mc.risk_band, mc.priority
         from listing l
         join moderation_case mc on mc.listing_id = l.id
         where l.id = ${listingId}
@@ -68,11 +69,26 @@ integration('listing submission moderation boundary', () => {
         status: 'pending_review',
         published_at: null,
         case_status: 'open',
-        policy_version: 'manual-review-v1'
+        policy_version: 'listing-risk-v1',
+        risk_band: 'medium',
+        priority: 30
       });
+      const signals = await client!`
+        select code, weight, policy_version
+        from moderation_case_signal
+        where case_id = ${persisted!.case_id}
+        order by weight desc
+      `;
+      expect(signals).toEqual([
+        {code: 'new_account', weight: 30, policy_version: 'listing-risk-v1'}
+      ]);
     } finally {
       if (listingId) {
         await client!`delete from outbox_event where aggregate_id = ${listingId}`;
+        await client!`
+          delete from moderation_case_signal
+          where case_id in (select id from moderation_case where listing_id = ${listingId})
+        `;
         await client!`delete from moderation_case where listing_id = ${listingId}`;
         await client!`delete from listing_status_history where listing_id = ${listingId}`;
         await client!`delete from listing where id = ${listingId}`;

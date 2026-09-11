@@ -8,6 +8,9 @@ describe('moderation authorization and lifecycle', () => {
     expect(hasModerationCapability(['moderator'], 'decision:write')).toBe(true);
     expect(hasModerationCapability(['moderator'], 'message-reports:decide')).toBe(true);
     expect(hasModerationCapability(['moderator'], 'review-reports:decide')).toBe(true);
+    expect(hasModerationCapability(['moderator'], 'operations:read')).toBe(false);
+    expect(hasModerationCapability(['admin'], 'operations:read')).toBe(true);
+    expect(hasModerationCapability(['owner'], 'operations:read')).toBe(true);
     expect(() => assertModerationCapability([], 'queue:read')).toThrowError(
       expect.objectContaining({code: 'FORBIDDEN'})
     );

@@ -10,6 +10,11 @@ interface QueueItem {
   listingId: string;
   priority: number;
   riskBand: 'unassessed' | 'low' | 'medium' | 'high';
+  policyVersion: string;
+  signals: Array<{
+    code: 'new_account' | 'contact_details_in_content';
+    weight: number;
+  }>;
   openedAt: string;
   title: string;
   description: string;
@@ -18,6 +23,37 @@ interface QueueItem {
   sellerName: string;
   categoryName: string;
   locationName: string;
+}
+
+interface ModerationOperations {
+  generatedAt: string;
+  windowDays: 7 | 30;
+  queueCounts: Record<
+    'listings' | 'listingReports' | 'appeals' | 'messageReports' | 'reviewReports',
+    number
+  >;
+  decisionCounts: Record<
+    | 'listingsApproved'
+    | 'listingsRejected'
+    | 'listingReportsDismissed'
+    | 'listingsRemoved'
+    | 'appealsAccepted'
+    | 'appealsRejected'
+    | 'messageReportsDismissed'
+    | 'conversationsClosed'
+    | 'reviewReportsDismissed'
+    | 'reviewsHidden',
+    number
+  >;
+  recentActions: Array<{
+    id: string;
+    entityType:
+      'listing' | 'listing_report' | 'listing_appeal' | 'message_report' | 'review_report';
+    entityId: string;
+    action: string;
+    actorName: string;
+    createdAt: string;
+  }>;
 }
 
 interface ReportQueueItem {
@@ -79,6 +115,19 @@ interface ModerationLabels {
   seller: string;
   risk: string;
   riskUnassessed: string;
+  riskBands: Record<'low' | 'medium' | 'high', string>;
+  riskPolicy: string;
+  riskSignalsTitle: string;
+  riskSignals: Record<'new_account' | 'contact_details_in_content', string>;
+  operationsTitle: string;
+  operationsError: string;
+  operationsWindows: Record<7 | 30, string>;
+  openWorkTitle: string;
+  decisionsTitle: string;
+  recentActionsTitle: string;
+  recentActionsEmpty: string;
+  metricLabels: Record<string, string>;
+  actionLabels: Record<string, string>;
   newListingsTitle: string;
   newListingsEmpty: string;
   approve: string;
@@ -143,6 +192,10 @@ export function ModerationDashboard({
   const [messageReports, setMessageReports] = useState<MessageReportQueueItem[]>([]);
   const [reviewReports, setReviewReports] = useState<ReviewReportQueueItem[]>([]);
   const [appeals, setAppeals] = useState<AppealQueueItem[]>([]);
+  const [operations, setOperations] = useState<ModerationOperations | null>(null);
+  const [operationsState, setOperationsState] = useState<'loading' | 'hidden' | 'ready' | 'error'>(
+    'loading'
+  );
   const [state, setState] = useState<'loading' | 'ready' | 'auth' | 'forbidden' | 'error'>(
     'loading'
   );
@@ -164,13 +217,17 @@ export function ModerationDashboard({
           fetch(`/api/v1/moderation/reports?locale=${locale}`, {cache: 'no-store'}),
           fetch(`/api/v1/moderation/message-reports?locale=${locale}`, {cache: 'no-store'}),
           fetch(`/api/v1/moderation/review-reports?locale=${locale}`, {cache: 'no-store'}),
-          fetch(`/api/v1/moderation/appeals?locale=${locale}`, {cache: 'no-store'})
+          fetch(`/api/v1/moderation/appeals?locale=${locale}`, {cache: 'no-store'}),
+          fetch('/api/v1/moderation/operations?windowDays=7&limit=20', {cache: 'no-store'})
         ]);
-        if (responses.some((response) => response.status === 401)) return setState('auth');
-        if (responses.some((response) => response.status === 403)) return setState('forbidden');
-        if (responses.some((response) => !response.ok)) throw new Error('queue failed');
+        const queueResponses = responses.slice(0, 5);
+        const operationsResponse = responses[5];
+        if (queueResponses.some((response) => response.status === 401)) return setState('auth');
+        if (queueResponses.some((response) => response.status === 403))
+          return setState('forbidden');
+        if (queueResponses.some((response) => !response.ok)) throw new Error('queue failed');
         const [caseBody, reportBody, messageReportBody, reviewReportBody, appealBody] =
-          (await Promise.all(responses.map((response) => response.json()))) as [
+          (await Promise.all(queueResponses.map((response) => response.json()))) as [
             {data: QueueItem[]},
             {data: ReportQueueItem[]},
             {data: MessageReportQueueItem[]},
@@ -182,6 +239,13 @@ export function ModerationDashboard({
         setMessageReports(messageReportBody.data);
         setReviewReports(reviewReportBody.data);
         setAppeals(appealBody.data);
+        if (operationsResponse?.ok) {
+          const operationsBody = (await operationsResponse.json()) as {data: ModerationOperations};
+          setOperations(operationsBody.data);
+          setOperationsState('ready');
+        } else {
+          setOperationsState(operationsResponse?.status === 403 ? 'hidden' : 'error');
+        }
         setState('ready');
       } catch {
         setState('error');
@@ -368,21 +432,36 @@ export function ModerationDashboard({
     );
   if (state === 'forbidden') return <p role="alert">{labels.forbidden}</p>;
   if (state === 'error') return <p role="alert">{labels.error}</p>;
-  if (
+  const queuesEmpty =
     items.length === 0 &&
     reports.length === 0 &&
     messageReports.length === 0 &&
     reviewReports.length === 0 &&
-    appeals.length === 0
-  )
+    appeals.length === 0;
+  const operationsContent = (
+    <>
+      {operations && <OperationsOverview locale={locale} labels={labels} data={operations} />}
+      {operationsState === 'error' && (
+        <p className="notice notice-error" role="alert">
+          {labels.operationsError}
+        </p>
+      )}
+    </>
+  );
+
+  if (queuesEmpty)
     return (
-      <div className="empty-state">
-        <p>{labels.empty}</p>
+      <div className="moderation-workspace">
+        {operationsContent}
+        <div className="empty-state">
+          <p>{labels.empty}</p>
+        </div>
       </div>
     );
 
   return (
     <div className="moderation-workspace">
+      {operationsContent}
       {actionError && (
         <p className="notice notice-error" role="alert">
           {actionError}
@@ -403,10 +482,23 @@ export function ModerationDashboard({
                 </div>
                 <span className="status-chip">
                   {labels.risk}:{' '}
-                  {item.riskBand === 'unassessed' ? labels.riskUnassessed : item.riskBand}
+                  {item.riskBand === 'unassessed'
+                    ? labels.riskUnassessed
+                    : labels.riskBands[item.riskBand]}
                 </span>
               </header>
               <p>{item.description}</p>
+              <div className="moderation-risk-signals">
+                <strong>{labels.riskSignalsTitle}</strong>
+                {item.signals.map((signal) => (
+                  <span className="status-chip" key={signal.code}>
+                    {labels.riskSignals[signal.code]} · +{signal.weight}
+                  </span>
+                ))}
+                <small>
+                  {labels.riskPolicy}: {item.policyVersion}
+                </small>
+              </div>
               <small>
                 {labels.seller}: {item.sellerName}
               </small>
@@ -670,6 +762,71 @@ export function ModerationDashboard({
         })}
       </QueueSection>
     </div>
+  );
+}
+
+function OperationsOverview({
+  locale,
+  labels,
+  data
+}: {
+  locale: AppLocale;
+  labels: ModerationLabels;
+  data: ModerationOperations;
+}) {
+  const formatter = new Intl.DateTimeFormat(locale, {dateStyle: 'medium', timeStyle: 'short'});
+  return (
+    <section className="moderation-operations" aria-labelledby="moderation-operations-title">
+      <header>
+        <div>
+          <p className="eyebrow">SATAL CONTROL</p>
+          <h2 id="moderation-operations-title">{labels.operationsTitle}</h2>
+        </div>
+        <span className="status-chip">{labels.operationsWindows[data.windowDays]}</span>
+      </header>
+      <div className="moderation-metrics-group">
+        <h3>{labels.openWorkTitle}</h3>
+        <div className="moderation-metrics-grid">
+          {Object.entries(data.queueCounts).map(([key, value]) => (
+            <div className="moderation-metric" key={key}>
+              <strong>{value}</strong>
+              <span>{labels.metricLabels[key] ?? key}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="moderation-metrics-group">
+        <h3>{labels.decisionsTitle}</h3>
+        <div className="moderation-metrics-grid">
+          {Object.entries(data.decisionCounts).map(([key, value]) => (
+            <div className="moderation-metric" key={key}>
+              <strong>{value}</strong>
+              <span>{labels.metricLabels[key] ?? key}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="moderation-audit">
+        <h3>{labels.recentActionsTitle}</h3>
+        {data.recentActions.length === 0 ? (
+          <p>{labels.recentActionsEmpty}</p>
+        ) : (
+          <ol>
+            {data.recentActions.map((action) => (
+              <li key={`${action.entityType}:${action.id}`}>
+                <span>
+                  <strong>{action.actorName}</strong>{' '}
+                  {labels.actionLabels[`${action.entityType}.${action.action}`] ?? action.action}
+                </span>
+                <time dateTime={action.createdAt}>
+                  {formatter.format(new Date(action.createdAt))}
+                </time>
+              </li>
+            ))}
+          </ol>
+        )}
+      </div>
+    </section>
   );
 }
 

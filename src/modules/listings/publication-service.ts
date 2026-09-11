@@ -1,5 +1,6 @@
 import {and, eq} from 'drizzle-orm';
 
+import {evaluateListingRisk} from '@/modules/moderation/risk-policy';
 import type {DatabaseClient} from '@/server/db/client';
 import {
   listing,
@@ -14,7 +15,9 @@ import {
   listingStatusHistory,
   location,
   moderationCase,
-  outboxEvent
+  moderationCaseSignal,
+  outboxEvent,
+  user
 } from '@/server/db/schema';
 import {AppError} from '@/server/errors/app-error';
 
@@ -68,6 +71,18 @@ export async function publishListingDraft(
     );
 
     const now = new Date();
+    const [seller] = await tx
+      .select({createdAt: user.createdAt})
+      .from(user)
+      .where(eq(user.id, actorId))
+      .limit(1);
+    if (!seller) throw new AppError('UNEXPECTED_ERROR', 'Listing seller was not found', 500);
+    const risk = evaluateListingRisk({
+      sellerCreatedAt: seller.createdAt,
+      title: draft.title,
+      description: draft.description,
+      now
+    });
     const publicLocationId = await resolvePublicLocationId(
       tx,
       draft.locationId!,
@@ -102,10 +117,27 @@ export async function publishListingDraft(
       toStatus: 'pending_review',
       reason: 'owner_submission'
     });
-    await tx.insert(moderationCase).values({
-      listingId: created.id,
-      policyVersion: 'manual-review-v1'
-    });
+    const [reviewCase] = await tx
+      .insert(moderationCase)
+      .values({
+        listingId: created.id,
+        priority: risk.score,
+        riskBand: risk.riskBand,
+        policyVersion: risk.policyVersion
+      })
+      .returning({id: moderationCase.id});
+    if (!reviewCase)
+      throw new AppError('UNEXPECTED_ERROR', 'Moderation case could not be created', 500);
+    if (risk.signals.length) {
+      await tx.insert(moderationCaseSignal).values(
+        risk.signals.map((signal) => ({
+          caseId: reviewCase.id,
+          code: signal.code,
+          weight: signal.weight,
+          policyVersion: risk.policyVersion
+        }))
+      );
+    }
 
     const draftHistory =
       draft.status === 'draft'

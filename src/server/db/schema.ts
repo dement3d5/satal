@@ -682,6 +682,10 @@ export const moderationRiskBand = pgEnum('moderation_risk_band', [
   'medium',
   'high'
 ]);
+export const moderationSignalCode = pgEnum('moderation_signal_code', [
+  'new_account',
+  'contact_details_in_content'
+]);
 export const moderationActionType = pgEnum('moderation_action_type', ['approve', 'reject']);
 
 export const moderationCase = pgTable(
@@ -709,6 +713,25 @@ export const moderationCase = pgTable(
       'moderation_case_resolution_consistent',
       sql`(${table.status} = 'open' and ${table.resolvedAt} is null) or (${table.status} <> 'open' and ${table.resolvedAt} is not null)`
     )
+  ]
+);
+
+export const moderationCaseSignal = pgTable(
+  'moderation_case_signal',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    caseId: uuid('case_id')
+      .notNull()
+      .references(() => moderationCase.id, {onDelete: 'restrict'}),
+    code: moderationSignalCode('code').notNull(),
+    weight: smallint('weight').notNull(),
+    policyVersion: varchar('policy_version', {length: 80}).notNull(),
+    createdAt: timestamp('created_at', {withTimezone: true}).defaultNow().notNull()
+  },
+  (table) => [
+    uniqueIndex('moderation_case_signal_case_code_unique').on(table.caseId, table.code),
+    index('moderation_case_signal_case_created_idx').on(table.caseId, table.createdAt),
+    check('moderation_case_signal_weight_range', sql`${table.weight} between 1 and 1000`)
   ]
 );
 

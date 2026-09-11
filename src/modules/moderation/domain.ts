@@ -11,7 +11,8 @@ export type ModerationCapability =
   | 'message-reports:read'
   | 'message-reports:decide'
   | 'review-reports:read'
-  | 'review-reports:decide';
+  | 'review-reports:decide'
+  | 'operations:read';
 
 const capabilities: Record<StaffRole, ReadonlySet<ModerationCapability>> = {
   moderator: new Set([
@@ -36,7 +37,8 @@ const capabilities: Record<StaffRole, ReadonlySet<ModerationCapability>> = {
     'message-reports:read',
     'message-reports:decide',
     'review-reports:read',
-    'review-reports:decide'
+    'review-reports:decide',
+    'operations:read'
   ]),
   owner: new Set([
     'queue:read',
@@ -48,7 +50,8 @@ const capabilities: Record<StaffRole, ReadonlySet<ModerationCapability>> = {
     'message-reports:read',
     'message-reports:decide',
     'review-reports:read',
-    'review-reports:decide'
+    'review-reports:decide',
+    'operations:read'
   ])
 };
 

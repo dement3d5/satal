@@ -31,6 +31,56 @@ export default async function ModerationPage({params}: {params: Promise<{locale:
           seller: t('seller'),
           risk: t('risk'),
           riskUnassessed: t('riskUnassessed'),
+          riskBands: {
+            low: t('riskBands.low'),
+            medium: t('riskBands.medium'),
+            high: t('riskBands.high')
+          },
+          riskPolicy: t('riskPolicy'),
+          riskSignalsTitle: t('riskSignalsTitle'),
+          riskSignals: {
+            new_account: t('riskSignals.newAccount'),
+            contact_details_in_content: t('riskSignals.contactDetailsInContent')
+          },
+          operationsTitle: t('operationsTitle'),
+          operationsError: t('operationsError'),
+          operationsWindows: {
+            7: t('operationsWindow', {days: 7}),
+            30: t('operationsWindow', {days: 30})
+          },
+          openWorkTitle: t('openWorkTitle'),
+          decisionsTitle: t('decisionsTitle'),
+          recentActionsTitle: t('recentActionsTitle'),
+          recentActionsEmpty: t('recentActionsEmpty'),
+          metricLabels: {
+            listings: t('metrics.listings'),
+            listingReports: t('metrics.listingReports'),
+            appeals: t('metrics.appeals'),
+            messageReports: t('metrics.messageReports'),
+            reviewReports: t('metrics.reviewReports'),
+            listingsApproved: t('metrics.listingsApproved'),
+            listingsRejected: t('metrics.listingsRejected'),
+            listingReportsDismissed: t('metrics.listingReportsDismissed'),
+            listingsRemoved: t('metrics.listingsRemoved'),
+            appealsAccepted: t('metrics.appealsAccepted'),
+            appealsRejected: t('metrics.appealsRejected'),
+            messageReportsDismissed: t('metrics.messageReportsDismissed'),
+            conversationsClosed: t('metrics.conversationsClosed'),
+            reviewReportsDismissed: t('metrics.reviewReportsDismissed'),
+            reviewsHidden: t('metrics.reviewsHidden')
+          },
+          actionLabels: {
+            'listing.approve': t('actions.listingApproved'),
+            'listing.reject': t('actions.listingRejected'),
+            'listing_report.dismiss': t('actions.listingReportDismissed'),
+            'listing_report.remove_listing': t('actions.listingRemoved'),
+            'listing_appeal.accept': t('actions.appealAccepted'),
+            'listing_appeal.reject': t('actions.appealRejected'),
+            'message_report.dismiss': t('actions.messageReportDismissed'),
+            'message_report.close_conversation': t('actions.conversationClosed'),
+            'review_report.dismiss': t('actions.reviewReportDismissed'),
+            'review_report.hide_review': t('actions.reviewHidden')
+          },
           newListingsTitle: t('newListingsTitle'),
           newListingsEmpty: t('newListingsEmpty'),
           approve: t('approve'),

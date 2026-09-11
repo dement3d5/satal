@@ -8,15 +8,15 @@ Satal uses explainable risk-based hybrid moderation, not a single opaque score o
 - medium risk: publish with prioritized post-review where policy permits;
 - high risk: hold for manual review.
 
-The implemented launch-safe baseline places every new listing in `pending_review` and opens a relational case. Low-risk auto-approval remains disabled until versioned rules, policy review, monitoring and abuse tests exist. Approval is the only transition that makes a listing public and emits `listing.published` for derived search indexing.
+The implemented launch-safe baseline places every new listing in `pending_review`, evaluates a versioned deterministic policy and opens a relational case with a bounded priority, risk band and normalized signal summaries. Low-risk auto-approval remains disabled until policy review, monitoring and abuse tests exist. Approval is the only transition that makes a listing public and emits `listing.published` for derived search indexing.
 
-Thresholds and rules are versioned/configurable. Signals may include account age/reputation, duplicate text and perceptual image hashes, category/price anomalies, suspicious links/contact patterns, reports and prior enforcement. IP is only a weak supporting signal and never a sole ban reason.
+Rules and thresholds are versioned. The first policy considers account tenure and structural contact patterns in public listing text. It persists only reason codes and weights—not the matched phone, email or URL—and only prioritizes human review. Future signals may include reputation, duplicate text and perceptual image hashes, category/price anomalies, reports and prior enforcement after policy review. IP is only a weak supporting signal and never a sole ban reason.
 
 ## Moderator experience
 
-The owner-facing queue prioritizes cases with reason summaries and evidence references. Actions require a reason and create audit records. Rejected users receive a comprehensible, non-sensitive explanation plus edit/resubmit and appeal paths where applicable.
+The staff queue prioritizes cases with localized reason summaries and policy version. Actions require a reason and create audit records. Rejected users receive a comprehensible, non-sensitive explanation plus edit/resubmit and appeal paths where applicable. Signal summaries never appear in seller-facing explanations or public APIs.
 
-The current workspace enforces explicit, optionally expiring PostgreSQL role grants, rejects self-review, excludes staff-linked listings and conversations from decision queues, locks each case/report/appeal before deciding it and never returns contact, reporter identity or internal-note fields to the browser unnecessarily. There is no public role-management endpoint and no privileged seed user. Seller appeals preserve the original rejection and append a separate decision; acceptance only reopens review. Assignment, broader evidence access and account enforcement workflows remain later additions.
+The current workspace enforces explicit, optionally expiring PostgreSQL role grants, rejects self-review, excludes staff-linked listings and conversations from decision queues, locks each case/report/appeal before deciding it and never returns contact, reporter identity or internal-note fields to the browser unnecessarily. Moderators can work queues; aggregated operations and the recent cross-queue action projection require `admin` or `owner`. There is no public role-management endpoint and no privileged seed user. Seller appeals preserve the original rejection and append a separate decision; acceptance only reopens review and preserves the original risk assessment. Assignment, broader evidence access and account enforcement workflows remain later additions.
 
 ## Reports and chat safety
 

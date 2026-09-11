@@ -64,7 +64,11 @@ integration('moderation persistence and permissions', () => {
       `;
       await client!`
         insert into moderation_case (id, listing_id, policy_version)
-        values (${caseId}, ${listingId}, 'manual-review-v1')
+        values (${caseId}, ${listingId}, 'listing-risk-v1')
+      `;
+      await client!`
+        insert into moderation_case_signal (case_id, code, weight, policy_version)
+        values (${caseId}, 'new_account', 30, 'listing-risk-v1')
       `;
 
       await expect(
@@ -82,7 +86,13 @@ integration('moderation persistence and permissions', () => {
         expect.arrayContaining([expect.objectContaining({caseId, listingId})])
       );
       await expect(listModerationQueue(db, reviewerId, {locale: 'en', limit: 30})).resolves.toEqual(
-        expect.arrayContaining([expect.objectContaining({caseId, listingId})])
+        expect.arrayContaining([
+          expect.objectContaining({
+            caseId,
+            listingId,
+            signals: [{code: 'new_account', weight: 30}]
+          })
+        ])
       );
 
       await expect(
@@ -123,6 +133,7 @@ integration('moderation persistence and permissions', () => {
     } finally {
       await client!`delete from outbox_event where aggregate_id = ${listingId}`;
       await client!`delete from moderation_action where case_id = ${caseId}`;
+      await client!`delete from moderation_case_signal where case_id = ${caseId}`;
       await client!`delete from moderation_case where id = ${caseId}`;
       await client!`delete from listing_status_history where listing_id = ${listingId}`;
       await client!`delete from listing where id = ${listingId}`;

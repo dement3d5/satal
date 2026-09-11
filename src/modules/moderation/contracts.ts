@@ -10,6 +10,14 @@ export const ownerListingQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(50).default(30)
 });
 
+export const moderationOperationsQuerySchema = z.object({
+  windowDays: z.coerce
+    .number()
+    .pipe(z.union([z.literal(7), z.literal(30)]))
+    .default(7),
+  limit: z.coerce.number().int().min(1).max(50).default(20)
+});
+
 const rejectionReasonSchema = z.enum([
   'prohibited_item',
   'fraud_risk',
@@ -35,3 +43,4 @@ export const moderationDecisionSchema = z.discriminatedUnion('action', [
 
 export type ModerationDecisionInput = z.infer<typeof moderationDecisionSchema>;
 export type ModerationQueueQuery = z.infer<typeof moderationQueueQuerySchema>;
+export type ModerationOperationsQuery = z.infer<typeof moderationOperationsQuerySchema>;

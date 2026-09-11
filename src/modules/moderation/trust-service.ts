@@ -525,7 +525,6 @@ export async function decideListingAppeal(
       .set({
         status: 'open',
         priority: sql`greatest(${moderationCase.priority}, 500)`,
-        riskBand: 'unassessed',
         assignedTo: null,
         openedAt: now,
         resolvedAt: null,

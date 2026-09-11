@@ -65,7 +65,9 @@ Better Auth owns `/api/auth/*`, credential hashing, database sessions, HttpOnly 
 
 ## Moderation contracts
 
-`GET /api/v1/moderation/cases?locale=az|ru|en&limit=30` returns a minimal localized queue DTO only to users with a live staff role. It excludes seller email, phone, internal risk evidence and credentials. `POST /api/v1/moderation/cases/{caseId}/decision` accepts a validated approve/reject union. Rejection requires a bounded public explanation; authorization, self-review and current case/listing state are rechecked inside the transaction.
+`GET /api/v1/moderation/cases?locale=az|ru|en&limit=30` returns a minimal localized queue DTO only to users with a live staff role. It includes bounded explainable signal codes/weights and the policy version, but excludes matched private content, seller email/phone, unrestricted evidence and credentials. `POST /api/v1/moderation/cases/{caseId}/decision` accepts a validated approve/reject union. Rejection requires a bounded public explanation; authorization, self-review and current case/listing state are rechecked inside the transaction.
+
+`GET /api/v1/moderation/operations?windowDays=7|30&limit=20` is limited to live `admin` and `owner` grants. It returns current queue counts, bounded decision aggregates for the requested window and a recent append-only action projection. The projection contains actor display name, action, target identity and timestamp only; it omits notes, reporter identities, message/listing content, account risk data and contact details. Responses are private and `no-store`.
 
 `GET /api/v1/listings/{listingId}/review` is seller-owner only and returns the current review state plus the safe rejection explanation. Cross-owner identifiers return `NOT_FOUND`. All moderation and owner-review responses are private and `no-store`.
 
