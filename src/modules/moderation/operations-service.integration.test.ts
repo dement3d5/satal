@@ -61,13 +61,25 @@ integration('moderation operations permissions and audit projection', () => {
         )
       `;
       await client!`
-        insert into moderation_case (id, listing_id, policy_version, risk_band)
-        values (${caseId}, ${listingId}, 'listing-risk-v1', 'low')
+        insert into moderation_case (id, listing_id, policy_version, risk_band, opened_at)
+        values (${caseId}, ${listingId}, 'listing-risk-v1', 'low', now() - interval '25 hours')
       `;
 
       await expect(
         getModerationOperations(db, moderatorId, {windowDays: 7, limit: 50})
       ).rejects.toMatchObject({code: 'FORBIDDEN'});
+
+      const beforeDecision = await getModerationOperations(db, ownerId, {
+        windowDays: 7,
+        limit: 50
+      });
+      expect(beforeDecision.queueCounts.unassignedListings).toBeGreaterThanOrEqual(1);
+      expect(beforeDecision.queueCounts.overdueListings).toBeGreaterThanOrEqual(1);
+      expect(beforeDecision.sla).toMatchObject({
+        listingTargetHours: 24,
+        dueSoonAfterHours: 18
+      });
+      expect(beforeDecision.sla.oldestOpenMinutes).toBeGreaterThanOrEqual(1_499);
 
       await decideModerationCase(db, ownerId, caseId, {
         action: 'approve',
@@ -86,6 +98,21 @@ integration('moderation operations permissions and audit projection', () => {
             entityId: listingId,
             action: 'approve',
             actorName: 'Operations owner'
+          }),
+          expect.objectContaining({
+            entityType: 'moderation_case',
+            entityId: listingId,
+            action: 'claim',
+            actorName: 'Operations owner'
+          })
+        ])
+      );
+      expect(operations.staffAccess).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            actorName: 'Operations owner',
+            surface: 'operations',
+            accessCount: 2
           })
         ])
       );
@@ -94,10 +121,14 @@ integration('moderation operations permissions and audit projection', () => {
     } finally {
       await client!`delete from outbox_event where aggregate_id = ${listingId}`;
       await client!`delete from moderation_action where case_id = ${caseId}`;
+      await client!`delete from moderation_case_assignment_event where case_id = ${caseId}`;
       await client!`delete from moderation_case where id = ${caseId}`;
       await client!`delete from listing_status_history where listing_id = ${listingId}`;
       await client!`delete from listing where id = ${listingId}`;
       await client!`delete from listing_draft where id = ${draftId}`;
+      await client!`
+        delete from moderation_workspace_access where actor_id in (${ownerId}, ${moderatorId})
+      `;
       await client!`delete from user_role where user_id in (${ownerId}, ${moderatorId})`;
       await client!`delete from "user" where id in (${sellerId}, ${ownerId}, ${moderatorId})`;
     }

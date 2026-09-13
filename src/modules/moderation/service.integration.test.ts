@@ -7,10 +7,12 @@ import {afterAll, beforeAll, describe, expect, it} from 'vitest';
 import * as schema from '@/server/db/schema';
 
 import {
+  claimModerationCase,
   decideModerationCase,
   getOwnListingReview,
   listModerationQueue,
-  listOwnListings
+  listOwnListings,
+  releaseModerationCase
 } from './service';
 
 const databaseUrl = process.env.TEST_DATABASE_URL;
@@ -29,6 +31,8 @@ integration('moderation persistence and permissions', () => {
   it('keeps the queue staff-only and records an atomic approval', async () => {
     const sellerId = randomUUID();
     const reviewerId = randomUUID();
+    const secondReviewerId = randomUUID();
+    const adminId = randomUUID();
     const ordinaryId = randomUUID();
     const draftId = randomUUID();
     const listingId = randomUUID();
@@ -40,11 +44,17 @@ integration('moderation persistence and permissions', () => {
         values
           (${sellerId}, 'Moderation seller', ${`${sellerId}@example.test`}, true),
           (${reviewerId}, 'Moderation reviewer', ${`${reviewerId}@example.test`}, true),
+          (${secondReviewerId}, 'Second reviewer', ${`${secondReviewerId}@example.test`}, true),
+          (${adminId}, 'Moderation admin', ${`${adminId}@example.test`}, true),
           (${ordinaryId}, 'Ordinary user', ${`${ordinaryId}@example.test`}, true)
       `;
       await client!`
         insert into user_role (user_id, role, granted_by)
-        values (${reviewerId}, 'moderator', ${reviewerId}), (${sellerId}, 'moderator', ${reviewerId})
+        values
+          (${reviewerId}, 'moderator', ${adminId}),
+          (${secondReviewerId}, 'moderator', ${adminId}),
+          (${adminId}, 'admin', ${adminId}),
+          (${sellerId}, 'moderator', ${adminId})
       `;
       await client!`
         insert into listing_draft (id, owner_id, category_id, category_schema_version, status)
@@ -95,14 +105,54 @@ integration('moderation persistence and permissions', () => {
         ])
       );
 
+      await expect(claimModerationCase(db, reviewerId, caseId)).resolves.toMatchObject({
+        caseId,
+        assigneeName: 'Moderation reviewer',
+        isAssignedToActor: true
+      });
+      await expect(claimModerationCase(db, reviewerId, caseId)).resolves.toMatchObject({
+        caseId,
+        isAssignedToActor: true
+      });
       await expect(
-        decideModerationCase(db, reviewerId, caseId, {
+        listModerationQueue(db, secondReviewerId, {locale: 'en', limit: 30})
+      ).resolves.toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            caseId,
+            assigneeName: 'Moderation reviewer',
+            isAssignedToActor: false,
+            ageMinutes: expect.any(Number),
+            slaState: 'within_target'
+          })
+        ])
+      );
+      await expect(claimModerationCase(db, secondReviewerId, caseId)).rejects.toMatchObject({
+        code: 'CONFLICT'
+      });
+      await expect(
+        decideModerationCase(db, secondReviewerId, caseId, {
+          action: 'approve',
+          reasonCode: 'policy_compliant'
+        })
+      ).rejects.toMatchObject({code: 'CONFLICT'});
+      await expect(releaseModerationCase(db, adminId, caseId)).resolves.toMatchObject({
+        caseId,
+        assigneeName: null
+      });
+      await expect(claimModerationCase(db, secondReviewerId, caseId)).resolves.toMatchObject({
+        caseId,
+        assigneeName: 'Second reviewer'
+      });
+
+      await expect(
+        decideModerationCase(db, secondReviewerId, caseId, {
           action: 'approve',
           reasonCode: 'policy_compliant'
         })
       ).resolves.toMatchObject({caseId, listingId, status: 'active', version: 2});
       await expect(
-        decideModerationCase(db, reviewerId, caseId, {
+        decideModerationCase(db, secondReviewerId, caseId, {
           action: 'approve',
           reasonCode: 'policy_compliant'
         })
@@ -130,16 +180,33 @@ integration('moderation persistence and permissions', () => {
         reason_code: 'policy_compliant'
       });
       expect(Number.isNaN(Date.parse(String(audit?.published_at)))).toBe(false);
+      const [assignmentAudit] = await client!`
+        select count(*)::int as event_count
+        from moderation_case_assignment_event
+        where case_id = ${caseId}
+      `;
+      expect(assignmentAudit?.event_count).toBe(3);
     } finally {
       await client!`delete from outbox_event where aggregate_id = ${listingId}`;
       await client!`delete from moderation_action where case_id = ${caseId}`;
+      await client!`delete from moderation_case_assignment_event where case_id = ${caseId}`;
       await client!`delete from moderation_case_signal where case_id = ${caseId}`;
       await client!`delete from moderation_case where id = ${caseId}`;
       await client!`delete from listing_status_history where listing_id = ${listingId}`;
       await client!`delete from listing where id = ${listingId}`;
       await client!`delete from listing_draft where id = ${draftId}`;
-      await client!`delete from user_role where user_id in (${sellerId}, ${reviewerId})`;
-      await client!`delete from "user" where id in (${sellerId}, ${reviewerId}, ${ordinaryId})`;
+      await client!`
+        delete from moderation_workspace_access
+        where actor_id in (${sellerId}, ${reviewerId}, ${secondReviewerId}, ${adminId})
+      `;
+      await client!`
+        delete from user_role
+        where user_id in (${sellerId}, ${reviewerId}, ${secondReviewerId}, ${adminId})
+      `;
+      await client!`
+        delete from "user"
+        where id in (${sellerId}, ${reviewerId}, ${secondReviewerId}, ${adminId}, ${ordinaryId})
+      `;
     }
   });
 });

@@ -99,6 +99,13 @@
       "when": 1789119689635,
       "tag": "0013_fixed_stephen_strange",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1789123347245,
+      "tag": "0014_illegal_squadron_supreme",
+      "breakpoints": true
     }
   ]
 }

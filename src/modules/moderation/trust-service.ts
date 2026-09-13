@@ -526,6 +526,7 @@ export async function decideListingAppeal(
         status: 'open',
         priority: sql`greatest(${moderationCase.priority}, 500)`,
         assignedTo: null,
+        assignedAt: null,
         openedAt: now,
         resolvedAt: null,
         updatedAt: now

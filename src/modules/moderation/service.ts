@@ -10,7 +10,9 @@ import {
   locationTranslation,
   moderationAction,
   moderationCase,
+  moderationCaseAssignmentEvent,
   moderationCaseSignal,
+  moderationWorkspaceAccess,
   outboxEvent,
   user,
   userRole
@@ -20,7 +22,10 @@ import {AppError} from '@/server/errors/app-error';
 import type {ModerationDecisionInput, ModerationQueueQuery} from './contracts';
 import {
   assertModerationCapability,
+  assertAssignmentAvailable,
   assertReviewableCase,
+  hasModerationCapability,
+  moderationCaseAge,
   type ModerationCapability,
   type StaffRole
 } from './domain';
@@ -33,6 +38,8 @@ export async function listModerationQueue(
   query: ModerationQueueQuery
 ) {
   await requireModerationCapability(db, actorId, 'queue:read');
+  await recordModerationAccess(db, actorId, 'queue');
+  const now = new Date();
   const rows = await db
     .select({
       caseId: moderationCase.id,
@@ -41,6 +48,8 @@ export async function listModerationQueue(
       riskBand: moderationCase.riskBand,
       policyVersion: moderationCase.policyVersion,
       openedAt: moderationCase.openedAt,
+      assignedTo: moderationCase.assignedTo,
+      assignedAt: moderationCase.assignedAt,
       title: listing.title,
       description: listing.description,
       priceMinor: listing.priceMinor,
@@ -102,11 +111,102 @@ export async function listModerationQueue(
     signalsByCase.set(signal.caseId, existing);
   }
 
-  return rows.map((row) => ({
-    ...row,
-    openedAt: row.openedAt.toISOString(),
-    signals: signalsByCase.get(row.caseId) ?? []
-  }));
+  const assigneeIds = [...new Set(rows.flatMap((row) => (row.assignedTo ? [row.assignedTo] : [])))];
+  const assignees = assigneeIds.length
+    ? await db
+        .select({id: user.id, name: user.name})
+        .from(user)
+        .where(inArray(user.id, assigneeIds))
+    : [];
+  const assigneeNameById = new Map(assignees.map((assignee) => [assignee.id, assignee.name]));
+
+  return rows.map((row) => {
+    const {assignedTo, assignedAt, ...publicRow} = row;
+    return {
+      ...publicRow,
+      openedAt: row.openedAt.toISOString(),
+      assignedAt: assignedAt?.toISOString() ?? null,
+      assigneeName: assignedTo ? (assigneeNameById.get(assignedTo) ?? null) : null,
+      isAssignedToActor: assignedTo === actorId,
+      ...moderationCaseAge({openedAt: row.openedAt, now}),
+      signals: signalsByCase.get(row.caseId) ?? []
+    };
+  });
+}
+
+export async function claimModerationCase(db: DatabaseClient, actorId: string, caseId: string) {
+  return db.transaction(async (tx) => {
+    await requireModerationCapability(tx, actorId, 'assignment:write');
+    const reviewCase = await readReviewableCaseForUpdate(tx, actorId, caseId);
+    assertAssignmentAvailable({actorId, assignedTo: reviewCase.assignedTo});
+    const [actor] = await tx
+      .select({name: user.name})
+      .from(user)
+      .where(eq(user.id, actorId))
+      .limit(1);
+    if (!actor) throw new AppError('NOT_FOUND', 'Moderator was not found', 404);
+
+    if (reviewCase.assignedTo === actorId) {
+      return {
+        caseId,
+        assigneeName: actor.name,
+        assignedAt: reviewCase.assignedAt?.toISOString() ?? null,
+        isAssignedToActor: true
+      };
+    }
+
+    const now = new Date();
+    await tx
+      .update(moderationCase)
+      .set({assignedTo: actorId, assignedAt: now, updatedAt: now})
+      .where(eq(moderationCase.id, caseId));
+    await tx.insert(moderationCaseAssignmentEvent).values({
+      caseId,
+      actorId,
+      action: 'claim',
+      previousAssigneeId: null,
+      nextAssigneeId: actorId,
+      createdAt: now
+    });
+
+    return {
+      caseId,
+      assigneeName: actor.name,
+      assignedAt: now.toISOString(),
+      isAssignedToActor: true
+    };
+  });
+}
+
+export async function releaseModerationCase(db: DatabaseClient, actorId: string, caseId: string) {
+  return db.transaction(async (tx) => {
+    const roles = await requireModerationCapability(tx, actorId, 'assignment:write');
+    const reviewCase = await readReviewableCaseForUpdate(tx, actorId, caseId);
+    if (!reviewCase.assignedTo) {
+      return {caseId, assigneeName: null, assignedAt: null, isAssignedToActor: false};
+    }
+    if (
+      reviewCase.assignedTo !== actorId &&
+      !hasModerationCapability(roles, 'assignment:override')
+    ) {
+      throw new AppError('FORBIDDEN', 'Only the assignee can release this moderation case', 403);
+    }
+
+    const now = new Date();
+    await tx
+      .update(moderationCase)
+      .set({assignedTo: null, assignedAt: null, updatedAt: now})
+      .where(eq(moderationCase.id, caseId));
+    await tx.insert(moderationCaseAssignmentEvent).values({
+      caseId,
+      actorId,
+      action: 'release',
+      previousAssigneeId: reviewCase.assignedTo,
+      nextAssigneeId: null,
+      createdAt: now
+    });
+    return {caseId, assigneeName: null, assignedAt: null, isAssignedToActor: false};
+  });
 }
 
 export async function decideModerationCase(
@@ -121,7 +221,9 @@ export async function decideModerationCase(
       .select({
         id: moderationCase.id,
         status: moderationCase.status,
-        listingId: moderationCase.listingId
+        listingId: moderationCase.listingId,
+        assignedTo: moderationCase.assignedTo,
+        assignedAt: moderationCase.assignedAt
       })
       .from(moderationCase)
       .where(eq(moderationCase.id, caseId))
@@ -141,6 +243,7 @@ export async function decideModerationCase(
       reviewerId: actorId,
       sellerId: target.sellerId
     });
+    assertAssignmentAvailable({actorId, assignedTo: reviewCase.assignedTo});
 
     const now = new Date();
     const nextStatus = input.action === 'approve' ? 'active' : 'rejected';
@@ -159,11 +262,23 @@ export async function decideModerationCase(
       .returning({id: listing.id, version: listing.version, status: listing.status});
     if (!updated) throw new AppError('CONFLICT', 'Listing changed during moderation', 409);
 
+    if (!reviewCase.assignedTo) {
+      await tx.insert(moderationCaseAssignmentEvent).values({
+        caseId,
+        actorId,
+        action: 'claim',
+        previousAssigneeId: null,
+        nextAssigneeId: actorId,
+        createdAt: now
+      });
+    }
+
     await tx
       .update(moderationCase)
       .set({
         status: input.action === 'approve' ? 'approved' : 'rejected',
         assignedTo: actorId,
+        assignedAt: reviewCase.assignedAt ?? now,
         resolvedAt: now,
         updatedAt: now
       })
@@ -352,7 +467,7 @@ export async function requireModerationCapability(
   db: QueryExecutor,
   actorId: string,
   capability: ModerationCapability
-): Promise<void> {
+): Promise<StaffRole[]> {
   const now = new Date();
   const rows = await db
     .select({role: userRole.role})
@@ -364,8 +479,63 @@ export async function requireModerationCapability(
         or(isNull(userRole.expiresAt), gt(userRole.expiresAt, now))
       )
     );
-  assertModerationCapability(
-    rows.map((row) => row.role as StaffRole),
-    capability
-  );
+  const roles = rows.map((row) => row.role as StaffRole);
+  assertModerationCapability(roles, capability);
+  return roles;
+}
+
+export async function recordModerationAccess(
+  db: DatabaseClient,
+  actorId: string,
+  surface: 'queue' | 'operations'
+): Promise<void> {
+  const now = new Date();
+  const accessDate = now.toISOString().slice(0, 10);
+  await db
+    .insert(moderationWorkspaceAccess)
+    .values({actorId, surface, accessDate, firstAccessAt: now, lastAccessAt: now})
+    .onConflictDoUpdate({
+      target: [
+        moderationWorkspaceAccess.actorId,
+        moderationWorkspaceAccess.surface,
+        moderationWorkspaceAccess.accessDate
+      ],
+      set: {
+        lastAccessAt: now,
+        accessCount: sql`${moderationWorkspaceAccess.accessCount} + 1`
+      }
+    });
+}
+
+async function readReviewableCaseForUpdate(
+  tx: Parameters<Parameters<DatabaseClient['transaction']>[0]>[0],
+  actorId: string,
+  caseId: string
+) {
+  const [reviewCase] = await tx
+    .select({
+      id: moderationCase.id,
+      status: moderationCase.status,
+      listingId: moderationCase.listingId,
+      assignedTo: moderationCase.assignedTo,
+      assignedAt: moderationCase.assignedAt
+    })
+    .from(moderationCase)
+    .where(eq(moderationCase.id, caseId))
+    .for('update')
+    .limit(1);
+  if (!reviewCase) throw new AppError('NOT_FOUND', 'Moderation case was not found', 404);
+  const [target] = await tx
+    .select({status: listing.status, sellerId: listing.sellerId})
+    .from(listing)
+    .where(eq(listing.id, reviewCase.listingId))
+    .limit(1);
+  if (!target) throw new AppError('NOT_FOUND', 'Listing was not found', 404);
+  assertReviewableCase({
+    caseStatus: reviewCase.status,
+    listingStatus: target.status,
+    reviewerId: actorId,
+    sellerId: target.sellerId
+  });
+  return reviewCase;
 }

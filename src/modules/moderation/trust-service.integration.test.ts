@@ -327,6 +327,7 @@ integration('reports and appeals persistence and permissions', () => {
       await client!`delete from listing_appeal_action where appeal_id in (select id from listing_appeal where listing_id in (${acceptedListingId}, ${rejectedListingId}))`;
       await client!`delete from listing_appeal where listing_id in (${acceptedListingId}, ${rejectedListingId})`;
       await client!`delete from moderation_action where case_id in (${acceptedCaseId}, ${rejectedCaseId})`;
+      await client!`delete from moderation_case_assignment_event where case_id in (${acceptedCaseId}, ${rejectedCaseId})`;
       await client!`delete from moderation_case where id in (${acceptedCaseId}, ${rejectedCaseId})`;
       await client!`delete from listing_status_history where listing_id in (${acceptedListingId}, ${rejectedListingId})`;
       await client!`delete from listing where id in (${acceptedListingId}, ${rejectedListingId})`;

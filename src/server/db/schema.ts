@@ -687,6 +687,11 @@ export const moderationSignalCode = pgEnum('moderation_signal_code', [
   'contact_details_in_content'
 ]);
 export const moderationActionType = pgEnum('moderation_action_type', ['approve', 'reject']);
+export const moderationAssignmentEventType = pgEnum('moderation_assignment_event_type', [
+  'claim',
+  'release'
+]);
+export const moderationAccessSurface = pgEnum('moderation_access_surface', ['queue', 'operations']);
 
 export const moderationCase = pgTable(
   'moderation_case',
@@ -700,6 +705,7 @@ export const moderationCase = pgTable(
     riskBand: moderationRiskBand('risk_band').default('unassessed').notNull(),
     policyVersion: varchar('policy_version', {length: 80}).notNull(),
     assignedTo: uuid('assigned_to').references(() => user.id, {onDelete: 'restrict'}),
+    assignedAt: timestamp('assigned_at', {withTimezone: true}),
     openedAt: timestamp('opened_at', {withTimezone: true}).defaultNow().notNull(),
     resolvedAt: timestamp('resolved_at', {withTimezone: true}),
     ...timestamps
@@ -709,6 +715,10 @@ export const moderationCase = pgTable(
     index('moderation_case_queue_idx').on(table.status, table.priority, table.openedAt),
     index('moderation_case_assignee_idx').on(table.assignedTo, table.status, table.updatedAt),
     check('moderation_case_priority_range', sql`${table.priority} between 0 and 1000`),
+    check(
+      'moderation_case_assignment_consistent',
+      sql`(${table.assignedTo} is null and ${table.assignedAt} is null) or (${table.assignedTo} is not null and ${table.assignedAt} is not null)`
+    ),
     check(
       'moderation_case_resolution_consistent',
       sql`(${table.status} = 'open' and ${table.resolvedAt} is null) or (${table.status} <> 'open' and ${table.resolvedAt} is not null)`
@@ -759,6 +769,58 @@ export const moderationAction = pgTable(
       'moderation_action_rejection_has_explanation',
       sql`${table.action} <> 'reject' or (${table.publicExplanation} is not null and length(btrim(${table.publicExplanation})) >= 10)`
     )
+  ]
+);
+
+export const moderationCaseAssignmentEvent = pgTable(
+  'moderation_case_assignment_event',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    caseId: uuid('case_id')
+      .notNull()
+      .references(() => moderationCase.id, {onDelete: 'restrict'}),
+    actorId: uuid('actor_id')
+      .notNull()
+      .references(() => user.id, {onDelete: 'restrict'}),
+    action: moderationAssignmentEventType('action').notNull(),
+    previousAssigneeId: uuid('previous_assignee_id').references(() => user.id, {
+      onDelete: 'restrict'
+    }),
+    nextAssigneeId: uuid('next_assignee_id').references(() => user.id, {onDelete: 'restrict'}),
+    createdAt: timestamp('created_at', {withTimezone: true}).defaultNow().notNull()
+  },
+  (table) => [
+    index('moderation_assignment_case_created_idx').on(table.caseId, table.createdAt),
+    index('moderation_assignment_actor_created_idx').on(table.actorId, table.createdAt),
+    check(
+      'moderation_assignment_transition_valid',
+      sql`(${table.action} = 'claim' and ${table.nextAssigneeId} is not null) or (${table.action} = 'release' and ${table.previousAssigneeId} is not null and ${table.nextAssigneeId} is null)`
+    )
+  ]
+);
+
+export const moderationWorkspaceAccess = pgTable(
+  'moderation_workspace_access',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    actorId: uuid('actor_id')
+      .notNull()
+      .references(() => user.id, {onDelete: 'restrict'}),
+    surface: moderationAccessSurface('surface').notNull(),
+    accessDate: date('access_date').notNull(),
+    firstAccessAt: timestamp('first_access_at', {withTimezone: true}).notNull(),
+    lastAccessAt: timestamp('last_access_at', {withTimezone: true}).notNull(),
+    accessCount: integer('access_count').default(1).notNull()
+  },
+  (table) => [
+    uniqueIndex('moderation_access_actor_surface_date_unique').on(
+      table.actorId,
+      table.surface,
+      table.accessDate
+    ),
+    index('moderation_access_surface_last_idx').on(table.surface, table.lastAccessAt),
+    check('moderation_access_count_positive', sql`${table.accessCount} > 0`),
+    check('moderation_access_time_consistent', sql`${table.lastAccessAt} >= ${table.firstAccessAt}`)
   ]
 );
 

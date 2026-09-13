@@ -337,6 +337,22 @@
       "newAccount": "Yeni hesab",
       "contactDetailsInContent": "Elan mətnində əlaqə məlumatı"
     },
+    "assignedTo": "Məsul şəxs",
+    "unassigned": "təyin edilməyib",
+    "claim": "İşə götür",
+    "claiming": "Təyin edilir...",
+    "release": "Azad et",
+    "releasing": "Azad edilir...",
+    "queueAge": "Növbədə",
+    "minutesShort": "dəq",
+    "hoursShort": "saat",
+    "slaStates": {
+      "withinTarget": "Vaxtındadır",
+      "dueSoon": "Müddət yaxınlaşır",
+      "overdue": "Gecikib"
+    },
+    "slaTarget": "Elan yoxlama hədəfi",
+    "oldestOpen": "Ən köhnə açıq iş",
     "operationsTitle": "Moderasiya vəziyyəti",
     "operationsError": "Moderasiya göstəricilərini yükləmək olmadı. İş növbələri əlçatandır.",
     "operationsWindow": "Son {days} gün",
@@ -344,8 +360,19 @@
     "decisionsTitle": "Dövr üzrə qərarlar",
     "recentActionsTitle": "Son əməliyyatlar",
     "recentActionsEmpty": "Bu dövrdə hələ əməliyyat yoxdur.",
+    "staffAccessTitle": "Əməkdaş girişləri",
+    "staffAccessEmpty": "Bu dövrdə hələ giriş yoxdur.",
+    "staffAccessCount": "giriş sayı",
+    "accessSurfaces": {
+      "queue": "elan növbəsi",
+      "operations": "əməliyyat paneli"
+    },
     "metrics": {
       "listings": "Elanlar",
+      "assignedListings": "Əməkdaşa təyin edilib",
+      "unassignedListings": "Məsul şəxs yoxdur",
+      "dueSoonListings": "Müddət yaxınlaşır",
+      "overdueListings": "Gecikib",
       "listingReports": "Elan şikayətləri",
       "appeals": "Apellyasiyalar",
       "messageReports": "Mesaj şikayətləri",
@@ -364,6 +391,8 @@
     "actions": {
       "listingApproved": "elanı təsdiqlədi",
       "listingRejected": "elanı rədd etdi",
+      "caseClaimed": "elanı işə götürdü",
+      "caseReleased": "elanı azad etdi",
       "listingReportDismissed": "elan şikayətini rədd etdi",
       "listingRemoved": "şikayət üzrə elanı sildi",
       "appealAccepted": "apellyasiyanı qəbul etdi",
@@ -417,7 +446,7 @@
     "appealReject": "Apellyasiyanı rədd et",
     "actionAuth": "Sessiya başa çatıb. Yenidən daxil olun və əməliyyatı təkrarlayın.",
     "actionForbidden": "Bu materialı cari hesabla yoxlamaq olmaz: o sizinlə bağlıdır və ya icazələr dəyişib. Kart növbədən çıxarıldı.",
-    "actionConflict": "Material artıq dəyişdirilib və ya yoxlanılıb. Kart növbədən çıxarıldı.",
+    "actionConflict": "Material dəyişib, başqa əməkdaşa təyin edilib və ya artıq yoxlanılıb. Növbəni yeniləyin.",
     "actionError": "Qərarı saxlamaq mümkün olmadı. Növbəni yeniləyib yenidən cəhd edin.",
     "reasons": {
       "prohibitedItem": "Qadağan olunmuş məhsul",

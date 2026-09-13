@@ -54,7 +54,9 @@ The review-safety milestone adds authenticated reports on public reviews, idempo
 
 The moderation-operations milestone adds a versioned explainable listing assessment, normalized privacy-safe signal summaries, priority-aware staff review and an `admin`/`owner` operations panel with current queue counts, bounded decision metrics and a safe cross-queue audit projection. Signals never auto-enforce and every listing still requires manual approval.
 
-Remaining: production realtime delivery, legally reviewed bans/enforcement, richer workload/SLA metrics and broader evidence-access audit tools.
+The moderation-workload milestone adds atomic case claim/release, parallel-decision protection, append-only assignment history, explicit 18/24-hour queue SLA indicators, owner/admin workload metrics and bounded daily queue/operations access auditing.
+
+Remaining: production realtime delivery, legally reviewed bans/restrictions and appeals, detailed evidence-view audit, moderator staffing/escalation policy and automatic production media-worker operation.
 
 ## Phase 5 — shops
 

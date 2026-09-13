@@ -16,6 +16,11 @@ interface QueueItem {
     weight: number;
   }>;
   openedAt: string;
+  assignedAt: string | null;
+  assigneeName: string | null;
+  isAssignedToActor: boolean;
+  ageMinutes: number;
+  slaState: 'within_target' | 'due_soon' | 'overdue';
   title: string;
   description: string;
   priceMinor: number | null;
@@ -29,9 +34,22 @@ interface ModerationOperations {
   generatedAt: string;
   windowDays: 7 | 30;
   queueCounts: Record<
-    'listings' | 'listingReports' | 'appeals' | 'messageReports' | 'reviewReports',
+    | 'listings'
+    | 'assignedListings'
+    | 'unassignedListings'
+    | 'dueSoonListings'
+    | 'overdueListings'
+    | 'listingReports'
+    | 'appeals'
+    | 'messageReports'
+    | 'reviewReports',
     number
   >;
+  sla: {
+    listingTargetHours: number;
+    dueSoonAfterHours: number;
+    oldestOpenMinutes: number;
+  };
   decisionCounts: Record<
     | 'listingsApproved'
     | 'listingsRejected'
@@ -48,11 +66,22 @@ interface ModerationOperations {
   recentActions: Array<{
     id: string;
     entityType:
-      'listing' | 'listing_report' | 'listing_appeal' | 'message_report' | 'review_report';
+      | 'listing'
+      | 'moderation_case'
+      | 'listing_report'
+      | 'listing_appeal'
+      | 'message_report'
+      | 'review_report';
     entityId: string;
     action: string;
     actorName: string;
     createdAt: string;
+  }>;
+  staffAccess: Array<{
+    actorName: string;
+    surface: 'queue' | 'operations';
+    accessCount: number;
+    lastAccessAt: string;
   }>;
 }
 
@@ -119,6 +148,18 @@ interface ModerationLabels {
   riskPolicy: string;
   riskSignalsTitle: string;
   riskSignals: Record<'new_account' | 'contact_details_in_content', string>;
+  assignedTo: string;
+  unassigned: string;
+  claim: string;
+  claiming: string;
+  release: string;
+  releasing: string;
+  queueAge: string;
+  minutesShort: string;
+  hoursShort: string;
+  slaStates: Record<'within_target' | 'due_soon' | 'overdue', string>;
+  slaTarget: string;
+  oldestOpen: string;
   operationsTitle: string;
   operationsError: string;
   operationsWindows: Record<7 | 30, string>;
@@ -126,6 +167,10 @@ interface ModerationLabels {
   decisionsTitle: string;
   recentActionsTitle: string;
   recentActionsEmpty: string;
+  staffAccessTitle: string;
+  staffAccessEmpty: string;
+  staffAccessCount: string;
+  accessSurfaces: Record<'queue' | 'operations', string>;
   metricLabels: Record<string, string>;
   actionLabels: Record<string, string>;
   newListingsTitle: string;
@@ -272,6 +317,35 @@ export function ModerationDashboard({
         return;
       }
       setItems((current) => current.filter((item) => item.caseId !== caseId));
+    } catch {
+      setActionError(labels.actionError);
+    } finally {
+      setPendingAction(null);
+    }
+  }
+
+  async function changeAssignment(caseId: string, action: 'claim' | 'release') {
+    const key = `assignment:${action}:${caseId}`;
+    setPendingAction(key);
+    setActionError(null);
+    try {
+      const response = await fetch(`/api/v1/moderation/cases/${caseId}/assignment`, {
+        method: action === 'claim' ? 'PUT' : 'DELETE'
+      });
+      if (!response.ok) {
+        if (response.status === 401) setState('auth');
+        if (response.status === 404) {
+          setItems((current) => current.filter((item) => item.caseId !== caseId));
+        }
+        setActionError(actionErrorFor(response));
+        return;
+      }
+      const body = (await response.json()) as {
+        data: Pick<QueueItem, 'assigneeName' | 'assignedAt' | 'isAssignedToActor'>;
+      };
+      setItems((current) =>
+        current.map((item) => (item.caseId === caseId ? {...item, ...body.data} : item))
+      );
     } catch {
       setActionError(labels.actionError);
     } finally {
@@ -470,7 +544,13 @@ export function ModerationDashboard({
 
       <QueueSection title={labels.newListingsTitle} empty={labels.newListingsEmpty}>
         {items.map((item) => {
-          const pending = pendingAction === `case:${item.caseId}`;
+          const pending = pendingAction?.endsWith(item.caseId) ?? false;
+          const canOverrideAssignment = operations !== null;
+          const canDecide = item.assigneeName === null || item.isAssignedToActor;
+          const ageValue =
+            item.ageMinutes >= 60
+              ? `${Math.floor(item.ageMinutes / 60)} ${labels.hoursShort}`
+              : `${item.ageMinutes} ${labels.minutesShort}`;
           return (
             <article className="moderation-card" key={item.caseId}>
               <header>
@@ -502,10 +582,41 @@ export function ModerationDashboard({
               <small>
                 {labels.seller}: {item.sellerName}
               </small>
+              <div className="moderation-assignment">
+                <span className={`status-chip moderation-sla-${item.slaState.replace('_', '-')}`}>
+                  {labels.slaStates[item.slaState]} · {labels.queueAge}: {ageValue}
+                </span>
+                <span>
+                  {labels.assignedTo}: {item.assigneeName ?? labels.unassigned}
+                </span>
+                {item.assigneeName === null ? (
+                  <button
+                    className="button"
+                    disabled={pending}
+                    onClick={() => void changeAssignment(item.caseId, 'claim')}
+                    type="button"
+                  >
+                    {pendingAction === `assignment:claim:${item.caseId}`
+                      ? labels.claiming
+                      : labels.claim}
+                  </button>
+                ) : item.isAssignedToActor || canOverrideAssignment ? (
+                  <button
+                    className="button"
+                    disabled={pending}
+                    onClick={() => void changeAssignment(item.caseId, 'release')}
+                    type="button"
+                  >
+                    {pendingAction === `assignment:release:${item.caseId}`
+                      ? labels.releasing
+                      : labels.release}
+                  </button>
+                ) : null}
+              </div>
               <div className="moderation-actions">
                 <button
                   className="button button-primary"
-                  disabled={pending}
+                  disabled={pending || !canDecide}
                   onClick={() =>
                     void decideCase(item.caseId, {
                       action: 'approve',
@@ -539,7 +650,7 @@ export function ModerationDashboard({
                         placeholder={labels.explanationHint}
                       />
                     </label>
-                    <button className="button" disabled={pending} type="submit">
+                    <button className="button" disabled={pending || !canDecide} type="submit">
                       {pending ? labels.rejecting : labels.reject}
                     </button>
                   </form>
@@ -775,6 +886,10 @@ function OperationsOverview({
   data: ModerationOperations;
 }) {
   const formatter = new Intl.DateTimeFormat(locale, {dateStyle: 'medium', timeStyle: 'short'});
+  const oldestOpenValue =
+    data.sla.oldestOpenMinutes >= 60
+      ? `${Math.floor(data.sla.oldestOpenMinutes / 60)} ${labels.hoursShort}`
+      : `${data.sla.oldestOpenMinutes} ${labels.minutesShort}`;
   return (
     <section className="moderation-operations" aria-labelledby="moderation-operations-title">
       <header>
@@ -794,6 +909,17 @@ function OperationsOverview({
             </div>
           ))}
         </div>
+        <p className="moderation-sla-summary">
+          <span>
+            {labels.slaTarget}:{' '}
+            <strong>
+              {data.sla.listingTargetHours} {labels.hoursShort}
+            </strong>
+          </span>
+          <span>
+            {labels.oldestOpen}: <strong>{oldestOpenValue}</strong>
+          </span>
+        </p>
       </div>
       <div className="moderation-metrics-group">
         <h3>{labels.decisionsTitle}</h3>
@@ -820,6 +946,26 @@ function OperationsOverview({
                 </span>
                 <time dateTime={action.createdAt}>
                   {formatter.format(new Date(action.createdAt))}
+                </time>
+              </li>
+            ))}
+          </ol>
+        )}
+      </div>
+      <div className="moderation-audit">
+        <h3>{labels.staffAccessTitle}</h3>
+        {data.staffAccess.length === 0 ? (
+          <p>{labels.staffAccessEmpty}</p>
+        ) : (
+          <ol>
+            {data.staffAccess.map((entry) => (
+              <li key={`${entry.actorName}:${entry.surface}`}>
+                <span>
+                  <strong>{entry.actorName}</strong> · {labels.accessSurfaces[entry.surface]} ·{' '}
+                  {labels.staffAccessCount}: {entry.accessCount}
+                </span>
+                <time dateTime={entry.lastAccessAt}>
+                  {formatter.format(new Date(entry.lastAccessAt))}
                 </time>
               </li>
             ))}

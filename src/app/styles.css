@@ -2387,6 +2387,18 @@ h1 {
   line-height: 1.3;
 }
 
+.moderation-sla-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem 1.5rem;
+  color: var(--color-muted);
+  font-size: 0.88rem;
+}
+
+.moderation-sla-summary strong {
+  color: var(--color-text);
+}
+
 .moderation-audit {
   display: grid;
   gap: 0.75rem;
@@ -2466,6 +2478,40 @@ h1 {
 
 .moderation-risk-signals small {
   width: 100%;
+}
+
+.moderation-assignment {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+}
+
+.moderation-assignment > span:nth-child(2) {
+  flex: 1 1 12rem;
+  color: var(--color-muted);
+}
+
+.moderation-sla-within-target {
+  border-color: #b9d9c8;
+  background: var(--color-accent-soft);
+  color: var(--color-accent-dark);
+}
+
+.moderation-sla-due-soon {
+  border-color: #dfcb91;
+  background: #fff7dc;
+  color: #70551f;
+}
+
+.moderation-sla-overdue {
+  border-color: #e1b6b6;
+  background: #fff0f0;
+  color: var(--color-danger);
 }
 
 .moderation-message-quote {

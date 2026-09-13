@@ -337,6 +337,22 @@
       "newAccount": "Новый аккаунт",
       "contactDetailsInContent": "Контактные данные в тексте"
     },
+    "assignedTo": "Ответственный",
+    "unassigned": "не назначен",
+    "claim": "Взять в работу",
+    "claiming": "Назначаем...",
+    "release": "Освободить",
+    "releasing": "Освобождаем...",
+    "queueAge": "В очереди",
+    "minutesShort": "мин",
+    "hoursShort": "ч",
+    "slaStates": {
+      "withinTarget": "В срок",
+      "dueSoon": "Срок близко",
+      "overdue": "Просрочено"
+    },
+    "slaTarget": "Цель проверки объявления",
+    "oldestOpen": "Самое старое открытое",
     "operationsTitle": "Состояние модерации",
     "operationsError": "Не удалось загрузить показатели модерации. Рабочие очереди остаются доступны.",
     "operationsWindow": "Последние {days} дней",
@@ -344,8 +360,19 @@
     "decisionsTitle": "Решения за период",
     "recentActionsTitle": "Последние действия",
     "recentActionsEmpty": "За этот период действий ещё нет.",
+    "staffAccessTitle": "Доступ сотрудников",
+    "staffAccessEmpty": "За этот период обращений ещё нет.",
+    "staffAccessCount": "обращений",
+    "accessSurfaces": {
+      "queue": "очередь объявлений",
+      "operations": "панель показателей"
+    },
     "metrics": {
       "listings": "Объявления",
+      "assignedListings": "Назначены сотрудникам",
+      "unassignedListings": "Без ответственного",
+      "dueSoonListings": "Срок близко",
+      "overdueListings": "Просрочены",
       "listingReports": "Жалобы на объявления",
       "appeals": "Апелляции",
       "messageReports": "Жалобы на сообщения",
@@ -364,6 +391,8 @@
     "actions": {
       "listingApproved": "одобрил(а) объявление",
       "listingRejected": "отклонил(а) объявление",
+      "caseClaimed": "взял(а) объявление в работу",
+      "caseReleased": "освободил(а) объявление",
       "listingReportDismissed": "отклонил(а) жалобу на объявление",
       "listingRemoved": "снял(а) объявление по жалобе",
       "appealAccepted": "принял(а) апелляцию",
@@ -417,7 +446,7 @@
     "appealReject": "Отклонить апелляцию",
     "actionAuth": "Сессия завершилась. Войдите снова и повторите действие.",
     "actionForbidden": "Этот материал нельзя проверять с текущего аккаунта: он связан с вами или права изменились. Карточка убрана из очереди.",
-    "actionConflict": "Материал уже изменился или был проверен. Карточка убрана из очереди.",
+    "actionConflict": "Материал уже изменился, назначен другому сотруднику или был проверен. Обновите очередь.",
     "actionError": "Не удалось сохранить решение. Обновите очередь и попробуйте снова.",
     "reasons": {
       "prohibitedItem": "Запрещённый товар",

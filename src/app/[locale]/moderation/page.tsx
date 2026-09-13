@@ -42,6 +42,22 @@ export default async function ModerationPage({params}: {params: Promise<{locale:
             new_account: t('riskSignals.newAccount'),
             contact_details_in_content: t('riskSignals.contactDetailsInContent')
           },
+          assignedTo: t('assignedTo'),
+          unassigned: t('unassigned'),
+          claim: t('claim'),
+          claiming: t('claiming'),
+          release: t('release'),
+          releasing: t('releasing'),
+          queueAge: t('queueAge'),
+          minutesShort: t('minutesShort'),
+          hoursShort: t('hoursShort'),
+          slaStates: {
+            within_target: t('slaStates.withinTarget'),
+            due_soon: t('slaStates.dueSoon'),
+            overdue: t('slaStates.overdue')
+          },
+          slaTarget: t('slaTarget'),
+          oldestOpen: t('oldestOpen'),
           operationsTitle: t('operationsTitle'),
           operationsError: t('operationsError'),
           operationsWindows: {
@@ -52,8 +68,19 @@ export default async function ModerationPage({params}: {params: Promise<{locale:
           decisionsTitle: t('decisionsTitle'),
           recentActionsTitle: t('recentActionsTitle'),
           recentActionsEmpty: t('recentActionsEmpty'),
+          staffAccessTitle: t('staffAccessTitle'),
+          staffAccessEmpty: t('staffAccessEmpty'),
+          staffAccessCount: t('staffAccessCount'),
+          accessSurfaces: {
+            queue: t('accessSurfaces.queue'),
+            operations: t('accessSurfaces.operations')
+          },
           metricLabels: {
             listings: t('metrics.listings'),
+            assignedListings: t('metrics.assignedListings'),
+            unassignedListings: t('metrics.unassignedListings'),
+            dueSoonListings: t('metrics.dueSoonListings'),
+            overdueListings: t('metrics.overdueListings'),
             listingReports: t('metrics.listingReports'),
             appeals: t('metrics.appeals'),
             messageReports: t('metrics.messageReports'),
@@ -72,6 +99,8 @@ export default async function ModerationPage({params}: {params: Promise<{locale:
           actionLabels: {
             'listing.approve': t('actions.listingApproved'),
             'listing.reject': t('actions.listingRejected'),
+            'moderation_case.claim': t('actions.caseClaimed'),
+            'moderation_case.release': t('actions.caseReleased'),
             'listing_report.dismiss': t('actions.listingReportDismissed'),
             'listing_report.remove_listing': t('actions.listingRemoved'),
             'listing_appeal.accept': t('actions.appealAccepted'),
