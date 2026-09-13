@@ -30,7 +30,7 @@ Exit: lint, typecheck, tests and production build pass.
 
 In progress. Milestone 3A implements locations/import contract, three-level localized taxonomy, typed dynamic attributes and owner-controlled listing draft foundations. Milestone 3B adds the schema-driven creation UI, atomic publication snapshot, public listing lifecycle/read APIs, localized homepage feed and public listing detail page.
 
-Media foundation is implemented: owner-only authorization, bounded quarantine ingress, signature/size/checksum verification, draft ordering/cover state, publication attachment snapshot, localized creation UI, decode/re-encode worker, dimension/animation checks, metadata-free variants and active-listing-only delivery. Production still requires worker scheduling/isolation, retention cleanup, malicious corpus testing and a live R2 verification.
+Media foundation is implemented: owner-only authorization, bounded quarantine ingress, signature/size/checksum verification, draft ordering/cover state, publication attachment snapshot, localized creation UI, leased continuous decode/re-encode worker, expired-lease recovery, transient retry/backoff, automatic local startup, retention cleanup, privacy-safe health metrics, dimension/animation checks, metadata-free variants and active-listing-only delivery. Production still requires supervised process/resource isolation, alert delivery, malicious corpus testing and a live R2 lifecycle verification.
 
 Search/filter foundation is implemented: localized URL-state UI and API, category/location/price/dynamic facets, Typesense adapter, leased outbox indexing, atomic alias rebuild and indexed PostgreSQL fallback. Production still requires a live Typesense deployment/rebuild drill, load/ranking tuning and operational alerts.
 
@@ -56,7 +56,7 @@ The moderation-operations milestone adds a versioned explainable listing assessm
 
 The moderation-workload milestone adds atomic case claim/release, parallel-decision protection, append-only assignment history, explicit 18/24-hour queue SLA indicators, owner/admin workload metrics and bounded daily queue/operations access auditing.
 
-Remaining: production realtime delivery, legally reviewed bans/restrictions and appeals, detailed evidence-view audit, moderator staffing/escalation policy and automatic production media-worker operation.
+Remaining: production realtime delivery, legally reviewed bans/restrictions and appeals, detailed evidence-view audit, moderator staffing/escalation policy, supervised production media-worker deployment and live R2 verification.
 
 ## Phase 5 — shops
 

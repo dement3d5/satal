@@ -176,6 +176,9 @@ export async function receiveQuarantinedUpload(
         actualBytes: bytes.byteLength,
         actualSha256,
         uploadedAt: now,
+        processingAvailableAt: now,
+        processingAttempts: 0,
+        lastProcessingErrorCode: null,
         updatedAt: now
       })
       .where(and(eq(mediaAsset.id, assetId), eq(mediaAsset.status, 'pending_upload')));
@@ -275,7 +278,12 @@ export async function removeDraftMedia(
       );
     await tx
       .update(mediaAsset)
-      .set({status: 'deleted', updatedAt: new Date()})
+      .set({
+        status: 'deleted',
+        processingLeaseOwner: null,
+        processingLeaseExpiresAt: null,
+        updatedAt: new Date()
+      })
       .where(eq(mediaAsset.id, assetId));
 
     const remaining = await tx

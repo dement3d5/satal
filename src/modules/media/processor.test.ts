@@ -1,7 +1,7 @@
 import sharp from 'sharp';
 import {describe, expect, it} from 'vitest';
 
-import {createSafeImageVariants} from './processor';
+import {createSafeImageVariants, MEDIA_RETRY_MAX_DELAY_MS, mediaRetryDelayMs} from './processor';
 
 describe('safe image processing', () => {
   it('decodes and re-encodes bounded WebP variants without source metadata', async () => {
@@ -29,5 +29,13 @@ describe('safe image processing', () => {
     await expect(
       createSafeImageVariants(Uint8Array.from([0xff, 0xd8, 0xff, 0x00]))
     ).rejects.toThrow();
+  });
+});
+
+describe('media processing retries', () => {
+  it('uses bounded exponential backoff', () => {
+    expect(mediaRetryDelayMs(1)).toBe(2_000);
+    expect(mediaRetryDelayMs(5)).toBe(32_000);
+    expect(mediaRetryDelayMs(100)).toBe(MEDIA_RETRY_MAX_DELAY_MS);
   });
 });

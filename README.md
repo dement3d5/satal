@@ -15,7 +15,7 @@ Phase 2, the Phase 3 marketplace foundation and the Phase 4 trust/communication 
 - responsive design tokens, accessible focus/reduced-motion behavior and health endpoint.
 - imported hierarchical geography, three-level localized taxonomy, typed category attributes and owner/version-controlled listing drafts.
 - atomic draft publication into a PostgreSQL listing snapshot, lifecycle/outbox history, public API, localized homepage feed and public detail page.
-- owner-authorized image uploads, hostile-file quarantine, Sharp/libvips re-encoding and metadata-free responsive variants for local development.
+- owner-authorized image uploads, hostile-file quarantine, a leased/retrying Sharp worker, automatic local processing, retention cleanup and metadata-free responsive variants.
 - localized URL-state search/filter UI, validated dynamic facets, a replaceable Typesense adapter/outbox indexer and indexed PostgreSQL degraded fallback.
 - owner-only favorites and reusable saved searches with localized UI and normalized PostgreSQL query snapshots.
 - Better Auth email/password sessions with verified server-side sign-out, localized account dashboard and account switching, seller listing states, and audited access to verified seller phone contacts.
@@ -49,7 +49,7 @@ The default local database URL is `postgresql://satal:satal@localhost:5432/satal
 
 The application is available at `http://localhost:3000/az`; `GET /api/v1/health` is the process health endpoint. OTP delivery intentionally returns a service-unavailable error while `SMS_PROVIDER=disabled`.
 
-Uploaded local images remain under ignored `.data/media/quarantine` until a worker pass processes them. Run `pnpm media:process` in another terminal (or schedule repeated one-shot runs) to create safe local WebP variants. Production requires a separately configured worker and verified R2 adapter; quarantine files are never public.
+`pnpm dev` starts both Next.js and the continuous local media worker, so accepted uploads become safe WebP variants automatically. Use `pnpm dev:web` only when the web process is intentionally needed without a worker. `pnpm media:process` performs one bounded processing/retention pass, `pnpm media:worker` runs the worker independently, and `pnpm media:status` prints a privacy-safe health snapshot and returns a failing exit code for an expired lease or a processable backlog older than 15 minutes. Production still requires an independently supervised worker and a live-verified R2 adapter; quarantine files are never public.
 
 Local search defaults to PostgreSQL. For Typesense, set `SEARCH_PROVIDER=typesense`, `TYPESENSE_URL` and `TYPESENSE_API_KEY`, then run `pnpm search:reindex`; schedule `pnpm search:process` to drain publication events. Never commit the API key.
 

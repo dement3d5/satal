@@ -98,10 +98,12 @@ Better Auth owns `user`, `account`, `session` and `verification`. Credential acc
 
 ### Listing media
 
-- `media_asset`: owner, quarantine key, declared/observed byte metadata, SHA-256 digests, processing timestamps and lifecycle;
+- `media_asset`: owner, quarantine key, declared/observed byte metadata, SHA-256 digests, processing availability/attempt count, lease owner/expiry, privacy-safe last error code, quarantine deletion marker, timestamps and lifecycle;
 - `listing_draft_media`: ordered draft attachment with one cover and a maximum of 12 positions;
 - `media_variant`: normalized thumbnail/card/detail object metadata created only by the processor;
 - `listing_media`: publication attachment/order copied in the publication transaction.
+
+PostgreSQL is also authoritative for media work availability and leases. A database check requires lease owner/expiry only while status is `processing`; queue, expired-lease and cleanup indexes keep claims and maintenance bounded. Transient adapter or persistence failures return an asset to `quarantined` with exponential backoff, while invalid decoded content becomes `rejected`. Successful object cleanup is recorded separately so idempotent maintenance can recover after a process stops between the object-store and database operations.
 
 The lifecycle is `pending_upload → quarantined → processing → ready`, with terminal `rejected` and `deleted` states. PostgreSQL is authoritative for ownership, attachment and readiness; object storage contains opaque bytes and cannot make an asset public by itself. Unique order/cover constraints prevent ambiguous presentation, and an asset can belong to only one draft/listing aggregate in the current MVP. Publishing copies attachment references even when processing is pending, so an asynchronous worker can expose verified variants later without mutating the listing snapshot.
 

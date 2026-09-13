@@ -13,6 +13,7 @@ export interface MediaProcessingStorage extends QuarantineStorage {
   deleteQuarantine(objectKey: string): Promise<void>;
   putVariant(objectKey: string, bytes: Uint8Array): Promise<void>;
   readVariant(objectKey: string): Promise<Uint8Array>;
+  deleteVariant(objectKey: string): Promise<void>;
 }
 
 class LocalMediaStorage implements MediaProcessingStorage {
@@ -39,6 +40,10 @@ class LocalMediaStorage implements MediaProcessingStorage {
   async readVariant(objectKey: string): Promise<Uint8Array> {
     return readFile(resolveObjectPath('variants', objectKey));
   }
+
+  async deleteVariant(objectKey: string): Promise<void> {
+    await rm(resolveObjectPath('variants', objectKey), {force: true});
+  }
 }
 
 class DisabledR2Storage implements MediaProcessingStorage {
@@ -55,6 +60,9 @@ class DisabledR2Storage implements MediaProcessingStorage {
     throw new ExternalServiceUnavailableError('R2 object storage');
   }
   readVariant(): Promise<Uint8Array> {
+    throw new ExternalServiceUnavailableError('R2 object storage');
+  }
+  deleteVariant(): Promise<void> {
     throw new ExternalServiceUnavailableError('R2 object storage');
   }
 }

@@ -17,8 +17,19 @@ describe('parseServerEnvironment', () => {
   it('accepts an explicit safe local configuration', () => {
     expect(parseServerEnvironment(validEnvironment)).toMatchObject({
       NODE_ENV: 'test',
+      MEDIA_WORKER_POLL_MS: 1_000,
+      MEDIA_WORKER_BATCH_SIZE: 10,
       OBJECT_STORAGE_PROVIDER: 'local'
     });
+  });
+
+  it('rejects unsafe media worker bounds', () => {
+    expect(() =>
+      parseServerEnvironment({...validEnvironment, MEDIA_WORKER_BATCH_SIZE: '0'})
+    ).toThrow();
+    expect(() =>
+      parseServerEnvironment({...validEnvironment, MEDIA_WORKER_POLL_MS: '60001'})
+    ).toThrow();
   });
 
   it('rejects short authentication secrets', () => {

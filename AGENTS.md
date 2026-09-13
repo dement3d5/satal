@@ -16,6 +16,7 @@ This repository builds Satal, an Azerbaijan-first classifieds marketplace. Read 
 - Keep domain/application rules out of React components, route handlers, ORM models, and vendor adapters.
 - Public and mobile-facing operations use versioned API contracts. UI server actions may orchestrate UX but must delegate business rules to application services.
 - External systems sit behind narrow adapters. Never claim an integration is production-ready without live credentials and an end-to-end verification.
+- Background media work is claimed through PostgreSQL leases. Keep retries idempotent, distinguish hostile input from infrastructure failure, and never expose quarantine objects or raw processing errors.
 
 ## Security and privacy
 

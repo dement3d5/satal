@@ -1534,6 +1534,14 @@ export const mediaAsset = pgTable(
     rejectionCode: varchar('rejection_code', {length: 80}),
     uploadExpiresAt: timestamp('upload_expires_at', {withTimezone: true}).notNull(),
     uploadedAt: timestamp('uploaded_at', {withTimezone: true}),
+    processingAvailableAt: timestamp('processing_available_at', {withTimezone: true})
+      .defaultNow()
+      .notNull(),
+    processingAttempts: integer('processing_attempts').default(0).notNull(),
+    processingLeaseOwner: varchar('processing_lease_owner', {length: 100}),
+    processingLeaseExpiresAt: timestamp('processing_lease_expires_at', {withTimezone: true}),
+    lastProcessingErrorCode: varchar('last_processing_error_code', {length: 80}),
+    quarantineDeletedAt: timestamp('quarantine_deleted_at', {withTimezone: true}),
     processedAt: timestamp('processed_at', {withTimezone: true}),
     ...timestamps
   },
@@ -1541,6 +1549,17 @@ export const mediaAsset = pgTable(
     uniqueIndex('media_asset_quarantine_key_unique').on(table.quarantineObjectKey),
     index('media_asset_owner_status_created_idx').on(table.ownerId, table.status, table.createdAt),
     index('media_asset_expired_upload_idx').on(table.status, table.uploadExpiresAt),
+    index('media_asset_processing_queue_idx').on(
+      table.status,
+      table.processingAvailableAt,
+      table.createdAt
+    ),
+    index('media_asset_processing_lease_idx').on(table.status, table.processingLeaseExpiresAt),
+    index('media_asset_quarantine_cleanup_idx').on(
+      table.status,
+      table.quarantineDeletedAt,
+      table.updatedAt
+    ),
     check('media_asset_expected_bytes_range', sql`${table.expectedBytes} between 1 and 10485760`),
     check(
       'media_asset_actual_bytes_range',
@@ -1554,6 +1573,11 @@ export const mediaAsset = pgTable(
     check(
       'media_asset_dimensions_together',
       sql`(${table.width} is null and ${table.height} is null) or (${table.width} > 0 and ${table.height} > 0)`
+    ),
+    check('media_asset_processing_attempts_non_negative', sql`${table.processingAttempts} >= 0`),
+    check(
+      'media_asset_processing_lease_consistent',
+      sql`(${table.status} = 'processing' and ${table.processingLeaseOwner} is not null and ${table.processingLeaseExpiresAt} is not null) or (${table.status} <> 'processing' and ${table.processingLeaseOwner} is null and ${table.processingLeaseExpiresAt} is null)`
     )
   ]
 );

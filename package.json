@@ -33,7 +33,8 @@
     "vitest": "^4.0.0"
   },
   "scripts": {
-    "dev": "next dev",
+    "dev": "tsx scripts/dev.ts",
+    "dev:web": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
@@ -45,6 +46,8 @@
     "db:migrate": "drizzle-kit migrate",
     "db:seed": "tsx scripts/seed.ts",
     "media:process": "tsx scripts/process-media.ts",
+    "media:worker": "tsx scripts/media-worker.ts",
+    "media:status": "tsx scripts/media-status.ts",
     "search:process": "tsx scripts/process-search.ts",
     "search:reindex": "tsx scripts/reindex-search.ts",
     "format": "prettier --write .",
