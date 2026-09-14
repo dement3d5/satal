@@ -1,7 +1,8 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
-import {useEffect, useState, type FormEvent} from 'react';
+import {useEffect, useRef, useState, type FormEvent} from 'react';
 
 import {ImageGallery} from '@/components/image-gallery';
 import type {AppLocale} from '@/i18n/routing';
@@ -144,6 +145,15 @@ interface ReviewReportQueueItem {
   createdAt: string;
 }
 
+type ModerationQueueId =
+  'listings' | 'reports' | 'messageReports' | 'reviewReports' | 'appeals' | 'operations';
+
+interface PendingConfirmation {
+  title: string;
+  tone: 'default' | 'danger';
+  action: () => void;
+}
+
 interface ModerationLabels {
   loading: string;
   auth: string;
@@ -152,8 +162,14 @@ interface ModerationLabels {
   error: string;
   empty: string;
   queueNavigation: string;
+  queueDescriptions: Record<ModerationQueueId, string>;
   preview: string;
+  backToQueue: string;
   reviewBeforeDecision: string;
+  decisionTitle: string;
+  confirmationMessage: string;
+  confirmationCancel: string;
+  confirmationContinue: string;
   listingDetails: string;
   photos: string;
   photoPrevious: string;
@@ -270,10 +286,28 @@ export function ModerationDashboard({
   );
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
-  const [previewedCaseIds, setPreviewedCaseIds] = useState<Set<string>>(() => new Set());
-  const [activeQueue, setActiveQueue] = useState<
-    'listings' | 'reports' | 'messageReports' | 'reviewReports' | 'appeals' | 'operations'
-  >('listings');
+  const [activeQueue, setActiveQueue] = useState<ModerationQueueId>('listings');
+  const [reviewingCaseId, setReviewingCaseId] = useState<string | null>(null);
+  const [confirmation, setConfirmation] = useState<PendingConfirmation | null>(null);
+  const cancelConfirmationRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!confirmation) return;
+    cancelConfirmationRef.current?.focus();
+    function closeOnEscape(event: KeyboardEvent) {
+      if (event.key === 'Escape') setConfirmation(null);
+    }
+    window.addEventListener('keydown', closeOnEscape);
+    return () => window.removeEventListener('keydown', closeOnEscape);
+  }, [confirmation]);
+
+  function requestConfirmation(
+    title: string,
+    action: () => void,
+    tone: PendingConfirmation['tone'] = 'default'
+  ) {
+    setConfirmation({title, action, tone});
+  }
 
   function actionErrorFor(response: Response) {
     if (response.status === 401) return labels.actionAuth;
@@ -340,11 +374,13 @@ export function ModerationDashboard({
         if (response.status === 401) setState('auth');
         if ([403, 404, 409].includes(response.status)) {
           setItems((current) => current.filter((item) => item.caseId !== caseId));
+          setReviewingCaseId(null);
         }
         setActionError(actionErrorFor(response));
         return;
       }
       setItems((current) => current.filter((item) => item.caseId !== caseId));
+      setReviewingCaseId(null);
     } catch {
       setActionError(labels.actionError);
     } finally {
@@ -503,20 +539,22 @@ export function ModerationDashboard({
   function rejectCase(event: FormEvent<HTMLFormElement>, caseId: string) {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
-    void decideCase(caseId, {
+    const payload = {
       action: 'reject',
       reasonCode: String(data.get('reasonCode') ?? ''),
       publicExplanation: String(data.get('publicExplanation') ?? '')
-    });
+    };
+    requestConfirmation(labels.reject, () => void decideCase(caseId, payload), 'danger');
   }
 
   function rejectAppeal(event: FormEvent<HTMLFormElement>, appealId: string) {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
-    void decideAppeal(appealId, {
+    const payload = {
       action: 'reject',
       publicResponse: String(data.get('publicResponse') ?? '')
-    });
+    };
+    requestConfirmation(labels.appealReject, () => void decideAppeal(appealId, payload), 'danger');
   }
 
   if (state === 'loading') return <p>{labels.loading}</p>;
@@ -544,141 +582,528 @@ export function ModerationDashboard({
       )}
     </>
   );
+  const queueTabs = [
+    {
+      id: 'listings' as const,
+      label: labels.newListingsTitle,
+      description: labels.queueDescriptions.listings,
+      count: items.length
+    },
+    {
+      id: 'reports' as const,
+      label: labels.reportsTitle,
+      description: labels.queueDescriptions.reports,
+      count: reports.length
+    },
+    {
+      id: 'messageReports' as const,
+      label: labels.messageReportsTitle,
+      description: labels.queueDescriptions.messageReports,
+      count: messageReports.length
+    },
+    {
+      id: 'reviewReports' as const,
+      label: labels.reviewReportsTitle,
+      description: labels.queueDescriptions.reviewReports,
+      count: reviewReports.length
+    },
+    {
+      id: 'appeals' as const,
+      label: labels.appealsTitle,
+      description: labels.queueDescriptions.appeals,
+      count: appeals.length
+    },
+    ...(operationsState === 'hidden'
+      ? []
+      : [
+          {
+            id: 'operations' as const,
+            label: labels.operationsTitle,
+            description: labels.queueDescriptions.operations,
+            count: null
+          }
+        ])
+  ];
 
   return (
     <div className="moderation-workspace">
-      <nav className="moderation-tabs" aria-label={labels.queueNavigation}>
-        {[
-          {id: 'listings' as const, label: labels.newListingsTitle, count: items.length},
-          {id: 'reports' as const, label: labels.reportsTitle, count: reports.length},
-          {
-            id: 'messageReports' as const,
-            label: labels.messageReportsTitle,
-            count: messageReports.length
-          },
-          {
-            id: 'reviewReports' as const,
-            label: labels.reviewReportsTitle,
-            count: reviewReports.length
-          },
-          {id: 'appeals' as const, label: labels.appealsTitle, count: appeals.length},
-          ...(operationsState === 'hidden'
-            ? []
-            : [{id: 'operations' as const, label: labels.operationsTitle, count: null}])
-        ].map((tab) => (
-          <button
-            aria-current={activeQueue === tab.id ? 'page' : undefined}
-            className={activeQueue === tab.id ? 'is-active' : undefined}
-            key={tab.id}
-            onClick={() => setActiveQueue(tab.id)}
-            type="button"
-          >
-            <span>{tab.label}</span>
-            {tab.count !== null && <strong>{tab.count}</strong>}
-          </button>
-        ))}
-      </nav>
-      <div hidden={activeQueue !== 'operations'}>{operationsContent}</div>
-      {actionError && (
-        <p className="notice notice-error" role="alert">
-          {actionError}
-        </p>
-      )}
+      <aside className="moderation-navigation-panel">
+        <strong>{labels.queueNavigation}</strong>
+        <nav className="moderation-tabs" aria-label={labels.queueNavigation}>
+          {queueTabs.map((tab) => (
+            <button
+              aria-current={activeQueue === tab.id ? 'page' : undefined}
+              className={activeQueue === tab.id ? 'is-active' : undefined}
+              key={tab.id}
+              onClick={() => {
+                setActiveQueue(tab.id);
+                setReviewingCaseId(null);
+                setActionError(null);
+              }}
+              type="button"
+            >
+              <span>
+                <strong>{tab.label}</strong>
+                <small>{tab.description}</small>
+              </span>
+              {tab.count !== null && <b>{tab.count}</b>}
+            </button>
+          ))}
+        </nav>
+      </aside>
 
-      <QueueSection
-        title={labels.newListingsTitle}
-        empty={labels.newListingsEmpty}
-        hidden={activeQueue !== 'listings'}
-      >
-        {items.map((item) => {
-          const pending = pendingAction?.endsWith(item.caseId) ?? false;
-          const canOverrideAssignment = item.canOverrideAssignment;
-          const canDecide =
-            item.assigneeName === null || item.isAssignedToActor || canOverrideAssignment;
-          const hasPreviewed = previewedCaseIds.has(item.caseId);
-          const ageValue =
-            item.ageMinutes >= 60
-              ? `${Math.floor(item.ageMinutes / 60)} ${labels.hoursShort}`
-              : `${item.ageMinutes} ${labels.minutesShort}`;
-          return (
-            <article className="moderation-card" key={item.caseId}>
-              <header>
-                <div>
-                  <span>
-                    {item.categoryName} · {item.locationName}
-                  </span>
-                  <h3>{item.title}</h3>
-                </div>
-                <span className="status-chip">
-                  {labels.risk}:{' '}
-                  {item.riskBand === 'unassessed'
-                    ? labels.riskUnassessed
-                    : labels.riskBands[item.riskBand]}
-                </span>
-              </header>
-              <details
-                className="moderation-listing-preview"
-                onToggle={(event) => {
-                  if (!event.currentTarget.open) return;
-                  setPreviewedCaseIds((current) => {
-                    const next = new Set(current);
-                    next.add(item.caseId);
-                    return next;
-                  });
-                }}
-              >
-                <summary>{labels.preview}</summary>
-                <div className="moderation-preview-content">
-                  <div className="moderation-preview-heading">
+      <div className="moderation-queue-surface">
+        {actionError && (
+          <p className="notice notice-error" role="alert">
+            {actionError}
+          </p>
+        )}
+
+        {activeQueue === 'operations' && operationsContent}
+
+        {activeQueue === 'listings' && (
+          <QueueSection
+            title={labels.newListingsTitle}
+            description={labels.queueDescriptions.listings}
+            empty={labels.newListingsEmpty}
+          >
+            <ListingModerationQueue
+              items={items}
+              labels={labels}
+              locale={locale}
+              pendingAction={pendingAction}
+              reviewingCaseId={reviewingCaseId}
+              onReview={setReviewingCaseId}
+              onBack={() => setReviewingCaseId(null)}
+              onAssignment={(caseId, action) => void changeAssignment(caseId, action)}
+              onApprove={(item) =>
+                requestConfirmation(
+                  labels.approve,
+                  () =>
+                    void decideCase(item.caseId, {
+                      action: 'approve',
+                      reasonCode: 'policy_compliant'
+                    })
+                )
+              }
+              onReject={rejectCase}
+            />
+          </QueueSection>
+        )}
+
+        {activeQueue === 'reports' && (
+          <QueueSection
+            title={labels.reportsTitle}
+            description={labels.queueDescriptions.reports}
+            empty={labels.reportsEmpty}
+          >
+            {reports.map((report) => {
+              const pending = pendingAction === `report:${report.reportId}`;
+              return (
+                <article className="moderation-card" key={report.reportId}>
+                  <header>
                     <div>
-                      <span>{labels.listingDetails}</span>
-                      <h4>{item.title}</h4>
+                      <span>
+                        {report.categoryName} · {report.locationName}
+                      </span>
+                      <h3>{report.title}</h3>
                     </div>
-                    <strong>
-                      {formatPrice(item.priceMinor, item.currency, locale, labels.priceOnRequest)}
-                    </strong>
+                    <span className="status-chip">
+                      {labels.reportReasons[report.reason] ?? report.reason}
+                    </span>
+                  </header>
+                  {report.details && (
+                    <p>
+                      <strong>{labels.reportDetails}:</strong> {report.details}
+                    </p>
+                  )}
+                  <small>
+                    {labels.seller}: {report.sellerName}
+                  </small>
+                  <div className="moderation-actions">
+                    <button
+                      className="button"
+                      disabled={pending}
+                      onClick={() =>
+                        requestConfirmation(
+                          labels.reportDismiss,
+                          () => void decideReport(report.reportId, 'dismiss')
+                        )
+                      }
+                      type="button"
+                    >
+                      {labels.reportDismiss}
+                    </button>
+                    <details>
+                      <summary>{labels.reportRemoveTitle}</summary>
+                      <button
+                        className="button button-danger"
+                        disabled={pending}
+                        onClick={() =>
+                          requestConfirmation(
+                            labels.reportRemove,
+                            () => void decideReport(report.reportId, 'remove_listing'),
+                            'danger'
+                          )
+                        }
+                        type="button"
+                      >
+                        {labels.reportRemove}
+                      </button>
+                    </details>
+                    <Link href={`/${locale}/listings/${report.listingId}`}>↗</Link>
                   </div>
-                  <ImageGallery
-                    alt={`${labels.photos}: ${item.title}`}
-                    className="moderation-media-gallery"
-                    labels={{
-                      empty: labels.noPhotos,
-                      previous: labels.photoPrevious,
-                      next: labels.photoNext,
-                      count: labels.photoCount
-                    }}
-                    urls={item.mediaUrls}
-                  />
-                  <section className="moderation-preview-description">
-                    <h4>{labels.listingDetails}</h4>
-                    <p>{item.description}</p>
-                  </section>
-                  <section className="moderation-preview-attributes">
-                    <h4>{labels.attributesTitle}</h4>
-                    {item.attributes.length === 0 ? (
-                      <p>{labels.noAttributes}</p>
-                    ) : (
-                      <dl>
-                        {item.attributes.map((attribute) => (
-                          <div key={attribute.attributeId}>
-                            <dt>{attribute.label}</dt>
-                            <dd>
-                              {Array.isArray(attribute.value)
-                                ? attribute.value.join(', ')
-                                : typeof attribute.value === 'boolean'
-                                  ? attribute.value
-                                    ? labels.yes
-                                    : labels.no
-                                  : String(attribute.value)}
-                              {attribute.unit ? ` ${attribute.unit}` : ''}
-                            </dd>
-                          </div>
-                        ))}
-                      </dl>
-                    )}
-                  </section>
-                </div>
-              </details>
+                </article>
+              );
+            })}
+          </QueueSection>
+        )}
+
+        {activeQueue === 'messageReports' && (
+          <QueueSection
+            title={labels.messageReportsTitle}
+            description={labels.queueDescriptions.messageReports}
+            empty={labels.messageReportsEmpty}
+          >
+            {messageReports.map((report) => {
+              const pending = pendingAction === `message-report:${report.reportId}`;
+              return (
+                <article className="moderation-card" key={report.reportId}>
+                  <header>
+                    <div>
+                      <span>{report.listingTitle}</span>
+                      <h3>{labels.messageReportContent}</h3>
+                    </div>
+                    <span className="status-chip">
+                      {labels.messageReportReasons[report.reason] ?? report.reason}
+                    </span>
+                  </header>
+                  <p className="moderation-message-quote">{report.messageBody}</p>
+                  <small>
+                    {labels.messageReportSender}: {report.senderName}
+                  </small>
+                  {report.details && (
+                    <p>
+                      <strong>{labels.messageReportDetails}:</strong> {report.details}
+                    </p>
+                  )}
+                  <div className="moderation-actions">
+                    <button
+                      className="button"
+                      disabled={pending}
+                      onClick={() =>
+                        requestConfirmation(
+                          labels.messageReportDismiss,
+                          () => void decideMessageReport(report.reportId, 'dismiss')
+                        )
+                      }
+                      type="button"
+                    >
+                      {labels.messageReportDismiss}
+                    </button>
+                    <details>
+                      <summary>{labels.messageReportCloseTitle}</summary>
+                      <button
+                        className="button button-danger"
+                        disabled={pending}
+                        onClick={() =>
+                          requestConfirmation(
+                            labels.messageReportClose,
+                            () => void decideMessageReport(report.reportId, 'close_conversation'),
+                            'danger'
+                          )
+                        }
+                        type="button"
+                      >
+                        {labels.messageReportClose}
+                      </button>
+                    </details>
+                  </div>
+                </article>
+              );
+            })}
+          </QueueSection>
+        )}
+
+        {activeQueue === 'reviewReports' && (
+          <QueueSection
+            title={labels.reviewReportsTitle}
+            description={labels.queueDescriptions.reviewReports}
+            empty={labels.reviewReportsEmpty}
+          >
+            {reviewReports.map((report) => {
+              const pending = pendingAction === `review-report:${report.reportId}`;
+              return (
+                <article className="moderation-card" key={report.reportId}>
+                  <header>
+                    <div>
+                      <span>
+                        {labels.reviewReportSubject}: {report.subjectName}
+                      </span>
+                      <h3>{labels.reviewReportContent}</h3>
+                    </div>
+                    <span className="status-chip">
+                      {labels.reviewReportReasons[report.reason] ?? report.reason}
+                    </span>
+                  </header>
+                  <p className="moderation-message-quote">
+                    {'★'.repeat(report.rating)}
+                    {'☆'.repeat(5 - report.rating)}
+                    {report.reviewBody ? ` — ${report.reviewBody}` : ''}
+                  </p>
+                  <small>
+                    {labels.reviewReportAuthor}: {report.authorName}
+                  </small>
+                  {report.details && (
+                    <p>
+                      <strong>{labels.reviewReportDetails}:</strong> {report.details}
+                    </p>
+                  )}
+                  <div className="moderation-actions">
+                    <button
+                      className="button"
+                      disabled={pending}
+                      onClick={() =>
+                        requestConfirmation(
+                          labels.reviewReportDismiss,
+                          () => void decideReviewReport(report.reportId, 'dismiss')
+                        )
+                      }
+                      type="button"
+                    >
+                      {labels.reviewReportDismiss}
+                    </button>
+                    <details>
+                      <summary>{labels.reviewReportHideTitle}</summary>
+                      <button
+                        className="button button-danger"
+                        disabled={pending}
+                        onClick={() =>
+                          requestConfirmation(
+                            labels.reviewReportHide,
+                            () => void decideReviewReport(report.reportId, 'hide_review'),
+                            'danger'
+                          )
+                        }
+                        type="button"
+                      >
+                        {labels.reviewReportHide}
+                      </button>
+                    </details>
+                  </div>
+                </article>
+              );
+            })}
+          </QueueSection>
+        )}
+
+        {activeQueue === 'appeals' && (
+          <QueueSection
+            title={labels.appealsTitle}
+            description={labels.queueDescriptions.appeals}
+            empty={labels.appealsEmpty}
+          >
+            {appeals.map((appeal) => {
+              const pending = pendingAction === `appeal:${appeal.appealId}`;
+              return (
+                <article className="moderation-card" key={appeal.appealId}>
+                  <header>
+                    <div>
+                      <span>
+                        {appeal.categoryName} · {appeal.locationName}
+                      </span>
+                      <h3>{appeal.title}</h3>
+                    </div>
+                  </header>
+                  {appeal.originalExplanation && (
+                    <p>
+                      <strong>{labels.appealOriginalDecision}:</strong> {appeal.originalExplanation}
+                    </p>
+                  )}
+                  <p>
+                    <strong>{labels.appealStatement}:</strong> {appeal.statement}
+                  </p>
+                  <small>
+                    {labels.seller}: {appeal.sellerName}
+                  </small>
+                  <div className="moderation-actions">
+                    <button
+                      className="button button-primary"
+                      disabled={pending}
+                      onClick={() =>
+                        requestConfirmation(
+                          labels.appealAccept,
+                          () => void decideAppeal(appeal.appealId, {action: 'accept'})
+                        )
+                      }
+                      type="button"
+                    >
+                      {labels.appealAccept}
+                    </button>
+                    <details>
+                      <summary>{labels.appealRejectTitle}</summary>
+                      <form onSubmit={(event) => rejectAppeal(event, appeal.appealId)}>
+                        <label>
+                          {labels.appealResponse}
+                          <textarea
+                            name="publicResponse"
+                            required
+                            minLength={10}
+                            maxLength={500}
+                            placeholder={labels.appealResponseHint}
+                          />
+                        </label>
+                        <button className="button" disabled={pending} type="submit">
+                          {labels.appealReject}
+                        </button>
+                      </form>
+                    </details>
+                  </div>
+                </article>
+              );
+            })}
+          </QueueSection>
+        )}
+      </div>
+      {confirmation && (
+        <ConfirmationDialog
+          cancelRef={cancelConfirmationRef}
+          labels={labels}
+          pending={pendingAction !== null}
+          title={confirmation.title}
+          tone={confirmation.tone}
+          onCancel={() => setConfirmation(null)}
+          onConfirm={() => {
+            const action = confirmation.action;
+            setConfirmation(null);
+            action();
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+function ListingModerationQueue({
+  items,
+  locale,
+  labels,
+  pendingAction,
+  reviewingCaseId,
+  onReview,
+  onBack,
+  onAssignment,
+  onApprove,
+  onReject
+}: {
+  items: QueueItem[];
+  locale: AppLocale;
+  labels: ModerationLabels;
+  pendingAction: string | null;
+  reviewingCaseId: string | null;
+  onReview: (caseId: string) => void;
+  onBack: () => void;
+  onAssignment: (caseId: string, action: 'claim' | 'release') => void;
+  onApprove: (item: QueueItem) => void;
+  onReject: (event: FormEvent<HTMLFormElement>, caseId: string) => void;
+}) {
+  const reviewingItem = items.find((item) => item.caseId === reviewingCaseId) ?? null;
+
+  if (reviewingItem) {
+    const item = reviewingItem;
+    const pending = pendingAction?.endsWith(item.caseId) ?? false;
+    const canDecide =
+      item.assigneeName === null || item.isAssignedToActor || item.canOverrideAssignment;
+    const ageValue = formatModerationAge(item, labels);
+    return (
+      <article className="moderation-review-workspace">
+        <button className="moderation-back-button" onClick={onBack} type="button">
+          <span aria-hidden="true">←</span> {labels.backToQueue}
+        </button>
+
+        <header className="moderation-review-header">
+          <div>
+            <span>
+              {item.categoryName} · {item.locationName}
+            </span>
+            <h3>{item.title}</h3>
+          </div>
+          <span className={`status-chip moderation-risk-${item.riskBand}`}>
+            {labels.risk}:{' '}
+            {item.riskBand === 'unassessed'
+              ? labels.riskUnassessed
+              : labels.riskBands[item.riskBand]}
+          </span>
+        </header>
+
+        <div className="moderation-review-layout">
+          <section className="moderation-review-listing" aria-label={labels.preview}>
+            <div className="moderation-listing-price">
+              <span>{labels.listingDetails}</span>
+              <strong>
+                {formatPrice(item.priceMinor, item.currency, locale, labels.priceOnRequest)}
+              </strong>
+            </div>
+            <ImageGallery
+              alt={`${labels.photos}: ${item.title}`}
+              className="moderation-media-gallery"
+              labels={{
+                empty: labels.noPhotos,
+                previous: labels.photoPrevious,
+                next: labels.photoNext,
+                count: labels.photoCount
+              }}
+              urls={item.mediaUrls}
+            />
+            <section className="moderation-preview-description">
+              <h4>{labels.listingDetails}</h4>
+              <p>{item.description}</p>
+            </section>
+            <section className="moderation-preview-attributes">
+              <h4>{labels.attributesTitle}</h4>
+              {item.attributes.length === 0 ? (
+                <p>{labels.noAttributes}</p>
+              ) : (
+                <dl>
+                  {item.attributes.map((attribute) => (
+                    <div key={attribute.attributeId}>
+                      <dt>{attribute.label}</dt>
+                      <dd>
+                        {Array.isArray(attribute.value)
+                          ? attribute.value.join(', ')
+                          : typeof attribute.value === 'boolean'
+                            ? attribute.value
+                              ? labels.yes
+                              : labels.no
+                            : String(attribute.value)}
+                        {attribute.unit ? ` ${attribute.unit}` : ''}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+              )}
+            </section>
+          </section>
+
+          <aside className="moderation-review-sidebar">
+            <section className="moderation-case-panel">
+              <div className="moderation-case-row">
+                <span>{labels.seller}</span>
+                <strong>{item.sellerName}</strong>
+              </div>
+              <div className="moderation-case-row">
+                <span>{labels.queueAge}</span>
+                <strong>{ageValue}</strong>
+              </div>
+              <div className="moderation-case-row">
+                <span>{labels.assignedTo}</span>
+                <strong>{item.assigneeName ?? labels.unassigned}</strong>
+              </div>
+              <div className="moderation-case-sla">
+                <span className={`status-chip moderation-sla-${item.slaState.replace('_', '-')}`}>
+                  {labels.slaStates[item.slaState]}
+                </span>
+              </div>
               <div className="moderation-risk-signals">
                 <strong>{labels.riskSignalsTitle}</strong>
                 {item.signals.map((signal) => (
@@ -690,322 +1115,234 @@ export function ModerationDashboard({
                   {labels.riskPolicy}: {item.policyVersion}
                 </small>
               </div>
-              <small>
-                {labels.seller}: {item.sellerName}
-              </small>
-              <div className="moderation-assignment">
+              <AssignmentButton
+                item={item}
+                labels={labels}
+                pending={pending}
+                pendingAction={pendingAction}
+                onAssignment={onAssignment}
+              />
+            </section>
+
+            <section className="moderation-decision-panel">
+              <div>
+                <p className="eyebrow">SATAL CONTROL</p>
+                <h3>{labels.decisionTitle}</h3>
+                <p>{labels.reviewBeforeDecision}</p>
+              </div>
+              <button
+                className="button button-primary"
+                disabled={pending || !canDecide}
+                onClick={() => onApprove(item)}
+                type="button"
+              >
+                {pending ? labels.approving : labels.approve}
+              </button>
+              <details className="moderation-rejection-panel">
+                <summary>{labels.rejectTitle}</summary>
+                <form onSubmit={(event) => onReject(event, item.caseId)}>
+                  <label>
+                    {labels.reason}
+                    <select name="reasonCode" required defaultValue="insufficient_information">
+                      {Object.entries(labels.reasons).map(([value, label]) => (
+                        <option key={value} value={value}>
+                          {label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label>
+                    {labels.explanation}
+                    <textarea
+                      name="publicExplanation"
+                      required
+                      minLength={10}
+                      maxLength={500}
+                      placeholder={labels.explanationHint}
+                    />
+                  </label>
+                  <button
+                    className="button button-danger"
+                    disabled={pending || !canDecide}
+                    type="submit"
+                  >
+                    {pending ? labels.rejecting : labels.reject}
+                  </button>
+                </form>
+              </details>
+            </section>
+          </aside>
+        </div>
+      </article>
+    );
+  }
+
+  if (items.length === 0) {
+    return (
+      <div className="empty-state moderation-empty-state">
+        <p>{labels.newListingsEmpty}</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="moderation-inbox-list">
+      {items.map((item) => {
+        const pending = pendingAction?.endsWith(item.caseId) ?? false;
+        return (
+          <article className="moderation-inbox-card" key={item.caseId}>
+            <div className="moderation-inbox-media">
+              {item.mediaUrls[0] ? (
+                <Image alt="" fill sizes="112px" src={item.mediaUrls[0]} unoptimized />
+              ) : (
+                <span>S</span>
+              )}
+            </div>
+            <div className="moderation-inbox-main">
+              <div className="moderation-inbox-meta">
+                <span>
+                  {item.categoryName} · {item.locationName}
+                </span>
                 <span className={`status-chip moderation-sla-${item.slaState.replace('_', '-')}`}>
-                  {labels.slaStates[item.slaState]} · {labels.queueAge}: {ageValue}
+                  {labels.slaStates[item.slaState]}
+                </span>
+              </div>
+              <h3>{item.title}</h3>
+              <div className="moderation-inbox-facts">
+                <span>
+                  {labels.seller}: <strong>{item.sellerName}</strong>
                 </span>
                 <span>
-                  {labels.assignedTo}: {item.assigneeName ?? labels.unassigned}
+                  {labels.queueAge}: <strong>{formatModerationAge(item, labels)}</strong>
                 </span>
-                {item.assigneeName === null ? (
-                  <button
-                    className="button"
-                    disabled={pending}
-                    onClick={() => void changeAssignment(item.caseId, 'claim')}
-                    type="button"
-                  >
-                    {pendingAction === `assignment:claim:${item.caseId}`
-                      ? labels.claiming
-                      : labels.claim}
-                  </button>
-                ) : item.isAssignedToActor || canOverrideAssignment ? (
-                  <button
-                    className="button"
-                    disabled={pending}
-                    onClick={() => void changeAssignment(item.caseId, 'release')}
-                    type="button"
-                  >
-                    {pendingAction === `assignment:release:${item.caseId}`
-                      ? labels.releasing
-                      : labels.release}
-                  </button>
-                ) : null}
-              </div>
-              <div className="moderation-actions">
-                {!hasPreviewed && (
-                  <p className="moderation-review-required">{labels.reviewBeforeDecision}</p>
-                )}
-                <button
-                  className="button button-primary"
-                  disabled={pending || !canDecide || !hasPreviewed}
-                  onClick={() =>
-                    void decideCase(item.caseId, {
-                      action: 'approve',
-                      reasonCode: 'policy_compliant'
-                    })
-                  }
-                  type="button"
-                >
-                  {pending ? labels.approving : labels.approve}
-                </button>
-                <details>
-                  <summary>{labels.rejectTitle}</summary>
-                  <form onSubmit={(event) => rejectCase(event, item.caseId)}>
-                    <label>
-                      {labels.reason}
-                      <select name="reasonCode" required defaultValue="insufficient_information">
-                        {Object.entries(labels.reasons).map(([value, label]) => (
-                          <option key={value} value={value}>
-                            {label}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <label>
-                      {labels.explanation}
-                      <textarea
-                        name="publicExplanation"
-                        required
-                        minLength={10}
-                        maxLength={500}
-                        placeholder={labels.explanationHint}
-                      />
-                    </label>
-                    <button
-                      className="button"
-                      disabled={pending || !canDecide || !hasPreviewed}
-                      type="submit"
-                    >
-                      {pending ? labels.rejecting : labels.reject}
-                    </button>
-                  </form>
-                </details>
-              </div>
-            </article>
-          );
-        })}
-      </QueueSection>
-
-      <QueueSection
-        title={labels.reportsTitle}
-        empty={labels.reportsEmpty}
-        hidden={activeQueue !== 'reports'}
-      >
-        {reports.map((report) => {
-          const pending = pendingAction === `report:${report.reportId}`;
-          return (
-            <article className="moderation-card" key={report.reportId}>
-              <header>
-                <div>
-                  <span>
-                    {report.categoryName} · {report.locationName}
-                  </span>
-                  <h3>{report.title}</h3>
-                </div>
-                <span className="status-chip">
-                  {labels.reportReasons[report.reason] ?? report.reason}
+                <span>
+                  {labels.assignedTo}: <strong>{item.assigneeName ?? labels.unassigned}</strong>
                 </span>
-              </header>
-              {report.details && (
-                <p>
-                  <strong>{labels.reportDetails}:</strong> {report.details}
-                </p>
-              )}
-              <small>
-                {labels.seller}: {report.sellerName}
-              </small>
-              <div className="moderation-actions">
-                <button
-                  className="button"
-                  disabled={pending}
-                  onClick={() => void decideReport(report.reportId, 'dismiss')}
-                  type="button"
-                >
-                  {labels.reportDismiss}
-                </button>
-                <details>
-                  <summary>{labels.reportRemoveTitle}</summary>
-                  <button
-                    className="button button-danger"
-                    disabled={pending}
-                    onClick={() => void decideReport(report.reportId, 'remove_listing')}
-                    type="button"
-                  >
-                    {labels.reportRemove}
-                  </button>
-                </details>
-                <Link href={`/${locale}/listings/${report.listingId}`}>↗</Link>
               </div>
-            </article>
-          );
-        })}
-      </QueueSection>
+            </div>
+            <div className="moderation-inbox-actions">
+              <button
+                className="button button-primary"
+                disabled={pending}
+                onClick={() => onReview(item.caseId)}
+                type="button"
+              >
+                {labels.preview}
+              </button>
+              <AssignmentButton
+                item={item}
+                labels={labels}
+                pending={pending}
+                pendingAction={pendingAction}
+                onAssignment={onAssignment}
+              />
+            </div>
+          </article>
+        );
+      })}
+    </div>
+  );
+}
 
-      <QueueSection
-        title={labels.messageReportsTitle}
-        empty={labels.messageReportsEmpty}
-        hidden={activeQueue !== 'messageReports'}
+function AssignmentButton({
+  item,
+  labels,
+  pending,
+  pendingAction,
+  onAssignment
+}: {
+  item: QueueItem;
+  labels: ModerationLabels;
+  pending: boolean;
+  pendingAction: string | null;
+  onAssignment: (caseId: string, action: 'claim' | 'release') => void;
+}) {
+  if (item.assigneeName === null) {
+    return (
+      <button
+        className="button button-quiet"
+        disabled={pending}
+        onClick={() => onAssignment(item.caseId, 'claim')}
+        type="button"
       >
-        {messageReports.map((report) => {
-          const pending = pendingAction === `message-report:${report.reportId}`;
-          return (
-            <article className="moderation-card" key={report.reportId}>
-              <header>
-                <div>
-                  <span>{report.listingTitle}</span>
-                  <h3>{labels.messageReportContent}</h3>
-                </div>
-                <span className="status-chip">
-                  {labels.messageReportReasons[report.reason] ?? report.reason}
-                </span>
-              </header>
-              <p className="moderation-message-quote">{report.messageBody}</p>
-              <small>
-                {labels.messageReportSender}: {report.senderName}
-              </small>
-              {report.details && (
-                <p>
-                  <strong>{labels.messageReportDetails}:</strong> {report.details}
-                </p>
-              )}
-              <div className="moderation-actions">
-                <button
-                  className="button"
-                  disabled={pending}
-                  onClick={() => void decideMessageReport(report.reportId, 'dismiss')}
-                  type="button"
-                >
-                  {labels.messageReportDismiss}
-                </button>
-                <details>
-                  <summary>{labels.messageReportCloseTitle}</summary>
-                  <button
-                    className="button button-danger"
-                    disabled={pending}
-                    onClick={() => void decideMessageReport(report.reportId, 'close_conversation')}
-                    type="button"
-                  >
-                    {labels.messageReportClose}
-                  </button>
-                </details>
-              </div>
-            </article>
-          );
-        })}
-      </QueueSection>
+        {pendingAction === `assignment:claim:${item.caseId}` ? labels.claiming : labels.claim}
+      </button>
+    );
+  }
+  if (!item.isAssignedToActor && !item.canOverrideAssignment) return null;
+  return (
+    <button
+      className="button button-quiet"
+      disabled={pending}
+      onClick={() => onAssignment(item.caseId, 'release')}
+      type="button"
+    >
+      {pendingAction === `assignment:release:${item.caseId}` ? labels.releasing : labels.release}
+    </button>
+  );
+}
 
-      <QueueSection
-        title={labels.reviewReportsTitle}
-        empty={labels.reviewReportsEmpty}
-        hidden={activeQueue !== 'reviewReports'}
-      >
-        {reviewReports.map((report) => {
-          const pending = pendingAction === `review-report:${report.reportId}`;
-          return (
-            <article className="moderation-card" key={report.reportId}>
-              <header>
-                <div>
-                  <span>
-                    {labels.reviewReportSubject}: {report.subjectName}
-                  </span>
-                  <h3>{labels.reviewReportContent}</h3>
-                </div>
-                <span className="status-chip">
-                  {labels.reviewReportReasons[report.reason] ?? report.reason}
-                </span>
-              </header>
-              <p className="moderation-message-quote">
-                {'★'.repeat(report.rating)}
-                {'☆'.repeat(5 - report.rating)}
-                {report.reviewBody ? ` — ${report.reviewBody}` : ''}
-              </p>
-              <small>
-                {labels.reviewReportAuthor}: {report.authorName}
-              </small>
-              {report.details && (
-                <p>
-                  <strong>{labels.reviewReportDetails}:</strong> {report.details}
-                </p>
-              )}
-              <div className="moderation-actions">
-                <button
-                  className="button"
-                  disabled={pending}
-                  onClick={() => void decideReviewReport(report.reportId, 'dismiss')}
-                  type="button"
-                >
-                  {labels.reviewReportDismiss}
-                </button>
-                <details>
-                  <summary>{labels.reviewReportHideTitle}</summary>
-                  <button
-                    className="button button-danger"
-                    disabled={pending}
-                    onClick={() => void decideReviewReport(report.reportId, 'hide_review')}
-                    type="button"
-                  >
-                    {labels.reviewReportHide}
-                  </button>
-                </details>
-              </div>
-            </article>
-          );
-        })}
-      </QueueSection>
+function formatModerationAge(item: QueueItem, labels: ModerationLabels) {
+  return item.ageMinutes >= 60
+    ? `${Math.floor(item.ageMinutes / 60)} ${labels.hoursShort}`
+    : `${item.ageMinutes} ${labels.minutesShort}`;
+}
 
-      <QueueSection
-        title={labels.appealsTitle}
-        empty={labels.appealsEmpty}
-        hidden={activeQueue !== 'appeals'}
+function ConfirmationDialog({
+  title,
+  tone,
+  pending,
+  labels,
+  cancelRef,
+  onCancel,
+  onConfirm
+}: {
+  title: string;
+  tone: PendingConfirmation['tone'];
+  pending: boolean;
+  labels: ModerationLabels;
+  cancelRef: React.RefObject<HTMLButtonElement | null>;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  return (
+    <div className="moderation-confirmation-backdrop" role="presentation" onMouseDown={onCancel}>
+      <section
+        aria-describedby="moderation-confirmation-description"
+        aria-labelledby="moderation-confirmation-title"
+        aria-modal="true"
+        className="moderation-confirmation-dialog"
+        onMouseDown={(event) => event.stopPropagation()}
+        role="dialog"
       >
-        {appeals.map((appeal) => {
-          const pending = pendingAction === `appeal:${appeal.appealId}`;
-          return (
-            <article className="moderation-card" key={appeal.appealId}>
-              <header>
-                <div>
-                  <span>
-                    {appeal.categoryName} · {appeal.locationName}
-                  </span>
-                  <h3>{appeal.title}</h3>
-                </div>
-              </header>
-              {appeal.originalExplanation && (
-                <p>
-                  <strong>{labels.appealOriginalDecision}:</strong> {appeal.originalExplanation}
-                </p>
-              )}
-              <p>
-                <strong>{labels.appealStatement}:</strong> {appeal.statement}
-              </p>
-              <small>
-                {labels.seller}: {appeal.sellerName}
-              </small>
-              <div className="moderation-actions">
-                <button
-                  className="button button-primary"
-                  disabled={pending}
-                  onClick={() => void decideAppeal(appeal.appealId, {action: 'accept'})}
-                  type="button"
-                >
-                  {labels.appealAccept}
-                </button>
-                <details>
-                  <summary>{labels.appealRejectTitle}</summary>
-                  <form onSubmit={(event) => rejectAppeal(event, appeal.appealId)}>
-                    <label>
-                      {labels.appealResponse}
-                      <textarea
-                        name="publicResponse"
-                        required
-                        minLength={10}
-                        maxLength={500}
-                        placeholder={labels.appealResponseHint}
-                      />
-                    </label>
-                    <button className="button" disabled={pending} type="submit">
-                      {labels.appealReject}
-                    </button>
-                  </form>
-                </details>
-              </div>
-            </article>
-          );
-        })}
-      </QueueSection>
+        <span className={`moderation-confirmation-icon is-${tone}`} aria-hidden="true">
+          {tone === 'danger' ? '!' : '✓'}
+        </span>
+        <div>
+          <p className="eyebrow">SATAL CONTROL</p>
+          <h2 id="moderation-confirmation-title">{title}</h2>
+          <p id="moderation-confirmation-description">{labels.confirmationMessage}</p>
+        </div>
+        <div className="moderation-confirmation-actions">
+          <button
+            className="button"
+            disabled={pending}
+            onClick={onCancel}
+            ref={cancelRef}
+            type="button"
+          >
+            {labels.confirmationCancel}
+          </button>
+          <button
+            className={`button ${tone === 'danger' ? 'button-danger' : 'button-primary'}`}
+            disabled={pending}
+            onClick={onConfirm}
+            type="button"
+          >
+            {labels.confirmationContinue}
+          </button>
+        </div>
+      </section>
     </div>
   );
 }
@@ -1112,19 +1449,24 @@ function OperationsOverview({
 
 function QueueSection({
   title,
+  description,
   empty,
-  hidden,
   children
 }: {
   title: string;
+  description: string;
   empty: string;
-  hidden?: boolean;
   children: React.ReactNode;
 }) {
   const count = Array.isArray(children) ? children.length : 1;
   return (
-    <section className="moderation-queue" aria-label={title} hidden={hidden}>
-      <h2>{title}</h2>
+    <section className="moderation-queue" aria-label={title}>
+      <header className="moderation-queue-heading">
+        <div>
+          <h2>{title}</h2>
+          <p>{description}</p>
+        </div>
+      </header>
       {count === 0 ? <p>{empty}</p> : children}
     </section>
   );
