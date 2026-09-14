@@ -43,6 +43,7 @@ export interface PublicListingDetail extends PublicListingCard {
   sellerId: string;
   sellerName: string;
   attributes: PublicListingAttribute[];
+  mediaUrls: string[];
 }
 
 export async function listPublicListings(
@@ -188,7 +189,7 @@ export async function getPublicListing(
     .limit(1);
   if (!row?.publishedAt) throw new AppError('NOT_FOUND', 'Listing was not found', 404);
 
-  const [scalarRows, multiRows, covers] = await Promise.all([
+  const [scalarRows, multiRows, mediaUrls] = await Promise.all([
     db
       .select({
         attributeId: listingAttributeValue.attributeId,
@@ -240,7 +241,7 @@ export async function getPublicListing(
         )
       )
       .where(eq(listingAttributeOptionValue.listingId, listingId)),
-    loadCoverUrls(db, [listingId], 'detail')
+    loadListingMediaUrls(db, listingId, 'detail')
   ]);
 
   const multi = new Map<string, {label: string; values: string[]}>();
@@ -251,10 +252,11 @@ export async function getPublicListing(
   }
 
   return {
-    ...toCard(row, covers.get(listingId) ?? null),
+    ...toCard(row, mediaUrls[0] ?? null),
     description: row.description,
     sellerId: row.sellerId,
     sellerName: row.sellerName,
+    mediaUrls,
     attributes: [
       ...scalarRows.map((item) => ({
         attributeId: item.attributeId,
@@ -270,6 +272,25 @@ export async function getPublicListing(
       }))
     ]
   };
+}
+
+async function loadListingMediaUrls(
+  db: DatabaseClient,
+  listingId: string,
+  kind: 'card' | 'detail'
+): Promise<string[]> {
+  const rows = await db
+    .select({assetId: mediaAsset.id})
+    .from(listingMedia)
+    .innerJoin(mediaAsset, eq(mediaAsset.id, listingMedia.mediaAssetId))
+    .innerJoin(
+      mediaVariant,
+      and(eq(mediaVariant.mediaAssetId, mediaAsset.id), eq(mediaVariant.kind, kind))
+    )
+    .where(and(eq(listingMedia.listingId, listingId), eq(mediaAsset.status, 'ready')))
+    .orderBy(desc(listingMedia.isCover), listingMedia.sortOrder);
+
+  return rows.map((row) => `/api/v1/media/${row.assetId}/variants/${kind}`);
 }
 
 async function loadCoverUrls(

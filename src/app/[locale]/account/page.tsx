@@ -55,7 +55,6 @@ export default async function AccountPage({params}: {params: Promise<{locale: Ap
           securityHint: t('securityHint'),
           currentSession: t('currentSession'),
           signOut: t('signOut'),
-          switchAccount: t('switchAccount'),
           signingOut: t('signingOut'),
           signOutError: t('signOutError'),
           staffAccess: t('staffAccess'),

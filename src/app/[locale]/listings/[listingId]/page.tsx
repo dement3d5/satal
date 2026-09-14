@@ -3,6 +3,7 @@ import {notFound} from 'next/navigation';
 import {getTranslations} from 'next-intl/server';
 
 import {SiteHeader} from '@/components/site-header';
+import {ImageGallery} from '@/components/image-gallery';
 import {StartConversation} from '@/modules/chat/ui/start-conversation';
 import {FavoriteButton} from '@/modules/engagement/ui/favorite-button';
 import {ContactButton} from '@/modules/identity/ui/contact-button';
@@ -53,20 +54,18 @@ export default async function ListingPage({params}: PageProps) {
         accountLabel={t('accountLink')}
       />
       <article className="listing-detail">
-        <div
-          className={item.mediaUrl ? 'listing-detail-media has-photo' : 'listing-detail-media'}
-          aria-label={t('mediaPlaceholder')}
-          style={
-            item.mediaUrl ? {backgroundImage: `url(${JSON.stringify(item.mediaUrl)})`} : undefined
-          }
-        >
-          {!item.mediaUrl && (
-            <>
-              <span>SATAL</span>
-              <strong>{t('mediaPlaceholder')}</strong>
-            </>
-          )}
-        </div>
+        <ImageGallery
+          alt={item.title}
+          className="listing-detail-gallery"
+          labels={{
+            empty: t('mediaPlaceholder'),
+            previous: t('mediaPrevious'),
+            next: t('mediaNext'),
+            count: t('mediaCount')
+          }}
+          priority
+          urls={item.mediaUrls}
+        />
         <div className="listing-detail-main">
           <nav className="listing-breadcrumb" aria-label={t('breadcrumbLabel')}>
             <a href={`/${locale}`}>{t('home')}</a>

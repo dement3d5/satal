@@ -7,7 +7,7 @@
     "personalNavigation": "Personal navigation"
   },
   "home": {
-    "accountLink": "Account",
+    "accountLink": "Profile",
     "languageNavigation": "Language selection",
     "eyebrow": "A marketplace for Azerbaijan",
     "title": "Find what matters faster.",
@@ -36,12 +36,15 @@
     "trustSimpleText": "Only the fields that matter"
   },
   "listing": {
-    "accountLink": "Account",
+    "accountLink": "Profile",
     "languageNavigation": "Language selection",
     "sellAction": "Post a listing",
     "breadcrumbLabel": "Breadcrumb",
     "home": "Home",
     "mediaPlaceholder": "Photos coming soon",
+    "mediaPrevious": "Previous photo",
+    "mediaNext": "Next photo",
+    "mediaCount": "of",
     "priceOnRequest": "Price on request",
     "attributesTitle": "Key details",
     "descriptionTitle": "Description",
@@ -184,7 +187,7 @@
     "submittedAccount": "Go to account"
   },
   "search": {
-    "accountLink": "Account",
+    "accountLink": "Profile",
     "languageNavigation": "Choose language",
     "sellAction": "Post a listing",
     "title": "Find what you need",
@@ -222,7 +225,7 @@
   "auth": {
     "languageNavigation": "Choose language",
     "sellAction": "Post a listing",
-    "accountLink": "Account",
+    "accountLink": "Profile",
     "title": "Welcome to Satal",
     "description": "Sign in to publish listings, save searches and contact sellers.",
     "signIn": "Sign in",
@@ -244,7 +247,7 @@
   "account": {
     "languageNavigation": "Choose language",
     "sellAction": "Post a listing",
-    "title": "Account",
+    "title": "Profile",
     "description": "Manage your profile, listings and account security in one place.",
     "loading": "Loading profile...",
     "signIn": "Sign in",
@@ -259,7 +262,7 @@
     "rating": "Rating",
     "noRating": "No reviews yet",
     "reviews": "Reviews",
-    "quickActions": "Account sections",
+    "quickActions": "Profile sections",
     "messages": "Messages",
     "saved": "Saved",
     "notifications": "Notifications",
@@ -276,10 +279,9 @@
     "savedMessage": "Saved",
     "saveError": "Could not save the profile.",
     "security": "Sign-in and security",
-    "securityHint": "Signing out removes the current server session. Switching accounts will not leave the previous user's data on the page.",
+    "securityHint": "Signing out safely ends the current server session on this device.",
     "currentSession": "Currently signed in as",
     "signOut": "Sign out",
-    "switchAccount": "Sign out and switch account",
     "signingOut": "Signing out...",
     "signOutError": "The session could not be ended. Refresh the page and try again.",
     "staffAccess": "Staff access",
@@ -312,7 +314,7 @@
     }
   },
   "moderation": {
-    "accountLink": "Account",
+    "accountLink": "Profile",
     "languageNavigation": "Choose language",
     "sellAction": "Post a listing",
     "title": "Moderation queue",
@@ -323,6 +325,20 @@
     "forbidden": "Your account does not have moderation access.",
     "error": "The moderation queue is temporarily unavailable.",
     "empty": "The queue is clear.",
+    "queueNavigation": "Moderation sections",
+    "preview": "Open listing preview",
+    "reviewBeforeDecision": "Open the preview and review the listing before deciding.",
+    "listingDetails": "Listing description",
+    "photos": "Photos",
+    "photoPrevious": "Previous photo",
+    "photoNext": "Next photo",
+    "photoCount": "of",
+    "noPhotos": "The seller did not add photos",
+    "attributesTitle": "Attributes",
+    "noAttributes": "This listing has no additional attributes.",
+    "priceOnRequest": "Price on request",
+    "yes": "Yes",
+    "no": "No",
     "seller": "Seller",
     "risk": "Risk",
     "riskUnassessed": "not assessed",
@@ -483,7 +499,7 @@
     }
   },
   "chat": {
-    "accountLink": "Account",
+    "accountLink": "Profile",
     "languageNavigation": "Choose language",
     "sellAction": "Post a listing",
     "title": "Messages",
@@ -546,7 +562,7 @@
     "reviewError": "The review could not be submitted. Check the text and try again."
   },
   "reputation": {
-    "accountLink": "Account",
+    "accountLink": "Profile",
     "languageNavigation": "Choose language",
     "sellAction": "Post a listing",
     "memberSince": "Member since {date}",
@@ -575,7 +591,7 @@
     "ratingLabel": "Rating: {rating} out of 5"
   },
   "notifications": {
-    "accountLink": "Account",
+    "accountLink": "Profile",
     "languageNavigation": "Choose language",
     "sellAction": "Post a listing",
     "title": "Notifications",
@@ -597,7 +613,7 @@
     "preferenceError": "The preference could not be saved."
   },
   "saved": {
-    "accountLink": "Account",
+    "accountLink": "Profile",
     "languageNavigation": "Choose language",
     "sellAction": "Post a listing",
     "title": "Saved",

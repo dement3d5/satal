@@ -3,7 +3,9 @@
 import Link from 'next/link';
 import {useEffect, useState, type FormEvent} from 'react';
 
+import {ImageGallery} from '@/components/image-gallery';
 import type {AppLocale} from '@/i18n/routing';
+import {formatPrice} from '@/modules/listings/ui/format';
 
 interface QueueItem {
   caseId: string;
@@ -28,6 +30,14 @@ interface QueueItem {
   sellerName: string;
   categoryName: string;
   locationName: string;
+  canOverrideAssignment: boolean;
+  mediaUrls: string[];
+  attributes: Array<{
+    attributeId: string;
+    label: string;
+    value: string | number | boolean | string[];
+    unit: string | null;
+  }>;
 }
 
 interface ModerationOperations {
@@ -141,6 +151,20 @@ interface ModerationLabels {
   forbidden: string;
   error: string;
   empty: string;
+  queueNavigation: string;
+  preview: string;
+  reviewBeforeDecision: string;
+  listingDetails: string;
+  photos: string;
+  photoPrevious: string;
+  photoNext: string;
+  photoCount: string;
+  noPhotos: string;
+  attributesTitle: string;
+  noAttributes: string;
+  priceOnRequest: string;
+  yes: string;
+  no: string;
   seller: string;
   risk: string;
   riskUnassessed: string;
@@ -246,6 +270,10 @@ export function ModerationDashboard({
   );
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [previewedCaseIds, setPreviewedCaseIds] = useState<Set<string>>(() => new Set());
+  const [activeQueue, setActiveQueue] = useState<
+    'listings' | 'reports' | 'messageReports' | 'reviewReports' | 'appeals' | 'operations'
+  >('listings');
 
   function actionErrorFor(response: Response) {
     if (response.status === 401) return labels.actionAuth;
@@ -506,12 +534,6 @@ export function ModerationDashboard({
     );
   if (state === 'forbidden') return <p role="alert">{labels.forbidden}</p>;
   if (state === 'error') return <p role="alert">{labels.error}</p>;
-  const queuesEmpty =
-    items.length === 0 &&
-    reports.length === 0 &&
-    messageReports.length === 0 &&
-    reviewReports.length === 0 &&
-    appeals.length === 0;
   const operationsContent = (
     <>
       {operations && <OperationsOverview locale={locale} labels={labels} data={operations} />}
@@ -523,30 +545,57 @@ export function ModerationDashboard({
     </>
   );
 
-  if (queuesEmpty)
-    return (
-      <div className="moderation-workspace">
-        {operationsContent}
-        <div className="empty-state">
-          <p>{labels.empty}</p>
-        </div>
-      </div>
-    );
-
   return (
     <div className="moderation-workspace">
-      {operationsContent}
+      <nav className="moderation-tabs" aria-label={labels.queueNavigation}>
+        {[
+          {id: 'listings' as const, label: labels.newListingsTitle, count: items.length},
+          {id: 'reports' as const, label: labels.reportsTitle, count: reports.length},
+          {
+            id: 'messageReports' as const,
+            label: labels.messageReportsTitle,
+            count: messageReports.length
+          },
+          {
+            id: 'reviewReports' as const,
+            label: labels.reviewReportsTitle,
+            count: reviewReports.length
+          },
+          {id: 'appeals' as const, label: labels.appealsTitle, count: appeals.length},
+          ...(operationsState === 'hidden'
+            ? []
+            : [{id: 'operations' as const, label: labels.operationsTitle, count: null}])
+        ].map((tab) => (
+          <button
+            aria-current={activeQueue === tab.id ? 'page' : undefined}
+            className={activeQueue === tab.id ? 'is-active' : undefined}
+            key={tab.id}
+            onClick={() => setActiveQueue(tab.id)}
+            type="button"
+          >
+            <span>{tab.label}</span>
+            {tab.count !== null && <strong>{tab.count}</strong>}
+          </button>
+        ))}
+      </nav>
+      <div hidden={activeQueue !== 'operations'}>{operationsContent}</div>
       {actionError && (
         <p className="notice notice-error" role="alert">
           {actionError}
         </p>
       )}
 
-      <QueueSection title={labels.newListingsTitle} empty={labels.newListingsEmpty}>
+      <QueueSection
+        title={labels.newListingsTitle}
+        empty={labels.newListingsEmpty}
+        hidden={activeQueue !== 'listings'}
+      >
         {items.map((item) => {
           const pending = pendingAction?.endsWith(item.caseId) ?? false;
-          const canOverrideAssignment = operations !== null;
-          const canDecide = item.assigneeName === null || item.isAssignedToActor;
+          const canOverrideAssignment = item.canOverrideAssignment;
+          const canDecide =
+            item.assigneeName === null || item.isAssignedToActor || canOverrideAssignment;
+          const hasPreviewed = previewedCaseIds.has(item.caseId);
           const ageValue =
             item.ageMinutes >= 60
               ? `${Math.floor(item.ageMinutes / 60)} ${labels.hoursShort}`
@@ -567,7 +616,69 @@ export function ModerationDashboard({
                     : labels.riskBands[item.riskBand]}
                 </span>
               </header>
-              <p>{item.description}</p>
+              <details
+                className="moderation-listing-preview"
+                onToggle={(event) => {
+                  if (!event.currentTarget.open) return;
+                  setPreviewedCaseIds((current) => {
+                    const next = new Set(current);
+                    next.add(item.caseId);
+                    return next;
+                  });
+                }}
+              >
+                <summary>{labels.preview}</summary>
+                <div className="moderation-preview-content">
+                  <div className="moderation-preview-heading">
+                    <div>
+                      <span>{labels.listingDetails}</span>
+                      <h4>{item.title}</h4>
+                    </div>
+                    <strong>
+                      {formatPrice(item.priceMinor, item.currency, locale, labels.priceOnRequest)}
+                    </strong>
+                  </div>
+                  <ImageGallery
+                    alt={`${labels.photos}: ${item.title}`}
+                    className="moderation-media-gallery"
+                    labels={{
+                      empty: labels.noPhotos,
+                      previous: labels.photoPrevious,
+                      next: labels.photoNext,
+                      count: labels.photoCount
+                    }}
+                    urls={item.mediaUrls}
+                  />
+                  <section className="moderation-preview-description">
+                    <h4>{labels.listingDetails}</h4>
+                    <p>{item.description}</p>
+                  </section>
+                  <section className="moderation-preview-attributes">
+                    <h4>{labels.attributesTitle}</h4>
+                    {item.attributes.length === 0 ? (
+                      <p>{labels.noAttributes}</p>
+                    ) : (
+                      <dl>
+                        {item.attributes.map((attribute) => (
+                          <div key={attribute.attributeId}>
+                            <dt>{attribute.label}</dt>
+                            <dd>
+                              {Array.isArray(attribute.value)
+                                ? attribute.value.join(', ')
+                                : typeof attribute.value === 'boolean'
+                                  ? attribute.value
+                                    ? labels.yes
+                                    : labels.no
+                                  : String(attribute.value)}
+                              {attribute.unit ? ` ${attribute.unit}` : ''}
+                            </dd>
+                          </div>
+                        ))}
+                      </dl>
+                    )}
+                  </section>
+                </div>
+              </details>
               <div className="moderation-risk-signals">
                 <strong>{labels.riskSignalsTitle}</strong>
                 {item.signals.map((signal) => (
@@ -614,9 +725,12 @@ export function ModerationDashboard({
                 ) : null}
               </div>
               <div className="moderation-actions">
+                {!hasPreviewed && (
+                  <p className="moderation-review-required">{labels.reviewBeforeDecision}</p>
+                )}
                 <button
                   className="button button-primary"
-                  disabled={pending || !canDecide}
+                  disabled={pending || !canDecide || !hasPreviewed}
                   onClick={() =>
                     void decideCase(item.caseId, {
                       action: 'approve',
@@ -650,7 +764,11 @@ export function ModerationDashboard({
                         placeholder={labels.explanationHint}
                       />
                     </label>
-                    <button className="button" disabled={pending || !canDecide} type="submit">
+                    <button
+                      className="button"
+                      disabled={pending || !canDecide || !hasPreviewed}
+                      type="submit"
+                    >
                       {pending ? labels.rejecting : labels.reject}
                     </button>
                   </form>
@@ -661,7 +779,11 @@ export function ModerationDashboard({
         })}
       </QueueSection>
 
-      <QueueSection title={labels.reportsTitle} empty={labels.reportsEmpty}>
+      <QueueSection
+        title={labels.reportsTitle}
+        empty={labels.reportsEmpty}
+        hidden={activeQueue !== 'reports'}
+      >
         {reports.map((report) => {
           const pending = pendingAction === `report:${report.reportId}`;
           return (
@@ -712,7 +834,11 @@ export function ModerationDashboard({
         })}
       </QueueSection>
 
-      <QueueSection title={labels.messageReportsTitle} empty={labels.messageReportsEmpty}>
+      <QueueSection
+        title={labels.messageReportsTitle}
+        empty={labels.messageReportsEmpty}
+        hidden={activeQueue !== 'messageReports'}
+      >
         {messageReports.map((report) => {
           const pending = pendingAction === `message-report:${report.reportId}`;
           return (
@@ -761,7 +887,11 @@ export function ModerationDashboard({
         })}
       </QueueSection>
 
-      <QueueSection title={labels.reviewReportsTitle} empty={labels.reviewReportsEmpty}>
+      <QueueSection
+        title={labels.reviewReportsTitle}
+        empty={labels.reviewReportsEmpty}
+        hidden={activeQueue !== 'reviewReports'}
+      >
         {reviewReports.map((report) => {
           const pending = pendingAction === `review-report:${report.reportId}`;
           return (
@@ -816,7 +946,11 @@ export function ModerationDashboard({
         })}
       </QueueSection>
 
-      <QueueSection title={labels.appealsTitle} empty={labels.appealsEmpty}>
+      <QueueSection
+        title={labels.appealsTitle}
+        empty={labels.appealsEmpty}
+        hidden={activeQueue !== 'appeals'}
+      >
         {appeals.map((appeal) => {
           const pending = pendingAction === `appeal:${appeal.appealId}`;
           return (
@@ -979,15 +1113,17 @@ function OperationsOverview({
 function QueueSection({
   title,
   empty,
+  hidden,
   children
 }: {
   title: string;
   empty: string;
+  hidden?: boolean;
   children: React.ReactNode;
 }) {
   const count = Array.isArray(children) ? children.length : 1;
   return (
-    <section className="moderation-queue" aria-label={title}>
+    <section className="moderation-queue" aria-label={title} hidden={hidden}>
       <h2>{title}</h2>
       {count === 0 ? <p>{empty}</p> : children}
     </section>

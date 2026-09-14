@@ -7,7 +7,7 @@
     "personalNavigation": "Şəxsi bölmələr"
   },
   "home": {
-    "accountLink": "Hesab",
+    "accountLink": "Profil",
     "languageNavigation": "Dil seçimi",
     "eyebrow": "Azərbaycan üçün elan platforması",
     "title": "Axtardığını daha tez tap.",
@@ -36,12 +36,15 @@
     "trustSimpleText": "Yalnız lazım olan sahələr"
   },
   "listing": {
-    "accountLink": "Hesab",
+    "accountLink": "Profil",
     "languageNavigation": "Dil seçimi",
     "sellAction": "Elan yerləşdir",
     "breadcrumbLabel": "Naviqasiya",
     "home": "Ana səhifə",
     "mediaPlaceholder": "Şəkillər tezliklə",
+    "mediaPrevious": "Əvvəlki şəkil",
+    "mediaNext": "Növbəti şəkil",
+    "mediaCount": "/",
     "priceOnRequest": "Qiymət razılaşma ilə",
     "attributesTitle": "Əsas xüsusiyyətlər",
     "descriptionTitle": "Təsvir",
@@ -184,7 +187,7 @@
     "submittedAccount": "Hesaba keç"
   },
   "search": {
-    "accountLink": "Hesab",
+    "accountLink": "Profil",
     "languageNavigation": "Dil seçimi",
     "sellAction": "Elan yerləşdir",
     "title": "Lazım olanı tapın",
@@ -222,7 +225,7 @@
   "auth": {
     "languageNavigation": "Dil seçimi",
     "sellAction": "Elan yerləşdir",
-    "accountLink": "Hesab",
+    "accountLink": "Profil",
     "title": "Satal-a xoş gəlmisiniz",
     "description": "Elan dərc etmək, axtarışları saxlamaq və satıcılarla əlaqə yaratmaq üçün daxil olun.",
     "signIn": "Daxil ol",
@@ -244,7 +247,7 @@
   "account": {
     "languageNavigation": "Dil seçimi",
     "sellAction": "Elan yerləşdir",
-    "title": "Hesab",
+    "title": "Profil",
     "description": "Profilinizi, elanlarınızı və hesab təhlükəsizliyinizi bir yerdən idarə edin.",
     "loading": "Profil yüklənir...",
     "signIn": "Daxil ol",
@@ -259,7 +262,7 @@
     "rating": "Reytinq",
     "noRating": "Hələ rəy yoxdur",
     "reviews": "Rəylər",
-    "quickActions": "Hesab bölmələri",
+    "quickActions": "Profil bölmələri",
     "messages": "Mesajlar",
     "saved": "Seçilmişlər",
     "notifications": "Bildirişlər",
@@ -276,10 +279,9 @@
     "savedMessage": "Saxlanıldı",
     "saveError": "Profili saxlamaq mümkün olmadı.",
     "security": "Giriş və təhlükəsizlik",
-    "securityHint": "Çıxış cari server sessiyasını silir. Hesabı dəyişdikdə əvvəlki istifadəçinin məlumatları səhifədə qalmır.",
+    "securityHint": "Çıxış bu cihazdakı cari server sessiyasını təhlükəsiz şəkildə bitirir.",
     "currentSession": "Hazırda bu hesabla daxil olmusunuz",
     "signOut": "Çıx",
-    "switchAccount": "Çıx və hesabı dəyiş",
     "signingOut": "Çıxılır...",
     "signOutError": "Sessiyanı bitirmək mümkün olmadı. Səhifəni yeniləyib yenidən cəhd edin.",
     "staffAccess": "Xidməti giriş",
@@ -312,7 +314,7 @@
     }
   },
   "moderation": {
-    "accountLink": "Hesab",
+    "accountLink": "Profil",
     "languageNavigation": "Dil seçimi",
     "sellAction": "Elan yerləşdir",
     "title": "Moderasiya növbəsi",
@@ -323,6 +325,20 @@
     "forbidden": "Hesabınızın moderasiya icazəsi yoxdur.",
     "error": "Moderasiya növbəsi müvəqqəti olaraq əlçatan deyil.",
     "empty": "Növbə boşdur.",
+    "queueNavigation": "Moderasiya bölmələri",
+    "preview": "Elanın önbaxışını aç",
+    "reviewBeforeDecision": "Qərardan əvvəl önbaxışı açın və elanı yoxlayın.",
+    "listingDetails": "Elanın təsviri",
+    "photos": "Şəkillər",
+    "photoPrevious": "Əvvəlki şəkil",
+    "photoNext": "Növbəti şəkil",
+    "photoCount": "/",
+    "noPhotos": "Satıcı şəkil əlavə etməyib",
+    "attributesTitle": "Xüsusiyyətlər",
+    "noAttributes": "Bu elanın əlavə xüsusiyyətləri yoxdur.",
+    "priceOnRequest": "Qiymət razılaşma ilə",
+    "yes": "Bəli",
+    "no": "Xeyr",
     "seller": "Satıcı",
     "risk": "Risk",
     "riskUnassessed": "qiymətləndirilməyib",
@@ -483,7 +499,7 @@
     }
   },
   "chat": {
-    "accountLink": "Hesab",
+    "accountLink": "Profil",
     "languageNavigation": "Dil seçimi",
     "sellAction": "Elan yerləşdir",
     "title": "Mesajlar",
@@ -546,7 +562,7 @@
     "reviewError": "Rəyi göndərmək mümkün olmadı. Mətni yoxlayıb yenidən cəhd edin."
   },
   "reputation": {
-    "accountLink": "Hesab",
+    "accountLink": "Profil",
     "languageNavigation": "Dil seçimi",
     "sellAction": "Elan yerləşdir",
     "memberSince": "{date} tarixindən Satal-da",
@@ -575,7 +591,7 @@
     "ratingLabel": "Qiymət: 5 üzərindən {rating}"
   },
   "notifications": {
-    "accountLink": "Hesab",
+    "accountLink": "Profil",
     "languageNavigation": "Dil seçimi",
     "sellAction": "Elan yerləşdir",
     "title": "Bildirişlər",
@@ -597,7 +613,7 @@
     "preferenceError": "Ayarı saxlamaq mümkün olmadı."
   },
   "saved": {
-    "accountLink": "Hesab",
+    "accountLink": "Profil",
     "languageNavigation": "Dil seçimi",
     "sellAction": "Elan yerləşdir",
     "title": "Yadda saxlanılanlar",

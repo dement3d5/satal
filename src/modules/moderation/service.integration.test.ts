@@ -4,8 +4,11 @@ import {drizzle} from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import {afterAll, beforeAll, describe, expect, it} from 'vitest';
 
+import {getPublicListing} from '@/modules/listings/public-listing-service';
+import type {MediaProcessingStorage} from '@/modules/media/storage';
 import * as schema from '@/server/db/schema';
 
+import {getModerationMediaVariant} from './media-service';
 import {
   claimModerationCase,
   decideModerationCase,
@@ -37,7 +40,17 @@ integration('moderation persistence and permissions', () => {
     const draftId = randomUUID();
     const listingId = randomUUID();
     const caseId = randomUUID();
+    const coverAssetId = randomUUID();
+    const secondAssetId = randomUUID();
     const db = drizzle(client!, {schema});
+    const storage: MediaProcessingStorage = {
+      put: async () => undefined,
+      readQuarantine: async () => new Uint8Array(),
+      deleteQuarantine: async () => undefined,
+      putVariant: async () => undefined,
+      readVariant: async () => new Uint8Array([1, 2, 3]),
+      deleteVariant: async () => undefined
+    };
     try {
       await client!`
         insert into "user" (id, name, email, email_verified)
@@ -80,6 +93,40 @@ integration('moderation persistence and permissions', () => {
         insert into moderation_case_signal (case_id, code, weight, policy_version)
         values (${caseId}, 'new_account', 30, 'listing-risk-v1')
       `;
+      await client!`
+        insert into listing_attribute_value (listing_id, attribute_id, option_id)
+        values (
+          ${listingId},
+          '30000000-0000-4000-8000-000000000005',
+          '40000000-0000-4000-8000-000000000002'
+        )
+      `;
+      await client!`
+        insert into media_asset (
+          id, owner_id, status, quarantine_object_key, declared_media_type,
+          expected_bytes, expected_sha256, upload_expires_at
+        ) values
+          (
+            ${coverAssetId}, ${sellerId}, 'ready', ${`tests/${coverAssetId}`}, 'image/jpeg',
+            10, ${'0'.repeat(64)}, now() + interval '1 hour'
+          ),
+          (
+            ${secondAssetId}, ${sellerId}, 'ready', ${`tests/${secondAssetId}`}, 'image/jpeg',
+            10, ${'1'.repeat(64)}, now() + interval '1 hour'
+          )
+      `;
+      await client!`
+        insert into media_variant (media_asset_id, kind, object_key, media_type, bytes, width, height)
+        values
+          (${coverAssetId}, 'detail', ${`tests/${coverAssetId}/detail.jpg`}, 'image/jpeg', 10, 1200, 900),
+          (${secondAssetId}, 'detail', ${`tests/${secondAssetId}/detail.jpg`}, 'image/jpeg', 10, 1200, 900)
+      `;
+      await client!`
+        insert into listing_media (listing_id, media_asset_id, sort_order, is_cover)
+        values
+          (${listingId}, ${secondAssetId}, 1, false),
+          (${listingId}, ${coverAssetId}, 0, true)
+      `;
 
       await expect(
         listModerationQueue(db, ordinaryId, {locale: 'en', limit: 30})
@@ -100,10 +147,28 @@ integration('moderation persistence and permissions', () => {
           expect.objectContaining({
             caseId,
             listingId,
-            signals: [{code: 'new_account', weight: 30}]
+            signals: [{code: 'new_account', weight: 30}],
+            canOverrideAssignment: false,
+            attributes: [expect.objectContaining({label: 'Condition', value: 'New', unit: null})],
+            mediaUrls: [
+              `/api/v1/moderation/media/${coverAssetId}/variants/detail`,
+              `/api/v1/moderation/media/${secondAssetId}/variants/detail`
+            ]
           })
         ])
       );
+      await expect(listModerationQueue(db, adminId, {locale: 'en', limit: 30})).resolves.toEqual(
+        expect.arrayContaining([expect.objectContaining({caseId, canOverrideAssignment: true})])
+      );
+      await expect(
+        getModerationMediaVariant(db, reviewerId, coverAssetId, 'detail', storage)
+      ).resolves.toMatchObject({bytes: new Uint8Array([1, 2, 3]), mediaType: 'image/jpeg'});
+      await expect(
+        getModerationMediaVariant(db, ordinaryId, coverAssetId, 'detail', storage)
+      ).rejects.toMatchObject({code: 'FORBIDDEN'});
+      await expect(
+        getModerationMediaVariant(db, sellerId, coverAssetId, 'detail', storage)
+      ).rejects.toMatchObject({code: 'NOT_FOUND'});
 
       await expect(claimModerationCase(db, reviewerId, caseId)).resolves.toMatchObject({
         caseId,
@@ -146,7 +211,7 @@ integration('moderation persistence and permissions', () => {
       });
 
       await expect(
-        decideModerationCase(db, secondReviewerId, caseId, {
+        decideModerationCase(db, adminId, caseId, {
           action: 'approve',
           reasonCode: 'policy_compliant'
         })
@@ -165,6 +230,14 @@ integration('moderation persistence and permissions', () => {
       await expect(listOwnListings(db, sellerId, {locale: 'en', limit: 30})).resolves.toEqual(
         expect.arrayContaining([expect.objectContaining({id: listingId, status: 'active'})])
       );
+      await expect(getPublicListing(db, 'en', listingId)).resolves.toMatchObject({
+        id: listingId,
+        mediaUrl: `/api/v1/media/${coverAssetId}/variants/detail`,
+        mediaUrls: [
+          `/api/v1/media/${coverAssetId}/variants/detail`,
+          `/api/v1/media/${secondAssetId}/variants/detail`
+        ]
+      });
 
       const [audit] = await client!`
         select l.status, l.published_at, mc.status as case_status, ma.action, ma.reason_code
@@ -185,7 +258,7 @@ integration('moderation persistence and permissions', () => {
         from moderation_case_assignment_event
         where case_id = ${caseId}
       `;
-      expect(assignmentAudit?.event_count).toBe(3);
+      expect(assignmentAudit?.event_count).toBe(4);
     } finally {
       await client!`delete from outbox_event where aggregate_id = ${listingId}`;
       await client!`delete from moderation_action where case_id = ${caseId}`;
@@ -194,6 +267,10 @@ integration('moderation persistence and permissions', () => {
       await client!`delete from moderation_case where id = ${caseId}`;
       await client!`delete from listing_status_history where listing_id = ${listingId}`;
       await client!`delete from listing where id = ${listingId}`;
+      await client!`
+        delete from media_asset
+        where id in (${coverAssetId}, ${secondAssetId})
+      `;
       await client!`delete from listing_draft where id = ${draftId}`;
       await client!`
         delete from moderation_workspace_access

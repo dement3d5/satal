@@ -2,12 +2,20 @@ import {and, asc, desc, eq, gt, inArray, isNull, ne, or, sql} from 'drizzle-orm'
 
 import type {DatabaseClient} from '@/server/db/client';
 import {
+  attributeDefinition,
+  attributeOptionTranslation,
+  attributeTranslation,
   categoryTranslation,
   listing,
   listingAppeal,
   listingAppealAction,
+  listingAttributeOptionValue,
+  listingAttributeValue,
+  listingMedia,
   listingStatusHistory,
   locationTranslation,
+  mediaAsset,
+  mediaVariant,
   moderationAction,
   moderationCase,
   moderationCaseAssignmentEvent,
@@ -37,7 +45,7 @@ export async function listModerationQueue(
   actorId: string,
   query: ModerationQueueQuery
 ) {
-  await requireModerationCapability(db, actorId, 'queue:read');
+  const roles = await requireModerationCapability(db, actorId, 'queue:read');
   await recordModerationAccess(db, actorId, 'queue');
   const now = new Date();
   const rows = await db
@@ -120,6 +128,129 @@ export async function listModerationQueue(
     : [];
   const assigneeNameById = new Map(assignees.map((assignee) => [assignee.id, assignee.name]));
 
+  const listingIds = rows.map((row) => row.listingId);
+  const [scalarAttributeRows, multiAttributeRows, mediaRows] = listingIds.length
+    ? await Promise.all([
+        db
+          .select({
+            listingId: listingAttributeValue.listingId,
+            attributeId: listingAttributeValue.attributeId,
+            label: attributeTranslation.label,
+            unit: attributeDefinition.unit,
+            textValue: listingAttributeValue.textValue,
+            integerValue: listingAttributeValue.integerValue,
+            decimalValue: listingAttributeValue.decimalValue,
+            booleanValue: listingAttributeValue.booleanValue,
+            dateValue: listingAttributeValue.dateValue,
+            optionLabel: attributeOptionTranslation.label
+          })
+          .from(listingAttributeValue)
+          .innerJoin(
+            attributeDefinition,
+            eq(attributeDefinition.id, listingAttributeValue.attributeId)
+          )
+          .innerJoin(
+            attributeTranslation,
+            and(
+              eq(attributeTranslation.attributeId, listingAttributeValue.attributeId),
+              eq(attributeTranslation.locale, query.locale)
+            )
+          )
+          .leftJoin(
+            attributeOptionTranslation,
+            and(
+              eq(attributeOptionTranslation.optionId, listingAttributeValue.optionId),
+              eq(attributeOptionTranslation.locale, query.locale)
+            )
+          )
+          .where(inArray(listingAttributeValue.listingId, listingIds))
+          .orderBy(asc(attributeTranslation.label)),
+        db
+          .select({
+            listingId: listingAttributeOptionValue.listingId,
+            attributeId: listingAttributeOptionValue.attributeId,
+            label: attributeTranslation.label,
+            optionLabel: attributeOptionTranslation.label
+          })
+          .from(listingAttributeOptionValue)
+          .innerJoin(
+            attributeTranslation,
+            and(
+              eq(attributeTranslation.attributeId, listingAttributeOptionValue.attributeId),
+              eq(attributeTranslation.locale, query.locale)
+            )
+          )
+          .innerJoin(
+            attributeOptionTranslation,
+            and(
+              eq(attributeOptionTranslation.optionId, listingAttributeOptionValue.optionId),
+              eq(attributeOptionTranslation.locale, query.locale)
+            )
+          )
+          .where(inArray(listingAttributeOptionValue.listingId, listingIds))
+          .orderBy(asc(attributeTranslation.label), asc(attributeOptionTranslation.label)),
+        db
+          .select({
+            listingId: listingMedia.listingId,
+            assetId: mediaAsset.id
+          })
+          .from(listingMedia)
+          .innerJoin(mediaAsset, eq(mediaAsset.id, listingMedia.mediaAssetId))
+          .innerJoin(
+            mediaVariant,
+            and(eq(mediaVariant.mediaAssetId, mediaAsset.id), eq(mediaVariant.kind, 'detail'))
+          )
+          .where(and(inArray(listingMedia.listingId, listingIds), eq(mediaAsset.status, 'ready')))
+          .orderBy(desc(listingMedia.isCover), asc(listingMedia.sortOrder))
+      ])
+    : [[], [], []];
+
+  const attributesByListing = new Map<
+    string,
+    Array<{
+      attributeId: string;
+      label: string;
+      value: string | number | boolean | string[];
+      unit: string | null;
+    }>
+  >();
+  for (const item of scalarAttributeRows) {
+    const attributes = attributesByListing.get(item.listingId) ?? [];
+    attributes.push({
+      attributeId: item.attributeId,
+      label: item.label,
+      value: moderationScalarValue(item),
+      unit: item.unit
+    });
+    attributesByListing.set(item.listingId, attributes);
+  }
+  const multiValues = new Map<
+    string,
+    {listingId: string; attributeId: string; label: string; values: string[]}
+  >();
+  for (const item of multiAttributeRows) {
+    const key = `${item.listingId}:${item.attributeId}`;
+    const current = multiValues.get(key) ?? {...item, values: []};
+    current.values.push(item.optionLabel);
+    multiValues.set(key, current);
+  }
+  for (const item of multiValues.values()) {
+    const attributes = attributesByListing.get(item.listingId) ?? [];
+    attributes.push({
+      attributeId: item.attributeId,
+      label: item.label,
+      value: item.values,
+      unit: null
+    });
+    attributesByListing.set(item.listingId, attributes);
+  }
+  const mediaByListing = new Map<string, string[]>();
+  for (const item of mediaRows) {
+    const urls = mediaByListing.get(item.listingId) ?? [];
+    urls.push(`/api/v1/moderation/media/${item.assetId}/variants/detail`);
+    mediaByListing.set(item.listingId, urls);
+  }
+
   return rows.map((row) => {
     const {assignedTo, assignedAt, ...publicRow} = row;
     return {
@@ -129,9 +260,29 @@ export async function listModerationQueue(
       assigneeName: assignedTo ? (assigneeNameById.get(assignedTo) ?? null) : null,
       isAssignedToActor: assignedTo === actorId,
       ...moderationCaseAge({openedAt: row.openedAt, now}),
-      signals: signalsByCase.get(row.caseId) ?? []
+      signals: signalsByCase.get(row.caseId) ?? [],
+      attributes: attributesByListing.get(row.listingId) ?? [],
+      mediaUrls: mediaByListing.get(row.listingId) ?? [],
+      canOverrideAssignment: hasModerationCapability(roles, 'assignment:override')
     };
   });
+}
+
+function moderationScalarValue(row: {
+  textValue: string | null;
+  integerValue: number | null;
+  decimalValue: string | null;
+  booleanValue: boolean | null;
+  dateValue: string | null;
+  optionLabel: string | null;
+}): string | number | boolean {
+  if (row.textValue !== null) return row.textValue;
+  if (row.integerValue !== null) return row.integerValue;
+  if (row.decimalValue !== null) return Number(row.decimalValue);
+  if (row.booleanValue !== null) return row.booleanValue;
+  if (row.dateValue !== null) return row.dateValue;
+  if (row.optionLabel !== null) return row.optionLabel;
+  throw new AppError('UNEXPECTED_ERROR', 'Listing attribute has no moderation value', 500);
 }
 
 export async function claimModerationCase(db: DatabaseClient, actorId: string, caseId: string) {
@@ -216,7 +367,7 @@ export async function decideModerationCase(
   input: ModerationDecisionInput
 ) {
   return db.transaction(async (tx) => {
-    await requireModerationCapability(tx, actorId, 'decision:write');
+    const roles = await requireModerationCapability(tx, actorId, 'decision:write');
     const [reviewCase] = await tx
       .select({
         id: moderationCase.id,
@@ -243,7 +394,9 @@ export async function decideModerationCase(
       reviewerId: actorId,
       sellerId: target.sellerId
     });
-    assertAssignmentAvailable({actorId, assignedTo: reviewCase.assignedTo});
+    if (!hasModerationCapability(roles, 'assignment:override')) {
+      assertAssignmentAvailable({actorId, assignedTo: reviewCase.assignedTo});
+    }
 
     const now = new Date();
     const nextStatus = input.action === 'approve' ? 'active' : 'rejected';
@@ -262,12 +415,12 @@ export async function decideModerationCase(
       .returning({id: listing.id, version: listing.version, status: listing.status});
     if (!updated) throw new AppError('CONFLICT', 'Listing changed during moderation', 409);
 
-    if (!reviewCase.assignedTo) {
+    if (reviewCase.assignedTo !== actorId) {
       await tx.insert(moderationCaseAssignmentEvent).values({
         caseId,
         actorId,
         action: 'claim',
-        previousAssigneeId: null,
+        previousAssigneeId: reviewCase.assignedTo,
         nextAssigneeId: actorId,
         createdAt: now
       });
@@ -278,7 +431,7 @@ export async function decideModerationCase(
       .set({
         status: input.action === 'approve' ? 'approved' : 'rejected',
         assignedTo: actorId,
-        assignedAt: reviewCase.assignedAt ?? now,
+        assignedAt: reviewCase.assignedTo === actorId ? (reviewCase.assignedAt ?? now) : now,
         resolvedAt: now,
         updatedAt: now
       })

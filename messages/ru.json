@@ -7,7 +7,7 @@
     "personalNavigation": "Личные разделы"
   },
   "home": {
-    "accountLink": "Аккаунт",
+    "accountLink": "Профиль",
     "languageNavigation": "Выбор языка",
     "eyebrow": "Платформа объявлений для Азербайджана",
     "title": "Находите нужное быстрее.",
@@ -36,12 +36,15 @@
     "trustSimpleText": "Только действительно нужные поля"
   },
   "listing": {
-    "accountLink": "Аккаунт",
+    "accountLink": "Профиль",
     "languageNavigation": "Выбор языка",
     "sellAction": "Подать объявление",
     "breadcrumbLabel": "Навигация",
     "home": "Главная",
     "mediaPlaceholder": "Фотографии скоро",
+    "mediaPrevious": "Предыдущая фотография",
+    "mediaNext": "Следующая фотография",
+    "mediaCount": "из",
     "priceOnRequest": "Цена договорная",
     "attributesTitle": "Основные характеристики",
     "descriptionTitle": "Описание",
@@ -184,7 +187,7 @@
     "submittedAccount": "Перейти в аккаунт"
   },
   "search": {
-    "accountLink": "Аккаунт",
+    "accountLink": "Профиль",
     "languageNavigation": "Выбор языка",
     "sellAction": "Подать объявление",
     "title": "Найдите то, что нужно",
@@ -222,7 +225,7 @@
   "auth": {
     "languageNavigation": "Выбор языка",
     "sellAction": "Подать объявление",
-    "accountLink": "Аккаунт",
+    "accountLink": "Профиль",
     "title": "Добро пожаловать в Satal",
     "description": "Войдите, чтобы публиковать объявления, сохранять поиски и связываться с продавцами.",
     "signIn": "Войти",
@@ -244,7 +247,7 @@
   "account": {
     "languageNavigation": "Выбор языка",
     "sellAction": "Подать объявление",
-    "title": "Аккаунт",
+    "title": "Профиль",
     "description": "Управляйте профилем, объявлениями и безопасностью аккаунта в одном месте.",
     "loading": "Загружаем профиль...",
     "signIn": "Войти",
@@ -259,7 +262,7 @@
     "rating": "Рейтинг",
     "noRating": "Пока нет отзывов",
     "reviews": "Отзывы",
-    "quickActions": "Разделы аккаунта",
+    "quickActions": "Разделы профиля",
     "messages": "Сообщения",
     "saved": "Избранное",
     "notifications": "Уведомления",
@@ -276,10 +279,9 @@
     "savedMessage": "Сохранено",
     "saveError": "Не удалось сохранить профиль.",
     "security": "Вход и безопасность",
-    "securityHint": "Выход удаляет текущую серверную сессию. После смены аккаунта данные предыдущего пользователя не останутся на странице.",
+    "securityHint": "Выход безопасно завершает текущую серверную сессию на этом устройстве.",
     "currentSession": "Сейчас выполнен вход как",
     "signOut": "Выйти",
-    "switchAccount": "Выйти и сменить аккаунт",
     "signingOut": "Выходим...",
     "signOutError": "Не удалось завершить сессию. Обновите страницу и попробуйте снова.",
     "staffAccess": "Служебный доступ",
@@ -312,7 +314,7 @@
     }
   },
   "moderation": {
-    "accountLink": "Аккаунт",
+    "accountLink": "Профиль",
     "languageNavigation": "Выбор языка",
     "sellAction": "Подать объявление",
     "title": "Очередь модерации",
@@ -323,6 +325,20 @@
     "forbidden": "У вашего аккаунта нет доступа к модерации.",
     "error": "Очередь модерации временно недоступна.",
     "empty": "Очередь пуста.",
+    "queueNavigation": "Разделы модерации",
+    "preview": "Открыть предпросмотр объявления",
+    "reviewBeforeDecision": "Сначала откройте предпросмотр и проверьте объявление.",
+    "listingDetails": "Описание объявления",
+    "photos": "Фотографии",
+    "photoPrevious": "Предыдущая фотография",
+    "photoNext": "Следующая фотография",
+    "photoCount": "из",
+    "noPhotos": "Продавец не добавил фотографии",
+    "attributesTitle": "Характеристики",
+    "noAttributes": "Для объявления нет дополнительных характеристик.",
+    "priceOnRequest": "Цена договорная",
+    "yes": "Да",
+    "no": "Нет",
     "seller": "Продавец",
     "risk": "Риск",
     "riskUnassessed": "не оценён",
@@ -483,7 +499,7 @@
     }
   },
   "chat": {
-    "accountLink": "Аккаунт",
+    "accountLink": "Профиль",
     "languageNavigation": "Выбор языка",
     "sellAction": "Подать объявление",
     "title": "Сообщения",
@@ -546,7 +562,7 @@
     "reviewError": "Не удалось отправить отзыв. Проверьте текст и попробуйте снова."
   },
   "reputation": {
-    "accountLink": "Аккаунт",
+    "accountLink": "Профиль",
     "languageNavigation": "Выбор языка",
     "sellAction": "Подать объявление",
     "memberSince": "На Satal с {date}",
@@ -575,7 +591,7 @@
     "ratingLabel": "Оценка: {rating} из 5"
   },
   "notifications": {
-    "accountLink": "Аккаунт",
+    "accountLink": "Профиль",
     "languageNavigation": "Выбор языка",
     "sellAction": "Подать объявление",
     "title": "Уведомления",
@@ -597,7 +613,7 @@
     "preferenceError": "Не удалось сохранить настройку."
   },
   "saved": {
-    "accountLink": "Аккаунт",
+    "accountLink": "Профиль",
     "languageNavigation": "Выбор языка",
     "sellAction": "Подать объявление",
     "title": "Сохранённое",

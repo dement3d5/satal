@@ -15,11 +15,11 @@ Phase 2, the Phase 3 marketplace foundation and the Phase 4 trust/communication 
 - responsive design tokens, accessible focus/reduced-motion behavior and health endpoint.
 - imported hierarchical geography, three-level localized taxonomy, typed category attributes and owner/version-controlled listing drafts.
 - atomic draft publication into a PostgreSQL listing snapshot, lifecycle/outbox history, public API, localized homepage feed and public detail page.
-- owner-authorized image uploads, hostile-file quarantine, a leased/retrying Sharp worker, automatic local processing, retention cleanup and metadata-free responsive variants.
+- owner-authorized image uploads, hostile-file quarantine, a leased/retrying Sharp worker, automatic local processing, retention cleanup, metadata-free responsive variants and ordered public galleries.
 - localized URL-state search/filter UI, validated dynamic facets, a replaceable Typesense adapter/outbox indexer and indexed PostgreSQL degraded fallback.
 - owner-only favorites and reusable saved searches with localized UI and normalized PostgreSQL query snapshots.
-- Better Auth email/password sessions with verified server-side sign-out, localized account dashboard and account switching, seller listing states, and audited access to verified seller phone contacts.
-- PostgreSQL-backed staff roles, pending-review listing submission and an audited localized moderation queue.
+- Better Auth email/password sessions with verified server-side sign-out, a localized profile dashboard, seller listing states, and audited access to verified seller phone contacts.
+- PostgreSQL-backed staff roles, pending-review listing submission and a localized tabbed moderation workspace with complete listing, characteristic and photo preview before a decision.
 - versioned explainable listing-risk prioritization plus an owner/admin operations and privacy-safe audit panel; signals never auto-enforce.
 - atomic moderator claim/release, parallel-decision protection, queue SLA indicators and bounded owner/admin staff-access auditing.
 - owner-safe listing reports and seller appeals with rate limits, staff queues, audited decisions and lifecycle-safe review reopening.

@@ -69,7 +69,6 @@ interface AccountLabels {
   securityHint: string;
   currentSession: string;
   signOut: string;
-  switchAccount: string;
   signingOut: string;
   signOutError: string;
   staffAccess: string;
@@ -156,7 +155,7 @@ export function AccountPanel({locale, labels}: {locale: AppLocale; labels: Accou
     }
   }
 
-  async function signOut(destination: 'home' | 'switch') {
+  async function signOut() {
     if (signingOut) return;
     setSigningOut(true);
     setSignOutError(false);
@@ -170,8 +169,7 @@ export function AccountPanel({locale, labels}: {locale: AppLocale; labels: Accou
       });
       if (sessionCheck.status !== 401) throw new Error('session is still active');
 
-      const nextUrl = destination === 'switch' ? `/${locale}/auth?signedOut=1` : `/${locale}`;
-      window.location.replace(nextUrl);
+      window.location.replace(`/${locale}`);
     } catch {
       setSignOutError(true);
       setSigningOut(false);
@@ -347,17 +345,9 @@ export function AccountPanel({locale, labels}: {locale: AppLocale; labels: Accou
               className="button"
               type="button"
               disabled={signingOut}
-              onClick={() => signOut('home')}
+              onClick={() => signOut()}
             >
               {signingOut ? labels.signingOut : labels.signOut}
-            </button>
-            <button
-              className="button button-secondary"
-              type="button"
-              disabled={signingOut}
-              onClick={() => signOut('switch')}
-            >
-              {labels.switchAccount}
             </button>
           </div>
           {signOutError && (
