@@ -7,7 +7,7 @@ import {afterAll, beforeAll, describe, expect, it} from 'vitest';
 import * as schema from '@/server/db/schema';
 
 import {getModerationOperations} from './operations-service';
-import {decideModerationCase} from './service';
+import {claimModerationCase, decideModerationCase} from './service';
 
 const databaseUrl = process.env.TEST_DATABASE_URL;
 const integration = databaseUrl ? describe : describe.skip;
@@ -81,6 +81,7 @@ integration('moderation operations permissions and audit projection', () => {
       });
       expect(beforeDecision.sla.oldestOpenMinutes).toBeGreaterThanOrEqual(1_499);
 
+      await claimModerationCase(db, ownerId, caseId);
       await decideModerationCase(db, ownerId, caseId, {
         action: 'approve',
         reasonCode: 'policy_compliant'

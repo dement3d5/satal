@@ -6,7 +6,12 @@ import {afterAll, beforeAll, describe, expect, it} from 'vitest';
 
 import * as schema from '@/server/db/schema';
 
-import {decideModerationCase, getOwnListingReview, listOwnListings} from './service';
+import {
+  claimModerationCase,
+  decideModerationCase,
+  getOwnListingReview,
+  listOwnListings
+} from './service';
 import {
   createListingAppeal,
   createListingReport,
@@ -282,6 +287,10 @@ integration('reports and appeals persistence and permissions', () => {
         status: 'pending_review',
         caseStatus: 'open',
         appeal: {id: acceptedAppeal.id, status: 'accepted'}
+      });
+      await expect(claimModerationCase(db, reviewerId, acceptedCaseId)).resolves.toMatchObject({
+        caseId: acceptedCaseId,
+        isAssignedToActor: true
       });
       await expect(
         decideModerationCase(db, reviewerId, acceptedCaseId, {
