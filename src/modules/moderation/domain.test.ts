@@ -1,6 +1,7 @@
 import {describe, expect, it} from 'vitest';
 
 import {
+  assertAssignedToActor,
   assertAssignmentAvailable,
   assertModerationCapability,
   assertReviewableCase,
@@ -29,6 +30,16 @@ describe('moderation authorization and lifecycle', () => {
     expect(() => assertAssignmentAvailable({actorId: 'a', assignedTo: null})).not.toThrow();
     expect(() => assertAssignmentAvailable({actorId: 'a', assignedTo: 'a'})).not.toThrow();
     expect(() => assertAssignmentAvailable({actorId: 'a', assignedTo: 'b'})).toThrowError(
+      expect.objectContaining({code: 'CONFLICT'})
+    );
+  });
+
+  it('requires the current moderator to claim a case before review decisions', () => {
+    expect(() => assertAssignedToActor({actorId: 'a', assignedTo: 'a'})).not.toThrow();
+    expect(() => assertAssignedToActor({actorId: 'a', assignedTo: null})).toThrowError(
+      expect.objectContaining({code: 'CONFLICT'})
+    );
+    expect(() => assertAssignedToActor({actorId: 'a', assignedTo: 'b'})).toThrowError(
       expect.objectContaining({code: 'CONFLICT'})
     );
   });

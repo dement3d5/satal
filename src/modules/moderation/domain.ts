@@ -121,3 +121,13 @@ export function assertAssignmentAvailable(input: {
     throw new AppError('CONFLICT', 'This moderation case is assigned to another moderator', 409);
   }
 }
+
+export function assertAssignedToActor(input: {actorId: string; assignedTo: string | null}): void {
+  if (input.assignedTo !== input.actorId) {
+    throw new AppError(
+      'CONFLICT',
+      'Claim this moderation case before reviewing or deciding it',
+      409
+    );
+  }
+}

@@ -73,6 +73,7 @@ export default async function ModerationPage({params}: {params: Promise<{locale:
           unassigned: t('unassigned'),
           claim: t('claim'),
           claiming: t('claiming'),
+          claimBeforeReview: t('claimBeforeReview'),
           release: t('release'),
           releasing: t('releasing'),
           queueAge: t('queueAge'),

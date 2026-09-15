@@ -192,6 +192,7 @@ interface ModerationLabels {
   unassigned: string;
   claim: string;
   claiming: string;
+  claimBeforeReview: string;
   release: string;
   releasing: string;
   queueAge: string;
@@ -410,6 +411,7 @@ export function ModerationDashboard({
       setItems((current) =>
         current.map((item) => (item.caseId === caseId ? {...item, ...body.data} : item))
       );
+      if (action === 'release') setReviewingCaseId(null);
     } catch {
       setActionError(labels.actionError);
     } finally {
@@ -1012,8 +1014,7 @@ function ListingModerationQueue({
   if (reviewingItem) {
     const item = reviewingItem;
     const pending = pendingAction?.endsWith(item.caseId) ?? false;
-    const canDecide =
-      item.assigneeName === null || item.isAssignedToActor || item.canOverrideAssignment;
+    const canDecide = item.isAssignedToActor;
     const ageValue = formatModerationAge(item, labels);
     return (
       <article className="moderation-review-workspace">
@@ -1223,7 +1224,7 @@ function ListingModerationQueue({
             <div className="moderation-inbox-actions">
               <button
                 className="button button-primary"
-                disabled={pending}
+                disabled={pending || !item.isAssignedToActor}
                 onClick={() => onReview(item.caseId)}
                 type="button"
               >
@@ -1236,6 +1237,9 @@ function ListingModerationQueue({
                 pendingAction={pendingAction}
                 onAssignment={onAssignment}
               />
+              {!item.isAssignedToActor && (
+                <small className="moderation-claim-hint">{labels.claimBeforeReview}</small>
+              )}
             </div>
           </article>
         );

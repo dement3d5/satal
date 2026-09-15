@@ -29,6 +29,7 @@ import {AppError} from '@/server/errors/app-error';
 
 import type {ModerationDecisionInput, ModerationQueueQuery} from './contracts';
 import {
+  assertAssignedToActor,
   assertModerationCapability,
   assertAssignmentAvailable,
   assertReviewableCase,
@@ -367,7 +368,7 @@ export async function decideModerationCase(
   input: ModerationDecisionInput
 ) {
   return db.transaction(async (tx) => {
-    const roles = await requireModerationCapability(tx, actorId, 'decision:write');
+    await requireModerationCapability(tx, actorId, 'decision:write');
     const [reviewCase] = await tx
       .select({
         id: moderationCase.id,
@@ -394,9 +395,7 @@ export async function decideModerationCase(
       reviewerId: actorId,
       sellerId: target.sellerId
     });
-    if (!hasModerationCapability(roles, 'assignment:override')) {
-      assertAssignmentAvailable({actorId, assignedTo: reviewCase.assignedTo});
-    }
+    assertAssignedToActor({actorId, assignedTo: reviewCase.assignedTo});
 
     const now = new Date();
     const nextStatus = input.action === 'approve' ? 'active' : 'rejected';
@@ -415,23 +414,12 @@ export async function decideModerationCase(
       .returning({id: listing.id, version: listing.version, status: listing.status});
     if (!updated) throw new AppError('CONFLICT', 'Listing changed during moderation', 409);
 
-    if (reviewCase.assignedTo !== actorId) {
-      await tx.insert(moderationCaseAssignmentEvent).values({
-        caseId,
-        actorId,
-        action: 'claim',
-        previousAssigneeId: reviewCase.assignedTo,
-        nextAssigneeId: actorId,
-        createdAt: now
-      });
-    }
-
     await tx
       .update(moderationCase)
       .set({
         status: input.action === 'approve' ? 'approved' : 'rejected',
         assignedTo: actorId,
-        assignedAt: reviewCase.assignedTo === actorId ? (reviewCase.assignedAt ?? now) : now,
+        assignedAt: reviewCase.assignedAt ?? now,
         resolvedAt: now,
         updatedAt: now
       })

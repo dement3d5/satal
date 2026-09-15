@@ -170,6 +170,19 @@ integration('moderation persistence and permissions', () => {
         getModerationMediaVariant(db, sellerId, coverAssetId, 'detail', storage)
       ).rejects.toMatchObject({code: 'NOT_FOUND'});
 
+      await expect(
+        decideModerationCase(db, reviewerId, caseId, {
+          action: 'approve',
+          reasonCode: 'policy_compliant'
+        })
+      ).rejects.toMatchObject({code: 'CONFLICT'});
+      await expect(
+        decideModerationCase(db, adminId, caseId, {
+          action: 'approve',
+          reasonCode: 'policy_compliant'
+        })
+      ).rejects.toMatchObject({code: 'CONFLICT'});
+
       await expect(claimModerationCase(db, reviewerId, caseId)).resolves.toMatchObject({
         caseId,
         assigneeName: 'Moderation reviewer',
@@ -210,6 +223,20 @@ integration('moderation persistence and permissions', () => {
         assigneeName: 'Second reviewer'
       });
 
+      await expect(
+        decideModerationCase(db, adminId, caseId, {
+          action: 'approve',
+          reasonCode: 'policy_compliant'
+        })
+      ).rejects.toMatchObject({code: 'CONFLICT'});
+      await expect(releaseModerationCase(db, adminId, caseId)).resolves.toMatchObject({
+        caseId,
+        assigneeName: null
+      });
+      await expect(claimModerationCase(db, adminId, caseId)).resolves.toMatchObject({
+        caseId,
+        assigneeName: 'Moderation admin'
+      });
       await expect(
         decideModerationCase(db, adminId, caseId, {
           action: 'approve',
@@ -258,7 +285,7 @@ integration('moderation persistence and permissions', () => {
         from moderation_case_assignment_event
         where case_id = ${caseId}
       `;
-      expect(assignmentAudit?.event_count).toBe(4);
+      expect(assignmentAudit?.event_count).toBe(5);
     } finally {
       await client!`delete from outbox_event where aggregate_id = ${listingId}`;
       await client!`delete from moderation_action where case_id = ${caseId}`;
