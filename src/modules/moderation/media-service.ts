@@ -5,6 +5,7 @@ import type {DatabaseClient} from '@/server/db/client';
 import {listing, listingMedia, mediaAsset, mediaVariant, moderationCase} from '@/server/db/schema';
 import {AppError} from '@/server/errors/app-error';
 
+import {hasModerationCapability} from './domain';
 import {requireModerationCapability} from './service';
 
 export type ModerationVariantKind = 'thumbnail' | 'detail';
@@ -16,7 +17,8 @@ export async function getModerationMediaVariant(
   kind: ModerationVariantKind,
   storage: MediaProcessingStorage = getMediaStorage()
 ): Promise<{bytes: Uint8Array; mediaType: string}> {
-  await requireModerationCapability(db, actorId, 'queue:read');
+  const roles = await requireModerationCapability(db, actorId, 'queue:read');
+  const canReviewOwnListings = hasModerationCapability(roles, 'listings:self-review');
   const [variant] = await db
     .select({objectKey: mediaVariant.objectKey, mediaType: mediaVariant.mediaType})
     .from(mediaVariant)
@@ -31,7 +33,7 @@ export async function getModerationMediaVariant(
         eq(mediaVariant.kind, kind),
         eq(listing.status, 'pending_review'),
         eq(moderationCase.status, 'open'),
-        ne(listing.sellerId, actorId)
+        canReviewOwnListings ? undefined : ne(listing.sellerId, actorId)
       )
     )
     .limit(1);

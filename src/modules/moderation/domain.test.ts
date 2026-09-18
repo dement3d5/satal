@@ -18,6 +18,9 @@ describe('moderation authorization and lifecycle', () => {
     expect(hasModerationCapability(['moderator'], 'assignment:write')).toBe(true);
     expect(hasModerationCapability(['moderator'], 'assignment:override')).toBe(false);
     expect(hasModerationCapability(['admin'], 'assignment:override')).toBe(true);
+    expect(hasModerationCapability(['moderator'], 'listings:self-review')).toBe(false);
+    expect(hasModerationCapability(['admin'], 'listings:self-review')).toBe(false);
+    expect(hasModerationCapability(['owner'], 'listings:self-review')).toBe(true);
     expect(hasModerationCapability(['moderator'], 'operations:read')).toBe(false);
     expect(hasModerationCapability(['admin'], 'operations:read')).toBe(true);
     expect(hasModerationCapability(['owner'], 'operations:read')).toBe(true);
@@ -69,6 +72,15 @@ describe('moderation authorization and lifecycle', () => {
         sellerId: 'same'
       })
     ).toThrowError(expect.objectContaining({code: 'FORBIDDEN'}));
+    expect(() =>
+      assertReviewableCase({
+        caseStatus: 'open',
+        listingStatus: 'pending_review',
+        reviewerId: 'owner',
+        sellerId: 'owner',
+        allowSelfReview: true
+      })
+    ).not.toThrow();
     expect(() =>
       assertReviewableCase({
         caseStatus: 'approved',

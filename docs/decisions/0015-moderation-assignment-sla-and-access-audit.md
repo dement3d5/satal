@@ -10,7 +10,7 @@ The shared listing queue allowed two moderators to start the same case and provi
 
 ## Decision
 
-An open `moderation_case` may be unassigned or assigned to one live staff actor. `assigned_to` and `assigned_at` change together under a row lock. A moderator may claim an unassigned case and release their own case; `admin` and `owner` may release another assignee's case to recover stuck work. Claiming an already-owned case and releasing an already-unassigned case are idempotent. A decision may atomically claim an unassigned case, but a case assigned to somebody else returns conflict. Existing self-review and lifecycle checks still run inside the same transaction.
+An open `moderation_case` may be unassigned or assigned to one live staff actor. `assigned_to` and `assigned_at` change together under a row lock. A moderator may claim an unassigned case and release their own case; `admin` and `owner` may release another assignee's case to recover stuck work. Claiming an already-owned case and releasing an already-unassigned case are idempotent. A decision may atomically claim an unassigned case, but a case assigned to somebody else returns conflict. Lifecycle and role-specific self-review checks still run inside the same transaction; ADR 0018 adds the narrow platform-owner exception for initial listing moderation.
 
 Every effective claim or release appends a `moderation_case_assignment_event` with actor and previous/next assignee. These rows are audit history and are not updated in place.
 

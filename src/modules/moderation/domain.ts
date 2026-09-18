@@ -6,6 +6,7 @@ export type ModerationCapability =
   | 'decision:write'
   | 'assignment:write'
   | 'assignment:override'
+  | 'listings:self-review'
   | 'reports:read'
   | 'reports:decide'
   | 'appeals:read'
@@ -50,6 +51,7 @@ const capabilities: Record<StaffRole, ReadonlySet<ModerationCapability>> = {
     'decision:write',
     'assignment:write',
     'assignment:override',
+    'listings:self-review',
     'reports:read',
     'reports:decide',
     'appeals:read',
@@ -83,8 +85,9 @@ export function assertReviewableCase(input: {
   listingStatus: 'pending_review' | 'active' | 'sold' | 'expired' | 'removed' | 'rejected';
   reviewerId: string;
   sellerId: string;
+  allowSelfReview?: boolean;
 }): void {
-  if (input.reviewerId === input.sellerId) {
+  if (input.reviewerId === input.sellerId && !input.allowSelfReview) {
     throw new AppError('FORBIDDEN', 'A moderator cannot review their own listing', 403);
   }
   if (input.caseStatus !== 'open' || input.listingStatus !== 'pending_review') {

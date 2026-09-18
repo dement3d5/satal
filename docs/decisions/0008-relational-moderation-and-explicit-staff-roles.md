@@ -1,6 +1,6 @@
 # ADR 0008: Relational moderation and explicit staff roles
 
-Status: accepted
+Status: amended by ADR 0018
 
 ## Context
 

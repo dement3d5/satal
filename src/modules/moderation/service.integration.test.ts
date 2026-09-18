@@ -313,4 +313,123 @@ integration('moderation persistence and permissions', () => {
       `;
     }
   });
+
+  it('allows a platform owner to claim, inspect and approve their own listing', async () => {
+    const ownerId = randomUUID();
+    const draftId = randomUUID();
+    const listingId = randomUUID();
+    const caseId = randomUUID();
+    const assetId = randomUUID();
+    const db = drizzle(client!, {schema});
+    const storage: MediaProcessingStorage = {
+      put: async () => undefined,
+      readQuarantine: async () => new Uint8Array(),
+      deleteQuarantine: async () => undefined,
+      putVariant: async () => undefined,
+      readVariant: async () => new Uint8Array([4, 5, 6]),
+      deleteVariant: async () => undefined
+    };
+
+    try {
+      await client!`
+        insert into "user" (id, name, email, email_verified)
+        values (${ownerId}, 'Platform owner', ${`${ownerId}@example.test`}, true)
+      `;
+      await client!`
+        insert into user_role (user_id, role, granted_by)
+        values (${ownerId}, 'owner', ${ownerId})
+      `;
+      await client!`
+        insert into listing_draft (id, owner_id, category_id, category_schema_version, status)
+        values (${draftId}, ${ownerId}, '20000000-0000-4000-8000-000000000003', 1, 'submitted')
+      `;
+      await client!`
+        insert into listing (
+          id, seller_id, source_draft_id, category_id, category_schema_version,
+          location_id, public_location_precision, status, title, description
+        ) values (
+          ${listingId}, ${ownerId}, ${draftId},
+          '20000000-0000-4000-8000-000000000003', 1,
+          '10000000-0000-4000-8000-000000000002', 'city', 'pending_review',
+          'Owner self-review listing',
+          'A complete listing used to verify the explicit owner moderation capability.'
+        )
+      `;
+      await client!`
+        insert into moderation_case (id, listing_id, policy_version)
+        values (${caseId}, ${listingId}, 'listing-risk-v1')
+      `;
+      await client!`
+        insert into media_asset (
+          id, owner_id, status, quarantine_object_key, declared_media_type,
+          expected_bytes, expected_sha256, upload_expires_at
+        ) values (
+          ${assetId}, ${ownerId}, 'ready', ${`tests/${assetId}`}, 'image/jpeg',
+          10, ${'2'.repeat(64)}, now() + interval '1 hour'
+        )
+      `;
+      await client!`
+        insert into media_variant (media_asset_id, kind, object_key, media_type, bytes, width, height)
+        values (${assetId}, 'detail', ${`tests/${assetId}/detail.jpg`}, 'image/jpeg', 10, 1200, 900)
+      `;
+      await client!`
+        insert into listing_media (listing_id, media_asset_id, sort_order, is_cover)
+        values (${listingId}, ${assetId}, 0, true)
+      `;
+
+      await expect(listModerationQueue(db, ownerId, {locale: 'en', limit: 30})).resolves.toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            caseId,
+            listingId,
+            mediaUrls: [`/api/v1/moderation/media/${assetId}/variants/detail`]
+          })
+        ])
+      );
+      await expect(
+        getModerationMediaVariant(db, ownerId, assetId, 'detail', storage)
+      ).resolves.toMatchObject({bytes: new Uint8Array([4, 5, 6]), mediaType: 'image/jpeg'});
+      await expect(
+        decideModerationCase(db, ownerId, caseId, {
+          action: 'approve',
+          reasonCode: 'policy_compliant'
+        })
+      ).rejects.toMatchObject({code: 'CONFLICT'});
+      await expect(claimModerationCase(db, ownerId, caseId)).resolves.toMatchObject({
+        caseId,
+        assigneeName: 'Platform owner',
+        isAssignedToActor: true
+      });
+      await expect(
+        decideModerationCase(db, ownerId, caseId, {
+          action: 'approve',
+          reasonCode: 'policy_compliant'
+        })
+      ).resolves.toMatchObject({caseId, listingId, status: 'active', version: 2});
+
+      const [audit] = await client!`
+        select mc.status as case_status, ma.actor_id, ma.action
+        from moderation_case mc
+        join moderation_action ma on ma.case_id = mc.id
+        where mc.id = ${caseId}
+      `;
+      expect(audit).toMatchObject({
+        case_status: 'approved',
+        actor_id: ownerId,
+        action: 'approve'
+      });
+    } finally {
+      await client!`delete from outbox_event where aggregate_id = ${listingId}`;
+      await client!`delete from moderation_action where case_id = ${caseId}`;
+      await client!`delete from moderation_case_assignment_event where case_id = ${caseId}`;
+      await client!`delete from moderation_case where id = ${caseId}`;
+      await client!`delete from listing_status_history where listing_id = ${listingId}`;
+      await client!`delete from listing where id = ${listingId}`;
+      await client!`delete from media_asset where id = ${assetId}`;
+      await client!`delete from listing_draft where id = ${draftId}`;
+      await client!`delete from moderation_workspace_access where actor_id = ${ownerId}`;
+      await client!`delete from user_role where user_id = ${ownerId}`;
+      await client!`delete from "user" where id = ${ownerId}`;
+    }
+  });
 });

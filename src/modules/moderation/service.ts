@@ -47,6 +47,7 @@ export async function listModerationQueue(
   query: ModerationQueueQuery
 ) {
   const roles = await requireModerationCapability(db, actorId, 'queue:read');
+  const canReviewOwnListings = hasModerationCapability(roles, 'listings:self-review');
   await recordModerationAccess(db, actorId, 'queue');
   const now = new Date();
   const rows = await db
@@ -88,7 +89,7 @@ export async function listModerationQueue(
       and(
         eq(moderationCase.status, 'open'),
         eq(listing.status, 'pending_review'),
-        ne(listing.sellerId, actorId)
+        canReviewOwnListings ? undefined : ne(listing.sellerId, actorId)
       )
     )
     .orderBy(desc(moderationCase.priority), asc(moderationCase.openedAt), asc(moderationCase.id))
@@ -288,8 +289,8 @@ function moderationScalarValue(row: {
 
 export async function claimModerationCase(db: DatabaseClient, actorId: string, caseId: string) {
   return db.transaction(async (tx) => {
-    await requireModerationCapability(tx, actorId, 'assignment:write');
-    const reviewCase = await readReviewableCaseForUpdate(tx, actorId, caseId);
+    const roles = await requireModerationCapability(tx, actorId, 'assignment:write');
+    const reviewCase = await readReviewableCaseForUpdate(tx, actorId, caseId, roles);
     assertAssignmentAvailable({actorId, assignedTo: reviewCase.assignedTo});
     const [actor] = await tx
       .select({name: user.name})
@@ -333,7 +334,7 @@ export async function claimModerationCase(db: DatabaseClient, actorId: string, c
 export async function releaseModerationCase(db: DatabaseClient, actorId: string, caseId: string) {
   return db.transaction(async (tx) => {
     const roles = await requireModerationCapability(tx, actorId, 'assignment:write');
-    const reviewCase = await readReviewableCaseForUpdate(tx, actorId, caseId);
+    const reviewCase = await readReviewableCaseForUpdate(tx, actorId, caseId, roles);
     if (!reviewCase.assignedTo) {
       return {caseId, assigneeName: null, assignedAt: null, isAssignedToActor: false};
     }
@@ -368,7 +369,7 @@ export async function decideModerationCase(
   input: ModerationDecisionInput
 ) {
   return db.transaction(async (tx) => {
-    await requireModerationCapability(tx, actorId, 'decision:write');
+    const roles = await requireModerationCapability(tx, actorId, 'decision:write');
     const [reviewCase] = await tx
       .select({
         id: moderationCase.id,
@@ -393,7 +394,8 @@ export async function decideModerationCase(
       caseStatus: reviewCase.status,
       listingStatus: target.status,
       reviewerId: actorId,
-      sellerId: target.sellerId
+      sellerId: target.sellerId,
+      allowSelfReview: hasModerationCapability(roles, 'listings:self-review')
     });
     assertAssignedToActor({actorId, assignedTo: reviewCase.assignedTo});
 
@@ -651,7 +653,8 @@ export async function recordModerationAccess(
 async function readReviewableCaseForUpdate(
   tx: Parameters<Parameters<DatabaseClient['transaction']>[0]>[0],
   actorId: string,
-  caseId: string
+  caseId: string,
+  roles: readonly StaffRole[]
 ) {
   const [reviewCase] = await tx
     .select({
@@ -676,7 +679,8 @@ async function readReviewableCaseForUpdate(
     caseStatus: reviewCase.status,
     listingStatus: target.status,
     reviewerId: actorId,
-    sellerId: target.sellerId
+    sellerId: target.sellerId,
+    allowSelfReview: hasModerationCapability(roles, 'listings:self-review')
   });
   return reviewCase;
 }
