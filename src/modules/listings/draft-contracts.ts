@@ -20,7 +20,10 @@ export const draftAttributeValueSchema = z.discriminatedUnion('type', [
   })
 ]);
 
-export const createDraftSchema = z.object({categoryId: uuid});
+export const createDraftSchema = z.object({
+  categoryId: uuid,
+  shopId: uuid.nullable().optional()
+});
 
 export const autosaveDraftSchema = z
   .object({

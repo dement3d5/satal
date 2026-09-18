@@ -1,6 +1,7 @@
 import {and, eq} from 'drizzle-orm';
 
 import {evaluateListingRisk} from '@/modules/moderation/risk-policy';
+import {requireShopCapability} from '@/modules/shops/service';
 import type {DatabaseClient} from '@/server/db/client';
 import {
   listing,
@@ -44,6 +45,12 @@ export async function publishListingDraft(
     await lockDraft(tx, draftId);
     const draft = await requireDraft(tx, draftId);
     assertDraftOwner(actorId, draft.ownerId);
+    if (draft.shopId) {
+      const membership = await requireShopCapability(tx, actorId, draft.shopId, 'listings:manage');
+      if (membership.status !== 'active') {
+        throw new AppError('CONFLICT', 'Listings cannot be published for an inactive shop', 409);
+      }
+    }
 
     const [alreadyPublished] = await tx
       .select()
@@ -92,6 +99,7 @@ export async function publishListingDraft(
       .insert(listing)
       .values({
         sellerId: actorId,
+        shopId: draft.shopId,
         sourceDraftId: draftId,
         categoryId: draft.categoryId,
         categorySchemaVersion: draft.categorySchemaVersion,

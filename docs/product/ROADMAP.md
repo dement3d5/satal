@@ -60,7 +60,9 @@ Remaining: production realtime delivery, legally reviewed bans/restrictions and 
 
 ## Phase 5 — shops
 
-Shop ownership, permissions, verification state, storefront and shop listing management.
+In progress. Milestone 5A implements one owner-created shop per account, normalized owner/manager/listing-manager permissions, structured public profile and hours, safe logo/cover uploads, an auditable verification-request lifecycle, optional shop-owned listing drafts and a localized public storefront containing only active PostgreSQL listings. Admin/owner can review verification applications from the management workspace; verification never bypasses listing moderation.
+
+Remaining: ownership-transfer and invitation acceptance/revocation workflows, shop suspension/closure operations with appeal policy, production business-document handling policy, directory search/ranking, shop-specific reputation aggregation, richer storefront filters and full journey E2E/accessibility review.
 
 ## Phase 6 — monetization
 

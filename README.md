@@ -2,7 +2,7 @@
 
 Satal is an Azerbaijan-first multilingual classifieds marketplace. The product optimizes for a short path from arrival to a relevant listing, category-aware search, trustworthy seller interactions, and low-complexity operation during MVP.
 
-Phase 2, the Phase 3 marketplace foundation and the Phase 4 trust/communication foundation are complete. The repository contains no production-ready SMS, email, push, storage, payment or hosting integration. Typesense has a real adapter but still requires owner-provided service credentials and deployment verification; disabled providers fail closed instead of simulating success.
+Phase 2, the Phase 3 marketplace foundation and the implemented Phase 4 trust/communication milestones are complete. Phase 5 shop foundations are in progress. The repository contains no production-ready SMS, email, push, storage, payment or hosting integration. Typesense has a real adapter but still requires owner-provided service credentials and deployment verification; disabled providers fail closed instead of simulating success.
 
 ## Foundation
 
@@ -28,6 +28,7 @@ Phase 2, the Phase 3 marketplace foundation and the Phase 4 trust/communication 
 - seller-confirmed qualified interactions, atomic sold-listing transition, double-blind bilateral reviews and public reputation profiles.
 - authenticated public-review reports, independent staff review and audited removal from reputation aggregates.
 - an auth-aware responsive header that keeps account-only destinations out of the guest navigation.
+- owner-created shops with scoped team roles, structured business hours, safe branding media, auditable verification requests, shop-owned listings and localized public storefronts.
 
 ## Requirements
 
@@ -47,7 +48,7 @@ pnpm dev
 
 The default local database URL is `postgresql://satal:satal@localhost:5432/satal`. Replace `AUTH_SECRET` in `.env.local` with a unique value of at least 32 characters. Never commit local environment files or real credentials.
 
-The application is available at `http://localhost:3000/az`; `GET /api/v1/health` is the process health endpoint. OTP delivery intentionally returns a service-unavailable error while `SMS_PROVIDER=disabled`.
+The application is available at `http://localhost:3000/az`; shop management is at `/{locale}/shop` and public storefronts use `/{locale}/shops/{slug}`. `GET /api/v1/health` is the process health endpoint. OTP delivery intentionally returns a service-unavailable error while `SMS_PROVIDER=disabled`.
 
 `pnpm dev` starts both Next.js and the continuous local media worker, so accepted uploads become safe WebP variants automatically. Use `pnpm dev:web` only when the web process is intentionally needed without a worker. `pnpm media:process` performs one bounded processing/retention pass, `pnpm media:worker` runs the worker independently, and `pnpm media:status` prints a privacy-safe health snapshot and returns a failing exit code for an expired lease or a processable backlog older than 15 minutes. Production still requires an independently supervised worker and a live-verified R2 adapter; quarantine files are never public.
 

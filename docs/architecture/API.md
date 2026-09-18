@@ -104,3 +104,15 @@ Better Auth owns `/api/auth/*`, credential hashing, database sessions, HttpOnly 
 `GET /api/v1/users/{userId}/reputation` is public and returns only the display name, account age, rating aggregate and revealed reviews. A review remains absent from this response until the counterpart submits or its 14-day reveal date passes. Email, phone, conversation content and pending review existence are never exposed.
 
 `POST /api/v1/reviews/{reviewId}/reports` lets an authenticated non-author report a currently public review with a fixed reason and optional bounded context. The relationship is idempotent and rate-limited. `GET /api/v1/moderation/review-reports` returns a minimal queue to independent live staff, omitting reporter identity. `POST /api/v1/moderation/review-reports/{reportId}/decision` dismisses one report or atomically hides the review and resolves all its open reports. These private responses use `no-store`; no endpoint in this flow bans an account.
+
+## Shops and storefronts
+
+`GET|POST /api/v1/shops` lists the authenticated actor's memberships or creates the account's one owned shop. `GET|PATCH /api/v1/shops/{shopId}` requires membership; mutation requires `profile:manage` and an optimistic `version`. Location IDs must reference an enabled canonical location, while public address and phone are explicitly business-facing fields.
+
+`GET|POST /api/v1/shops/{shopId}/members` and `DELETE /api/v1/shops/{shopId}/members/{userId}` are owner-only. The server resolves additions by an existing account email, accepts only `manager` or `listing_manager`, and cannot demote/remove the owner. Shop membership grants no platform moderation capability.
+
+`POST|DELETE /api/v1/shops/{shopId}/media/{logo|cover}` authorizes or removes a single shop image through the existing ten-minute upload capability and quarantine processor. Public storefronts never render pending/quarantined originals. `POST /api/v1/shops/{shopId}/verification` requires profile completeness and creates one pending request. `GET /api/v1/shop-verifications` and `POST /api/v1/shop-verifications/{requestId}/decision` require live platform `admin`/`owner` access and preserve resolved requests.
+
+`GET /api/v1/storefronts/{slug}?locale=az|ru|en` is public, short-cached and returns the active shop profile, structured hours, ready logo/cover and at most 48 authoritative active listing cards. The localized SEO route `/{locale}/shops/{slug}` consumes the same application service.
+
+`POST /api/v1/listing-drafts` accepts an optional `shopId`. The session actor must currently have `listings:manage`; publication rechecks the capability and active shop state before copying the shop reference to the listing. Personal drafts omit it.

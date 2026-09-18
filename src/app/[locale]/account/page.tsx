@@ -39,6 +39,7 @@ export default async function AccountPage({params}: {params: Promise<{locale: Ap
           messages: t('messages'),
           saved: t('saved'),
           notifications: t('notifications'),
+          shop: t('shop'),
           personalDetails: t('personalDetails'),
           personalDetailsHint: t('personalDetailsHint'),
           name: t('name'),

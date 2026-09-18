@@ -383,6 +383,146 @@ export const categoryAttribute = pgTable(
   ]
 );
 
+export const shopStatus = pgEnum('shop_status', ['active', 'suspended', 'closed']);
+export const shopVerificationStatus = pgEnum('shop_verification_status', [
+  'unverified',
+  'pending',
+  'verified',
+  'rejected'
+]);
+export const shopMemberRole = pgEnum('shop_member_role', ['owner', 'manager', 'listing_manager']);
+export const shopVerificationRequestStatus = pgEnum('shop_verification_request_status', [
+  'pending',
+  'approved',
+  'rejected',
+  'cancelled'
+]);
+
+export const shop = pgTable(
+  'shop',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    ownerId: uuid('owner_id')
+      .notNull()
+      .references(() => user.id, {onDelete: 'restrict'}),
+    slug: varchar('slug', {length: 80}).notNull(),
+    name: varchar('name', {length: 120}).notNull(),
+    description: text('description').default('').notNull(),
+    locationId: uuid('location_id').references(() => location.id, {onDelete: 'restrict'}),
+    publicAddress: varchar('public_address', {length: 300}),
+    publicPhone: varchar('public_phone', {length: 32}),
+    status: shopStatus('status').default('active').notNull(),
+    verificationStatus: shopVerificationStatus('verification_status')
+      .default('unverified')
+      .notNull(),
+    version: integer('version').default(1).notNull(),
+    verifiedAt: timestamp('verified_at', {withTimezone: true}),
+    verificationReviewedBy: uuid('verification_reviewed_by').references(() => user.id, {
+      onDelete: 'restrict'
+    }),
+    ...timestamps
+  },
+  (table) => [
+    uniqueIndex('shop_slug_unique').on(table.slug),
+    uniqueIndex('shop_owner_unique').on(table.ownerId),
+    index('shop_public_directory_idx').on(table.status, table.verificationStatus, table.createdAt),
+    index('shop_location_idx').on(table.locationId),
+    check('shop_slug_format', sql`${table.slug} ~ '^[a-z0-9]+(?:-[a-z0-9]+)*$'`),
+    check('shop_name_not_blank', sql`length(btrim(${table.name})) >= 2`),
+    check('shop_version_positive', sql`${table.version} > 0`),
+    check('shop_description_length', sql`length(${table.description}) <= 3000`),
+    check(
+      'shop_verification_timestamp_consistent',
+      sql`(${table.verificationStatus} = 'verified' and ${table.verifiedAt} is not null) or (${table.verificationStatus} <> 'verified' and ${table.verifiedAt} is null)`
+    )
+  ]
+);
+
+export const shopMember = pgTable(
+  'shop_member',
+  {
+    shopId: uuid('shop_id')
+      .notNull()
+      .references(() => shop.id, {onDelete: 'cascade'}),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => user.id, {onDelete: 'restrict'}),
+    role: shopMemberRole('role').notNull(),
+    invitedBy: uuid('invited_by').references(() => user.id, {onDelete: 'restrict'}),
+    ...timestamps
+  },
+  (table) => [
+    primaryKey({columns: [table.shopId, table.userId]}),
+    index('shop_member_user_role_idx').on(table.userId, table.role, table.shopId)
+  ]
+);
+
+export const shopBusinessHour = pgTable(
+  'shop_business_hour',
+  {
+    shopId: uuid('shop_id')
+      .notNull()
+      .references(() => shop.id, {onDelete: 'cascade'}),
+    weekday: smallint('weekday').notNull(),
+    isClosed: boolean('is_closed').default(false).notNull(),
+    opensAtMinute: smallint('opens_at_minute'),
+    closesAtMinute: smallint('closes_at_minute'),
+    ...timestamps
+  },
+  (table) => [
+    primaryKey({columns: [table.shopId, table.weekday]}),
+    check('shop_business_hour_weekday_range', sql`${table.weekday} between 0 and 6`),
+    check(
+      'shop_business_hour_minutes_range',
+      sql`${table.opensAtMinute} is null or ${table.opensAtMinute} between 0 and 1439`
+    ),
+    check(
+      'shop_business_hour_closing_minutes_range',
+      sql`${table.closesAtMinute} is null or ${table.closesAtMinute} between 1 and 1440`
+    ),
+    check(
+      'shop_business_hour_state_consistent',
+      sql`(${table.isClosed} and ${table.opensAtMinute} is null and ${table.closesAtMinute} is null) or (not ${table.isClosed} and ${table.opensAtMinute} is not null and ${table.closesAtMinute} is not null and ${table.opensAtMinute} < ${table.closesAtMinute})`
+    )
+  ]
+);
+
+export const shopVerificationRequest = pgTable(
+  'shop_verification_request',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    shopId: uuid('shop_id')
+      .notNull()
+      .references(() => shop.id, {onDelete: 'cascade'}),
+    submittedBy: uuid('submitted_by')
+      .notNull()
+      .references(() => user.id, {onDelete: 'restrict'}),
+    status: shopVerificationRequestStatus('status').default('pending').notNull(),
+    legalName: varchar('legal_name', {length: 200}).notNull(),
+    registryNumber: varchar('registry_number', {length: 120}),
+    statement: text('statement').notNull(),
+    reviewedBy: uuid('reviewed_by').references(() => user.id, {onDelete: 'restrict'}),
+    reviewerNote: text('reviewer_note'),
+    resolvedAt: timestamp('resolved_at', {withTimezone: true}),
+    ...timestamps
+  },
+  (table) => [
+    uniqueIndex('shop_verification_one_pending_unique')
+      .on(table.shopId)
+      .where(sql`${table.status} = 'pending'`),
+    index('shop_verification_queue_idx').on(table.status, table.createdAt),
+    check('shop_verification_legal_name_not_blank', sql`length(btrim(${table.legalName})) >= 2`),
+    check(
+      'shop_verification_statement_length',
+      sql`length(btrim(${table.statement})) between 20 and 2000`
+    ),
+    check(
+      'shop_verification_resolution_consistent',
+      sql`(${table.status} = 'pending' and ${table.reviewedBy} is null and ${table.resolvedAt} is null) or (${table.status} <> 'pending' and ${table.resolvedAt} is not null)`
+    )
+  ]
+);
+
 export const listingDraftStatus = pgEnum('listing_draft_status', [
   'draft',
   'ready_for_review',
@@ -403,6 +543,7 @@ export const listingDraft = pgTable(
     ownerId: uuid('owner_id')
       .notNull()
       .references(() => user.id, {onDelete: 'restrict'}),
+    shopId: uuid('shop_id').references(() => shop.id, {onDelete: 'restrict'}),
     categoryId: uuid('category_id')
       .notNull()
       .references(() => category.id, {onDelete: 'restrict'}),
@@ -427,6 +568,7 @@ export const listingDraft = pgTable(
       table.updatedAt
     ),
     index('listing_draft_category_status_idx').on(table.categoryId, table.status),
+    index('listing_draft_shop_status_updated_idx').on(table.shopId, table.status, table.updatedAt),
     index('listing_draft_location_idx').on(table.locationId),
     check('listing_draft_schema_version_positive', sql`${table.categorySchemaVersion} > 0`),
     check('listing_draft_version_positive', sql`${table.version} > 0`),
@@ -528,6 +670,7 @@ export const listing = pgTable(
     sellerId: uuid('seller_id')
       .notNull()
       .references(() => user.id, {onDelete: 'restrict'}),
+    shopId: uuid('shop_id').references(() => shop.id, {onDelete: 'restrict'}),
     sourceDraftId: uuid('source_draft_id')
       .notNull()
       .references(() => listingDraft.id, {onDelete: 'restrict'}),
@@ -567,6 +710,12 @@ export const listing = pgTable(
       table.id
     ),
     index('listing_seller_status_updated_idx').on(table.sellerId, table.status, table.updatedAt),
+    index('listing_shop_public_feed_idx').on(
+      table.shopId,
+      table.status,
+      table.publishedAt,
+      table.id
+    ),
     index('listing_public_search_idx')
       .using(
         'gin',
@@ -1513,6 +1662,7 @@ export const mediaAssetStatus = pgEnum('media_asset_status', [
 ]);
 
 export const mediaVariantKind = pgEnum('media_variant_kind', ['thumbnail', 'card', 'detail']);
+export const shopMediaKind = pgEnum('shop_media_kind', ['logo', 'cover']);
 
 export const mediaAsset = pgTable(
   'media_asset',
@@ -1579,6 +1729,24 @@ export const mediaAsset = pgTable(
       'media_asset_processing_lease_consistent',
       sql`(${table.status} = 'processing' and ${table.processingLeaseOwner} is not null and ${table.processingLeaseExpiresAt} is not null) or (${table.status} <> 'processing' and ${table.processingLeaseOwner} is null and ${table.processingLeaseExpiresAt} is null)`
     )
+  ]
+);
+
+export const shopMedia = pgTable(
+  'shop_media',
+  {
+    shopId: uuid('shop_id')
+      .notNull()
+      .references(() => shop.id, {onDelete: 'cascade'}),
+    kind: shopMediaKind('kind').notNull(),
+    mediaAssetId: uuid('media_asset_id')
+      .notNull()
+      .references(() => mediaAsset.id, {onDelete: 'restrict'}),
+    ...timestamps
+  },
+  (table) => [
+    primaryKey({columns: [table.shopId, table.kind]}),
+    uniqueIndex('shop_media_asset_unique').on(table.mediaAssetId)
   ]
 );
 

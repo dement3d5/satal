@@ -13,7 +13,14 @@ export async function POST(request: Request) {
     const actorId = await requireActorId(request.headers);
     const input = await parseJson(request, createDraftSchema);
     const response = NextResponse.json(
-      {data: await createListingDraft(getDatabase(), actorId, input.categoryId)},
+      {
+        data: await createListingDraft(
+          getDatabase(),
+          actorId,
+          input.categoryId,
+          input.shopId ?? null
+        )
+      },
       {status: 201}
     );
     response.headers.set('cache-control', 'no-store');

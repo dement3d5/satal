@@ -26,6 +26,13 @@ interface DraftSnapshot {
   id: string;
   version: number;
   categoryId: string;
+  shopId: string | null;
+}
+
+interface ShopOption {
+  id: string;
+  name: string;
+  status: 'active' | 'suspended' | 'closed';
 }
 
 interface ApiErrorShape {
@@ -46,6 +53,8 @@ export function ListingCreation() {
   const locale = useLocale() as ContractLocale;
   const [step, setStep] = useState<Step>('category');
   const [categories, setCategories] = useState<CategoryNodeContract[]>([]);
+  const [shops, setShops] = useState<ShopOption[]>([]);
+  const [selectedShopId, setSelectedShopId] = useState('');
   const [categoryPath, setCategoryPath] = useState<CategoryNodeContract[]>([]);
   const [schema, setSchema] = useState<CategorySchemaContract | null>(null);
   const [loadingCategories, setLoadingCategories] = useState(true);
@@ -92,6 +101,19 @@ export function ListingCreation() {
     const timer = window.setTimeout(() => void loadCategories(), 0);
     return () => window.clearTimeout(timer);
   }, [loadCategories]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      void fetch('/api/v1/shops', {cache: 'no-store', credentials: 'same-origin'})
+        .then(async (response) => {
+          if (!response.ok) return;
+          const body = (await response.json()) as {data?: ShopOption[]};
+          setShops((body.data ?? []).filter((item) => item.status === 'active'));
+        })
+        .catch(() => undefined);
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   const loadSchema = useCallback(
     async (category: CategoryNodeContract) => {
@@ -157,7 +179,10 @@ export function ListingCreation() {
         const response = await fetch('/api/v1/listing-drafts', {
           method: 'POST',
           headers: {'content-type': 'application/json'},
-          body: JSON.stringify({categoryId: schema.category.id})
+          body: JSON.stringify({
+            categoryId: schema.category.id,
+            shopId: selectedShopId || null
+          })
         });
         const body = (await response.json()) as {data?: DraftSnapshot} & ApiErrorShape;
         if (response.status === 401) {
@@ -450,7 +475,10 @@ export function ListingCreation() {
             onChoose={(category) => void chooseCategory(category)}
             onContinue={() => void beginDetails()}
             onRetry={() => void loadCategories()}
+            onShop={(shopId) => setSelectedShopId(shopId)}
+            selectedShopId={selectedShopId}
             schema={schema}
+            shops={shops}
             t={t}
           />
         )}
@@ -543,7 +571,10 @@ function CategoryStep(props: {
   onChoose: (category: CategoryNodeContract) => void;
   onContinue: () => void;
   onRetry: () => void;
+  onShop: (shopId: string) => void;
+  selectedShopId: string;
   schema: CategorySchemaContract | null;
+  shops: ShopOption[];
   t: Translator;
 }) {
   const {t} = props;
@@ -563,12 +594,31 @@ function CategoryStep(props: {
       {props.loading ? (
         <SkeletonList />
       ) : props.schema ? (
-        <div className="selected-category">
-          <CheckIcon />
-          <div>
-            <strong>{props.schema.category.name}</strong>
-            <span>{t('categorySelected')}</span>
+        <div className="selected-category-stack">
+          <div className="selected-category">
+            <CheckIcon />
+            <div>
+              <strong>{props.schema.category.name}</strong>
+              <span>{t('categorySelected')}</span>
+            </div>
           </div>
+          {props.shops.length > 0 && (
+            <label className="shop-listing-owner">
+              <span>{t('shopOwnerLabel')}</span>
+              <select
+                onChange={(event) => props.onShop(event.target.value)}
+                value={props.selectedShopId}
+              >
+                <option value="">{t('personalListing')}</option>
+                {props.shops.map((shop) => (
+                  <option key={shop.id} value={shop.id}>
+                    {shop.name}
+                  </option>
+                ))}
+              </select>
+              <small>{t('shopOwnerHint')}</small>
+            </label>
+          )}
         </div>
       ) : (
         <div className="choice-grid">

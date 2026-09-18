@@ -47,6 +47,20 @@ Draft lifecycle is `draft → ready_for_review → submitted`, with explicit aba
 
 Changing category is allowed only before submission. The application transaction loads the new `category_attribute` schema, retains values that are still applicable and valid, deletes incompatible scalar/multi-select rows, updates category/schema version, resets `ready_for_review` to `draft`, increments the draft version and records the change. Required-field completeness is evaluated against the captured category schema version before transition to review.
 
+### Shops
+
+- `shop`: one owner-controlled public business profile with stable slug, optional canonical location/public address/phone, independent operational and verification states, and optimistic version;
+- `shop_member`: normalized owner/manager/listing-manager membership used for every protected action;
+- `shop_business_hour`: at most one structured opening interval per weekday, stored as bounded local minutes rather than free-form JSON;
+- `shop_verification_request`: append-preserving application lifecycle with submitter, independent reviewer, bounded public business identity fields and an internal reviewer note;
+- `shop_media`: one logo and one cover attachment backed by the existing quarantined `media_asset` pipeline.
+
+The MVP limits an account to one owned shop but permits membership in multiple shops. Ownership is explicit in both `shop.owner_id` and its required owner membership created in the same transaction; the duplicate field keeps ownership queries and future transfer validation unambiguous. Managers may edit the profile, media and shop listings, while listing managers can only create/publish shop listings. Only the owner can change membership. Platform `admin`/`owner` roles, not shop roles, resolve verification requests.
+
+`listing_draft.shop_id` and `listing.shop_id` are optional. Personal listings remain unchanged. A shop draft records both the shop and the concrete member who authored it; creation and publication recheck live `listings:manage` membership and active shop state. Publication copies the shop reference into the immutable listing snapshot, so an active shop listing can be rebuilt into search and rendered on the storefront without trusting client identity. Removing a member does not erase authored audit history.
+
+Verification is `unverified → pending → verified|rejected`. A partial unique index permits only one pending request per shop, while resolved requests remain available for audit. `verified_at` is constrained to exist only for verified shops. Changing the shop name, canonical location, public address or phone cancels an in-flight request and removes an existing badge so identity cannot drift after review. Verification never changes listing moderation or automatically publishes content.
+
 ## Constraints and indexes
 
 - uniqueness for slugs, source identities, translation keys, attribute keys and option keys;
@@ -56,6 +70,9 @@ Changing category is allowed only before submission. The application transaction
 - category/status and location indexes for later operational/publication workflows;
 - category attribute render/projection indexes and typed option projection indexes;
 - localized location name/alias indexes for future geography lookup.
+- shop slug/owner uniqueness, public directory and member lookup indexes;
+- one pending verification request per shop and a status/creation queue index;
+- shop/status/publication indexes on drafts and listings for management and storefront reads.
 
 ### Published listings
 
@@ -105,7 +122,7 @@ Better Auth owns `user`, `account`, `session` and `verification`. Credential acc
 
 PostgreSQL is also authoritative for media work availability and leases. A database check requires lease owner/expiry only while status is `processing`; queue, expired-lease and cleanup indexes keep claims and maintenance bounded. Transient adapter or persistence failures return an asset to `quarantined` with exponential backoff, while invalid decoded content becomes `rejected`. Successful object cleanup is recorded separately so idempotent maintenance can recover after a process stops between the object-store and database operations.
 
-The lifecycle is `pending_upload → quarantined → processing → ready`, with terminal `rejected` and `deleted` states. PostgreSQL is authoritative for ownership, attachment and readiness; object storage contains opaque bytes and cannot make an asset public by itself. Unique order/cover constraints prevent ambiguous presentation, and an asset can belong to only one draft/listing aggregate in the current MVP. Publishing copies attachment references even when processing is pending, so an asynchronous worker can expose verified variants later without mutating the listing snapshot.
+The lifecycle is `pending_upload → quarantined → processing → ready`, with terminal `rejected` and `deleted` states. PostgreSQL is authoritative for ownership, attachment and readiness; object storage contains opaque bytes and cannot make an asset public by itself. Unique order/cover constraints prevent ambiguous presentation, and an asset can belong to only one draft/listing or shop-media aggregate in the current MVP. Publishing copies listing attachment references even when processing is pending, so an asynchronous worker can expose verified variants later without mutating the listing snapshot. Shop logo/cover authorization uses the same short-lived capability, quarantine and processing path; public storefronts resolve only ready variants.
 
 ### Reports and appeals
 

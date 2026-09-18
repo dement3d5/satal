@@ -12,6 +12,10 @@ Email/password is enabled as a functional account path through Better Auth; pass
 
 Use capability-based RBAC for user, shop owner, moderator, support, admin and owner. Application services authorize both action and target ownership. Add integration tests for IDOR and privilege boundaries.
 
+Shop roles and platform staff roles are separate namespaces. `owner`, `manager` and `listing_manager` apply only to one explicit `shop_member` relationship and never grant moderation/admin access. The server derives the actor from the session, rechecks live membership when creating and publishing shop listings, and does not accept a seller/owner identity from the client. Only the shop owner changes membership; the owner row cannot be removed through the member API. Platform admin/owner authorization is separately required for shop-verification decisions.
+
+Shop logo and cover uploads use the same expiring capability, signature/size/hash validation, quarantine and re-encoding pipeline as listing media. Storefronts serve only ready variants. Public address and phone are explicit business-profile fields; private seller addresses are never inferred or reused.
+
 Favorites and saved searches never accept an owner ID from the client. The actor comes from the validated session, cross-owner saved-search mutations return `NOT_FOUND`, and private responses use `no-store`. Favorite reads re-check active listing visibility so a stale relationship cannot expose removed content. Integration coverage exercises these ownership boundaries.
 
 Listing reports and appeals also derive the actor exclusively from the session. Reports require an active listing owned by another user, are unique per reporter/listing and are limited to ten new targets per rolling hour under a serialized actor lock. Appeals require the listing seller and return `NOT_FOUND` across the ownership boundary. Staff report/appeal decisions verify a live role and prohibit acting on the reviewer's own listing inside the locking transaction.

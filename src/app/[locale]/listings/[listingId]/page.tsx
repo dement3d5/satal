@@ -117,6 +117,14 @@ export default async function ListingPage({params}: PageProps) {
             }}
           />
           <span>{t('sellerLabel')}</span>
+          {item.shopId && item.shopSlug && item.shopName && (
+            <a className="listing-shop-link" href={`/${locale}/shops/${item.shopSlug}`}>
+              <span>{t('shopLabel')}</span>
+              <strong>
+                {item.shopName} {item.shopVerified ? '✓' : ''}
+              </strong>
+            </a>
+          )}
           <a className="seller-profile-link" href={`/${locale}/users/${item.sellerId}`}>
             <strong>{item.sellerName}</strong>
             <small>

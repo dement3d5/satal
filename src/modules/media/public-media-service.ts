@@ -1,7 +1,7 @@
-import {and, eq} from 'drizzle-orm';
+import {and, eq, or} from 'drizzle-orm';
 
 import type {DatabaseClient} from '@/server/db/client';
-import {listing, listingMedia, mediaAsset, mediaVariant} from '@/server/db/schema';
+import {listing, listingMedia, mediaAsset, mediaVariant, shop, shopMedia} from '@/server/db/schema';
 import {AppError} from '@/server/errors/app-error';
 
 import {getMediaStorage, type MediaProcessingStorage} from './storage';
@@ -18,14 +18,16 @@ export async function getPublicMediaVariant(
     .select({objectKey: mediaVariant.objectKey, mediaType: mediaVariant.mediaType})
     .from(mediaVariant)
     .innerJoin(mediaAsset, eq(mediaAsset.id, mediaVariant.mediaAssetId))
-    .innerJoin(listingMedia, eq(listingMedia.mediaAssetId, mediaAsset.id))
-    .innerJoin(listing, eq(listing.id, listingMedia.listingId))
+    .leftJoin(listingMedia, eq(listingMedia.mediaAssetId, mediaAsset.id))
+    .leftJoin(listing, eq(listing.id, listingMedia.listingId))
+    .leftJoin(shopMedia, eq(shopMedia.mediaAssetId, mediaAsset.id))
+    .leftJoin(shop, eq(shop.id, shopMedia.shopId))
     .where(
       and(
         eq(mediaAsset.id, assetId),
         eq(mediaAsset.status, 'ready'),
         eq(mediaVariant.kind, kind),
-        eq(listing.status, 'active')
+        or(eq(listing.status, 'active'), eq(shop.status, 'active'))
       )
     )
     .limit(1);

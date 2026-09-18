@@ -53,6 +53,7 @@ interface AccountLabels {
   messages: string;
   saved: string;
   notifications: string;
+  shop: string;
   personalDetails: string;
   personalDetailsHint: string;
   name: string;
@@ -290,6 +291,7 @@ export function AccountPanel({locale, labels}: {locale: AppLocale; labels: Accou
         <a href={`/${locale}/messages`}>{labels.messages}</a>
         <a href={`/${locale}/saved`}>{labels.saved}</a>
         <a href={`/${locale}/notifications`}>{labels.notifications}</a>
+        <a href={`/${locale}/shop`}>{labels.shop}</a>
         {profile.staffRoles.length > 0 && <a href={`/${locale}/moderation`}>{labels.moderation}</a>}
       </nav>
 

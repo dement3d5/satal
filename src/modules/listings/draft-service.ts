@@ -2,6 +2,7 @@ import {and, eq, inArray, sql} from 'drizzle-orm';
 
 import type {AttributeRules, AttributeValue, AttributeValueType} from '@/modules/catalog/domain';
 import {validateAttributeValue} from '@/modules/catalog/domain';
+import {requireShopCapability} from '@/modules/shops/service';
 import type {DatabaseClient} from '@/server/db/client';
 import {
   attributeDefinition,
@@ -43,6 +44,7 @@ interface ScalarAttributeRow {
 
 export interface ListingDraftContract {
   id: string;
+  shopId: string | null;
   categoryId: string;
   categorySchemaVersion: number;
   locationId: string | null;
@@ -60,14 +62,22 @@ export interface ListingDraftContract {
 export async function createListingDraft(
   db: DatabaseClient,
   actorId: string,
-  categoryId: string
+  categoryId: string,
+  shopId: string | null = null
 ): Promise<ListingDraftContract> {
   return db.transaction(async (tx) => {
     const categoryRow = await requireLeafCategory(tx, categoryId);
+    if (shopId) {
+      const membership = await requireShopCapability(tx, actorId, shopId, 'listings:manage');
+      if (membership.status !== 'active') {
+        throw new AppError('CONFLICT', 'Listings cannot be created for an inactive shop', 409);
+      }
+    }
     const [created] = await tx
       .insert(listingDraft)
       .values({
         ownerId: actorId,
+        shopId,
         categoryId,
         categorySchemaVersion: categoryRow.schemaVersion
       })
@@ -428,6 +438,7 @@ function toContract(
 ): ListingDraftContract {
   return {
     id: draft.id,
+    shopId: draft.shopId,
     categoryId: draft.categoryId,
     categorySchemaVersion: draft.categorySchemaVersion,
     locationId: draft.locationId,

@@ -14,6 +14,7 @@ import {
   locationTranslation,
   mediaAsset,
   mediaVariant,
+  shop,
   user
 } from '@/server/db/schema';
 import {AppError} from '@/server/errors/app-error';
@@ -42,6 +43,10 @@ export interface PublicListingDetail extends PublicListingCard {
   description: string;
   sellerId: string;
   sellerName: string;
+  shopId: string | null;
+  shopName: string | null;
+  shopSlug: string | null;
+  shopVerified: boolean;
   attributes: PublicListingAttribute[];
   mediaUrls: string[];
 }
@@ -167,10 +172,15 @@ export async function getPublicListing(
       locationName: locationTranslation.name,
       sellerId: user.id,
       sellerName: user.name,
+      shopId: shop.id,
+      shopName: shop.name,
+      shopSlug: shop.slug,
+      shopVerificationStatus: shop.verificationStatus,
       publishedAt: listing.publishedAt
     })
     .from(listing)
     .innerJoin(user, eq(user.id, listing.sellerId))
+    .leftJoin(shop, eq(shop.id, listing.shopId))
     .innerJoin(
       categoryTranslation,
       and(
@@ -256,6 +266,10 @@ export async function getPublicListing(
     description: row.description,
     sellerId: row.sellerId,
     sellerName: row.sellerName,
+    shopId: row.shopId,
+    shopName: row.shopName,
+    shopSlug: row.shopSlug,
+    shopVerified: row.shopVerificationStatus === 'verified',
     mediaUrls,
     attributes: [
       ...scalarRows.map((item) => ({
