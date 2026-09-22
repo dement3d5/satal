@@ -12,7 +12,7 @@ PostgreSQL is the source of truth. Tables use stable UUID identifiers, UTC times
 
 Kinds cover country, economic region, city, district, settlement, neighborhood, metro and street. The model is intentionally broader than the dev dataset. Parent/kind/depth validation occurs at import/application boundaries; database checks enforce root consistency and bounded depth.
 
-The committed `data/geography/dev.az.json` is illustrative and explicitly unverified. It contains Azerbaijan, Bakı, Gəncə, Yasamal, İçərişəhər neighborhood and İçərişəhər metro only. A reviewed authoritative production dataset, license, translations and import verification record are a launch prerequisite.
+The committed `data/geography/dev.az.json` remains illustrative and explicitly unverified. A separate `data/geography/baku-metro.official.az.json` import records the 26 unique public station names listed across the current Red, Green and Purple lines by the official Baku Metro source (`metro.gov.az/{locale}/about-lines`, reviewed 2026-09-23). The official line totals count the same-name Memar Ajami interchange on two lines; search intentionally presents one canonical place choice. A reviewed authoritative dataset for every other Azerbaijan city, district, settlement and street, including its license and import-verification record, remains a launch prerequisite.
 
 Listing drafts reference a canonical location and a public precision (`city`, `district` or `neighborhood`). A private seller's exact address is neither required nor stored as a public listing field. Business address and private delivery/contact details require separate later privacy-reviewed models.
 

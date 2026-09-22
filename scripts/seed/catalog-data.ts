@@ -241,14 +241,170 @@ export const attributeSeed: readonly AttributeSeed[] = [
   }
 ];
 
-export const optionSeed = [
-  [
-    '40000000-0000-4000-8000-000000000001',
-    '30000000-0000-4000-8000-000000000001',
-    'other',
-    100,
-    ['Digər', 'Другой', 'Other']
-  ],
+type OptionSeed = readonly [
+  id: string,
+  attributeId: string,
+  key: string,
+  sortOrder: number,
+  labels: readonly [string, string, string]
+];
+
+// Snapshot of passenger-car makes offered by the Azerbaijan market reference on 2026-09-23.
+// Keep the array append-only: generated IDs are stable as long as existing positions do not move.
+const passengerCarBrands = [
+  'Abarth',
+  'Acura',
+  'Alfa Romeo',
+  'Aston Martin',
+  'Audi',
+  'Avatr',
+  'Baic',
+  'BAW',
+  'Bentley',
+  'Bestune',
+  'BMW',
+  'BMW Alpina',
+  'Buick',
+  'BYD',
+  'Cadillac',
+  'Changan',
+  'Chery',
+  'Chevrolet',
+  'Chrysler',
+  'Citroen',
+  'Dacia',
+  'Daewoo',
+  'Daihatsu',
+  'Denza',
+  'DFSK',
+  'Dodge',
+  'DongFeng',
+  'FAW',
+  'Ferrari',
+  'Fiat',
+  'Ford',
+  'Forthing',
+  'GAC',
+  'GAZ',
+  'Geely',
+  'Genesis',
+  'GMC',
+  'GWM (Great Wall Motor)',
+  'Haval',
+  'Honda',
+  'Hongqi',
+  'Hummer',
+  'Hyundai',
+  'iCar',
+  'IM',
+  'Infiniti',
+  'Iran Khodro',
+  'Isuzu',
+  'JAC',
+  'JAECOO',
+  'Jaguar',
+  'Jeep',
+  'JETOUR',
+  'JMC',
+  'KAIYI',
+  'Karry',
+  'Khazar',
+  'Kia',
+  'LADA (VAZ)',
+  'Lamborghini',
+  'Land Rover',
+  'Leapmotor',
+  'Lexus',
+  'Li Auto',
+  'Lifan',
+  'Lincoln',
+  'Lotus',
+  'LuAz',
+  'Lynk & Co',
+  'M-Hero',
+  'Maextro',
+  'Maple',
+  'Maserati',
+  'Mazda',
+  'Mercedes-Benz',
+  'Mercedes-Maybach',
+  'Mercury',
+  'MG',
+  'Mini',
+  'Mitsubishi',
+  'Moskvich',
+  'Neta',
+  'Nio',
+  'Nissan',
+  'Opel',
+  'Peugeot',
+  'Polestar',
+  'Porsche',
+  'Radar',
+  'Ravon',
+  'Renault',
+  'Renault Samsung',
+  'Rolls-Royce',
+  'Rover',
+  'ROX (Polar Stone)',
+  'Saab',
+  'Saipa',
+  'Saturn',
+  'Scion',
+  'SEAT',
+  'Seres Aito',
+  'Skoda',
+  'Smart',
+  'Soueast',
+  'SsangYong',
+  'Subaru',
+  'Suzuki',
+  'Tesla',
+  'Tofas',
+  'Toyota',
+  'UAZ',
+  'VGV',
+  'Volkswagen',
+  'Volvo',
+  'Voyah',
+  'Wuling',
+  'Xiaomi',
+  'XPeng',
+  'ZAZ',
+  'ZEEKR',
+  'ZX Auto'
+] as const;
+
+const preservedBrandOptionIds: Partial<Record<(typeof passengerCarBrands)[number], string>> = {
+  BMW: '40000000-0000-4000-8000-000000000008',
+  Hyundai: '40000000-0000-4000-8000-000000000009',
+  Kia: '40000000-0000-4000-8000-000000000010',
+  'LADA (VAZ)': '40000000-0000-4000-8000-000000000011',
+  'Mercedes-Benz': '40000000-0000-4000-8000-000000000007',
+  Toyota: '40000000-0000-4000-8000-000000000006'
+};
+
+const brandOptionSeed: readonly OptionSeed[] = passengerCarBrands.map((label, index) => [
+  preservedBrandOptionIds[label] ??
+    `41000000-0000-4000-8000-${String(index + 100).padStart(12, '0')}`,
+  '30000000-0000-4000-8000-000000000001',
+  label
+    .toLocaleLowerCase('en')
+    .replace(/&/g, ' and ')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, ''),
+  (index + 1) * 10,
+  [label, label, label]
+]);
+
+export const retiredOptionIds = [
+  '40000000-0000-4000-8000-000000000001',
+  '40000000-0000-4000-8000-000000000015',
+  '40000000-0000-4000-8000-000000000016'
+] as const;
+
+export const optionSeed: readonly OptionSeed[] = [
+  ...brandOptionSeed,
   [
     '40000000-0000-4000-8000-000000000002',
     '30000000-0000-4000-8000-000000000005',
@@ -276,48 +432,6 @@ export const optionSeed = [
     'parking-sensors',
     20,
     ['Park sensoru', 'Парктроник', 'Parking sensors']
-  ],
-  [
-    '40000000-0000-4000-8000-000000000006',
-    '30000000-0000-4000-8000-000000000001',
-    'toyota',
-    10,
-    ['Toyota', 'Toyota', 'Toyota']
-  ],
-  [
-    '40000000-0000-4000-8000-000000000007',
-    '30000000-0000-4000-8000-000000000001',
-    'mercedes-benz',
-    20,
-    ['Mercedes-Benz', 'Mercedes-Benz', 'Mercedes-Benz']
-  ],
-  [
-    '40000000-0000-4000-8000-000000000008',
-    '30000000-0000-4000-8000-000000000001',
-    'bmw',
-    30,
-    ['BMW', 'BMW', 'BMW']
-  ],
-  [
-    '40000000-0000-4000-8000-000000000009',
-    '30000000-0000-4000-8000-000000000001',
-    'hyundai',
-    40,
-    ['Hyundai', 'Hyundai', 'Hyundai']
-  ],
-  [
-    '40000000-0000-4000-8000-000000000010',
-    '30000000-0000-4000-8000-000000000001',
-    'kia',
-    50,
-    ['KIA', 'KIA', 'KIA']
-  ],
-  [
-    '40000000-0000-4000-8000-000000000011',
-    '30000000-0000-4000-8000-000000000001',
-    'lada',
-    60,
-    ['LADA', 'LADA', 'LADA']
   ],
   [
     '40000000-0000-4000-8000-000000000012',
@@ -472,8 +586,36 @@ export const optionSeed = [
     'pickup',
     70,
     ['Pikap', 'Пикап', 'Pickup']
+  ],
+  [
+    '40000000-0000-4000-8000-000000000034',
+    '30000000-0000-4000-8000-000000000020',
+    'liftback',
+    80,
+    ['Liftbek', 'Лифтбек', 'Liftback']
+  ],
+  [
+    '40000000-0000-4000-8000-000000000035',
+    '30000000-0000-4000-8000-000000000020',
+    'cabriolet',
+    90,
+    ['Kabriolet', 'Кабриолет', 'Cabriolet']
+  ],
+  [
+    '40000000-0000-4000-8000-000000000036',
+    '30000000-0000-4000-8000-000000000020',
+    'roadster',
+    100,
+    ['Rodster', 'Родстер', 'Roadster']
+  ],
+  [
+    '40000000-0000-4000-8000-000000000037',
+    '30000000-0000-4000-8000-000000000021',
+    'cosmetic-repair',
+    20,
+    ['Kosmetik təmir', 'Косметический ремонт', 'Cosmetic renovation']
   ]
-] as const;
+];
 
 export const applicabilitySeed = [
   [
@@ -624,7 +766,7 @@ export const applicabilitySeed = [
     '20000000-0000-4000-8000-000000000006',
     '30000000-0000-4000-8000-000000000015',
     false,
-    true,
+    false,
     false,
     true,
     50

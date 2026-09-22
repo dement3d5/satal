@@ -15,7 +15,7 @@ The geographic model covers the country, not only Baku. Visitors abroad may brow
 
 For the initial launch, the home page editorially features only Baku apartments and passenger cars. Category and city identifiers are resolved from PostgreSQL, while search and the underlying data model retain every enabled location and category for later rollout.
 
-The launch search surface follows the same two-category scope. Apartment filters prioritize building type, rooms, area, floor, repair, deed and mortgage; vehicle filters prioritize make/model discovery, year, mileage, condition, engine, fuel, transmission and body type. Labels, options, constraints and category applicability remain catalog data rather than frontend constants.
+The launch search surface follows the same two-category scope. Apartment filters prioritize building type, rooms, area, floor, repair, deed and mortgage; total building floors remain stored for listing detail but are not a launch search facet. Vehicle filters prioritize make/model discovery, year, mileage, condition, engine, fuel, transmission and visual body type. The passenger-make snapshot is sourced from the Azerbaijan market reference and excludes the ambiguous “Other” choice; model text remains searchable so the catalog is not blocked by a stale finite model list. Labels, options, constraints and category applicability remain catalog data rather than frontend category constants.
 
 ## MVP outcomes
 

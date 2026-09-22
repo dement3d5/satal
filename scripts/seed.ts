@@ -1,7 +1,11 @@
-import {sql} from 'drizzle-orm';
+import {eq, sql} from 'drizzle-orm';
 
+import bakuMetroJson from '../data/geography/baku-metro.official.az.json' with {type: 'json'};
 import geographyJson from '../data/geography/dev.az.json' with {type: 'json'};
-import {geographyDatasetSchema} from '../src/modules/geography/import-schema';
+import {
+  geographyDatasetSchema,
+  type GeographyDataset
+} from '../src/modules/geography/import-schema';
 import {assertLocationPlacement} from '../src/modules/geography/domain';
 import {getDatabase} from '../src/server/db/client';
 import {
@@ -17,13 +21,22 @@ import {
   locationTranslation,
   supportedLocale
 } from '../src/server/db/schema';
-import {applicabilitySeed, attributeSeed, categorySeed, optionSeed} from './seed/catalog-data';
+import {
+  applicabilitySeed,
+  attributeSeed,
+  categorySeed,
+  optionSeed,
+  retiredOptionIds
+} from './seed/catalog-data';
 
 const locales = ['az', 'ru', 'en'] as const;
 
 async function seed(): Promise<void> {
   const database = getDatabase();
-  const geography = geographyDatasetSchema.parse(geographyJson);
+  const geographyDatasets = [
+    geographyDatasetSchema.parse(geographyJson),
+    geographyDatasetSchema.parse(bakuMetroJson)
+  ];
 
   await database.transaction(async (transaction) => {
     await transaction
@@ -36,30 +49,19 @@ async function seed(): Promise<void> {
 
     const importedLocations = new Map<
       string,
-      {kind: (typeof geography.locations)[number]['kind']; depth: number}
+      {kind: GeographyDataset['locations'][number]['kind']; depth: number}
     >();
-    for (const item of geography.locations) {
-      const parent = item.parentId ? importedLocations.get(item.parentId) : null;
-      if (item.parentId && !parent)
-        throw new Error(`Location parent ${item.parentId} must precede its child`);
-      assertLocationPlacement({kind: item.kind, depth: item.depth, parent: parent ?? null});
+    for (const geography of geographyDatasets) {
+      for (const item of geography.locations) {
+        const parent = item.parentId ? importedLocations.get(item.parentId) : null;
+        if (item.parentId && !parent)
+          throw new Error(`Location parent ${item.parentId} must precede its child`);
+        assertLocationPlacement({kind: item.kind, depth: item.depth, parent: parent ?? null});
 
-      await transaction
-        .insert(location)
-        .values({
-          id: item.id,
-          parentId: item.parentId,
-          slug: item.slug,
-          kind: item.kind,
-          depth: item.depth,
-          sortOrder: item.sortOrder,
-          sourceName: geography.dataset.sourceName,
-          sourceId: item.sourceId,
-          verifiedAt: geography.dataset.verified ? new Date() : null
-        })
-        .onConflictDoUpdate({
-          target: location.id,
-          set: {
+        await transaction
+          .insert(location)
+          .values({
+            id: item.id,
             parentId: item.parentId,
             slug: item.slug,
             kind: item.kind,
@@ -67,31 +69,51 @@ async function seed(): Promise<void> {
             sortOrder: item.sortOrder,
             sourceName: geography.dataset.sourceName,
             sourceId: item.sourceId,
-            verifiedAt: geography.dataset.verified ? new Date() : null,
-            enabled: true,
-            updatedAt: sql`now()`
-          }
-        });
-
-      await transaction
-        .insert(locationTranslation)
-        .values(locales.map((locale) => ({locationId: item.id, locale, name: item.names[locale]})))
-        .onConflictDoUpdate({
-          target: [locationTranslation.locationId, locationTranslation.locale],
-          set: {name: sql`excluded.name`, updatedAt: sql`now()`}
-        });
-
-      for (const alias of item.aliases) {
-        const normalizedAlias = normalizeAlias(alias.value);
-        await transaction
-          .insert(locationAlias)
-          .values({locationId: item.id, locale: alias.locale, alias: alias.value, normalizedAlias})
+            verifiedAt: geography.dataset.verified ? new Date() : null
+          })
           .onConflictDoUpdate({
-            target: [locationAlias.locale, locationAlias.normalizedAlias],
-            set: {locationId: item.id, alias: alias.value, updatedAt: sql`now()`}
+            target: location.id,
+            set: {
+              parentId: item.parentId,
+              slug: item.slug,
+              kind: item.kind,
+              depth: item.depth,
+              sortOrder: item.sortOrder,
+              sourceName: geography.dataset.sourceName,
+              sourceId: item.sourceId,
+              verifiedAt: geography.dataset.verified ? new Date() : null,
+              enabled: true,
+              updatedAt: sql`now()`
+            }
           });
+
+        await transaction
+          .insert(locationTranslation)
+          .values(
+            locales.map((locale) => ({locationId: item.id, locale, name: item.names[locale]}))
+          )
+          .onConflictDoUpdate({
+            target: [locationTranslation.locationId, locationTranslation.locale],
+            set: {name: sql`excluded.name`, updatedAt: sql`now()`}
+          });
+
+        for (const alias of item.aliases) {
+          const normalizedAlias = normalizeAlias(alias.value);
+          await transaction
+            .insert(locationAlias)
+            .values({
+              locationId: item.id,
+              locale: alias.locale,
+              alias: alias.value,
+              normalizedAlias
+            })
+            .onConflictDoUpdate({
+              target: [locationAlias.locale, locationAlias.normalizedAlias],
+              set: {locationId: item.id, alias: alias.value, updatedAt: sql`now()`}
+            });
+        }
+        importedLocations.set(item.id, {kind: item.kind, depth: item.depth});
       }
-      importedLocations.set(item.id, {kind: item.kind, depth: item.depth});
     }
 
     for (const [id, parentId, slug, depth, sortOrder, names] of categorySeed) {
@@ -178,6 +200,13 @@ async function seed(): Promise<void> {
           target: [attributeOptionTranslation.optionId, attributeOptionTranslation.locale],
           set: {label: sql`excluded.label`, updatedAt: sql`now()`}
         });
+    }
+
+    for (const optionId of retiredOptionIds) {
+      await transaction
+        .update(attributeOption)
+        .set({enabled: false, updatedAt: sql`now()`})
+        .where(eq(attributeOption.id, optionId));
     }
 
     for (const [

@@ -28,9 +28,36 @@ integration('Phase 3 PostgreSQL model', () => {
     expect(result).toMatchObject({
       categories: 9,
       category_translations: 27,
-      locations: 6,
-      location_translations: 18
+      locations: 31,
+      location_translations: 93
     });
+  });
+
+  it('seeds the complete verified Baku metro list and an expanded passenger make catalog', async () => {
+    const [result] = await client!`
+      select
+        (
+          select count(distinct location.id)::int
+          from location
+          where location.kind = 'metro'
+            and location.parent_id = '10000000-0000-4000-8000-000000000002'
+            and location.verified_at is not null
+        ) as metro_stations,
+        (
+          select count(*)::int
+          from attribute_option
+          where attribute_id = '30000000-0000-4000-8000-000000000001'
+            and enabled = true
+        ) as vehicle_makes,
+        (
+          select enabled
+          from attribute_option
+          where id = '40000000-0000-4000-8000-000000000001'
+        ) as other_make_enabled
+    `;
+
+    expect(result).toMatchObject({metro_stations: 26, other_make_enabled: false});
+    expect(result!.vehicle_makes).toBeGreaterThan(100);
   });
 
   it('seeds distinct filter schemas for launch apartments and cars', async () => {
@@ -52,12 +79,12 @@ integration('Phase 3 PostgreSQL model', () => {
         'bedrooms',
         'area',
         'floor',
-        'total_floors',
         'repair_condition',
         'deed_available',
         'mortgage_available'
       ])
     );
+    expect(keys('apartments-for-sale')).not.toContain('total_floors');
     expect(keys('passenger-cars')).toEqual(
       expect.arrayContaining([
         'brand',

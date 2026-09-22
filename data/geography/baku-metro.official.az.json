@@ -1,0 +1,295 @@
+{
+  "dataset": {
+    "sourceName": "metro.gov.az/about-lines",
+    "verified": true,
+    "version": "2026-09-23"
+  },
+  "locations": [
+    {
+      "id": "10000000-0000-4000-8000-000000000006",
+      "parentId": "10000000-0000-4000-8000-000000000002",
+      "slug": "metro-icheri-sheher",
+      "kind": "metro",
+      "depth": 2,
+      "sortOrder": 100,
+      "sourceId": "icherisheher",
+      "names": {"az": "İçərişəhər", "ru": "Ичеришехер", "en": "Icherisheher"},
+      "aliases": []
+    },
+    {
+      "id": "11000000-0000-4000-8000-000000000001",
+      "parentId": "10000000-0000-4000-8000-000000000002",
+      "slug": "metro-sahil",
+      "kind": "metro",
+      "depth": 2,
+      "sortOrder": 110,
+      "sourceId": "sahil",
+      "names": {"az": "Sahil", "ru": "Сахил", "en": "Sahil"},
+      "aliases": []
+    },
+    {
+      "id": "11000000-0000-4000-8000-000000000002",
+      "parentId": "10000000-0000-4000-8000-000000000002",
+      "slug": "metro-28-may",
+      "kind": "metro",
+      "depth": 2,
+      "sortOrder": 120,
+      "sourceId": "28-may",
+      "names": {"az": "28 May", "ru": "28 Мая", "en": "28 May"},
+      "aliases": []
+    },
+    {
+      "id": "11000000-0000-4000-8000-000000000003",
+      "parentId": "10000000-0000-4000-8000-000000000002",
+      "slug": "metro-ganjlik",
+      "kind": "metro",
+      "depth": 2,
+      "sortOrder": 130,
+      "sourceId": "ganjlik",
+      "names": {"az": "Gənclik", "ru": "Гянджлик", "en": "Ganjlik"},
+      "aliases": []
+    },
+    {
+      "id": "11000000-0000-4000-8000-000000000004",
+      "parentId": "10000000-0000-4000-8000-000000000002",
+      "slug": "metro-narimanov",
+      "kind": "metro",
+      "depth": 2,
+      "sortOrder": 140,
+      "sourceId": "narimanov",
+      "names": {"az": "Nərimanov", "ru": "Нариманов", "en": "Narimanov"},
+      "aliases": []
+    },
+    {
+      "id": "11000000-0000-4000-8000-000000000005",
+      "parentId": "10000000-0000-4000-8000-000000000002",
+      "slug": "metro-ulduz",
+      "kind": "metro",
+      "depth": 2,
+      "sortOrder": 150,
+      "sourceId": "ulduz",
+      "names": {"az": "Ulduz", "ru": "Улдуз", "en": "Ulduz"},
+      "aliases": []
+    },
+    {
+      "id": "11000000-0000-4000-8000-000000000006",
+      "parentId": "10000000-0000-4000-8000-000000000002",
+      "slug": "metro-koroglu",
+      "kind": "metro",
+      "depth": 2,
+      "sortOrder": 160,
+      "sourceId": "koroglu",
+      "names": {"az": "Koroğlu", "ru": "Кёроглу", "en": "Koroglu"},
+      "aliases": []
+    },
+    {
+      "id": "11000000-0000-4000-8000-000000000007",
+      "parentId": "10000000-0000-4000-8000-000000000002",
+      "slug": "metro-gara-garayev",
+      "kind": "metro",
+      "depth": 2,
+      "sortOrder": 170,
+      "sourceId": "gara-garayev",
+      "names": {"az": "Qara Qarayev", "ru": "Гара Гараев", "en": "Gara Garayev"},
+      "aliases": []
+    },
+    {
+      "id": "11000000-0000-4000-8000-000000000008",
+      "parentId": "10000000-0000-4000-8000-000000000002",
+      "slug": "metro-neftchilar",
+      "kind": "metro",
+      "depth": 2,
+      "sortOrder": 180,
+      "sourceId": "neftchilar",
+      "names": {"az": "Neftçilər", "ru": "Нефтчиляр", "en": "Neftchilar"},
+      "aliases": []
+    },
+    {
+      "id": "11000000-0000-4000-8000-000000000009",
+      "parentId": "10000000-0000-4000-8000-000000000002",
+      "slug": "metro-khalglar-dostlugu",
+      "kind": "metro",
+      "depth": 2,
+      "sortOrder": 190,
+      "sourceId": "khalglar-dostlugu",
+      "names": {"az": "Xalqlar dostluğu", "ru": "Халглар Достлугу", "en": "Khalglar Dostlugu"},
+      "aliases": []
+    },
+    {
+      "id": "11000000-0000-4000-8000-000000000010",
+      "parentId": "10000000-0000-4000-8000-000000000002",
+      "slug": "metro-ahmadli",
+      "kind": "metro",
+      "depth": 2,
+      "sortOrder": 200,
+      "sourceId": "ahmadli",
+      "names": {"az": "Əhmədli", "ru": "Ахмедлы", "en": "Ahmadli"},
+      "aliases": []
+    },
+    {
+      "id": "11000000-0000-4000-8000-000000000011",
+      "parentId": "10000000-0000-4000-8000-000000000002",
+      "slug": "metro-hazi-aslanov",
+      "kind": "metro",
+      "depth": 2,
+      "sortOrder": 210,
+      "sourceId": "hazi-aslanov",
+      "names": {"az": "Həzi Aslanov", "ru": "Ази Асланов", "en": "Hazi Aslanov"},
+      "aliases": []
+    },
+    {
+      "id": "11000000-0000-4000-8000-000000000012",
+      "parentId": "10000000-0000-4000-8000-000000000002",
+      "slug": "metro-bakmil",
+      "kind": "metro",
+      "depth": 2,
+      "sortOrder": 220,
+      "sourceId": "bakmil",
+      "names": {"az": "Bakmil", "ru": "Бакмил", "en": "Bakmil"},
+      "aliases": []
+    },
+    {
+      "id": "11000000-0000-4000-8000-000000000013",
+      "parentId": "10000000-0000-4000-8000-000000000002",
+      "slug": "metro-darnagul",
+      "kind": "metro",
+      "depth": 2,
+      "sortOrder": 230,
+      "sourceId": "darnagul",
+      "names": {"az": "Dərnəgül", "ru": "Дарнагюль", "en": "Darnagul"},
+      "aliases": []
+    },
+    {
+      "id": "11000000-0000-4000-8000-000000000014",
+      "parentId": "10000000-0000-4000-8000-000000000002",
+      "slug": "metro-azadlig-prospekti",
+      "kind": "metro",
+      "depth": 2,
+      "sortOrder": 240,
+      "sourceId": "azadlig-prospekti",
+      "names": {"az": "Azadlıq prospekti", "ru": "Азадлыг проспекти", "en": "Azadlig Prospekti"},
+      "aliases": []
+    },
+    {
+      "id": "11000000-0000-4000-8000-000000000015",
+      "parentId": "10000000-0000-4000-8000-000000000002",
+      "slug": "metro-nasimi",
+      "kind": "metro",
+      "depth": 2,
+      "sortOrder": 250,
+      "sourceId": "nasimi",
+      "names": {"az": "Nəsimi", "ru": "Насими", "en": "Nasimi"},
+      "aliases": []
+    },
+    {
+      "id": "11000000-0000-4000-8000-000000000016",
+      "parentId": "10000000-0000-4000-8000-000000000002",
+      "slug": "metro-memar-ajami",
+      "kind": "metro",
+      "depth": 2,
+      "sortOrder": 260,
+      "sourceId": "memar-ajami",
+      "names": {"az": "Memar Əcəmi", "ru": "Мемар Аджеми", "en": "Memar Ajami"},
+      "aliases": []
+    },
+    {
+      "id": "11000000-0000-4000-8000-000000000017",
+      "parentId": "10000000-0000-4000-8000-000000000002",
+      "slug": "metro-20-january",
+      "kind": "metro",
+      "depth": 2,
+      "sortOrder": 270,
+      "sourceId": "20-january",
+      "names": {"az": "20 Yanvar", "ru": "20 Января", "en": "20 January"},
+      "aliases": []
+    },
+    {
+      "id": "11000000-0000-4000-8000-000000000018",
+      "parentId": "10000000-0000-4000-8000-000000000002",
+      "slug": "metro-inshaatchilar",
+      "kind": "metro",
+      "depth": 2,
+      "sortOrder": 280,
+      "sourceId": "inshaatchilar",
+      "names": {"az": "İnşaatçılar", "ru": "Иншаатчылар", "en": "Inshaatchilar"},
+      "aliases": []
+    },
+    {
+      "id": "11000000-0000-4000-8000-000000000019",
+      "parentId": "10000000-0000-4000-8000-000000000002",
+      "slug": "metro-elmlar-akademiyasi",
+      "kind": "metro",
+      "depth": 2,
+      "sortOrder": 290,
+      "sourceId": "elmlar-akademiyasi",
+      "names": {"az": "Elmlər Akademiyası", "ru": "Эльмляр Академиясы", "en": "Elmlar Akademiyasi"},
+      "aliases": []
+    },
+    {
+      "id": "11000000-0000-4000-8000-000000000020",
+      "parentId": "10000000-0000-4000-8000-000000000002",
+      "slug": "metro-nizami",
+      "kind": "metro",
+      "depth": 2,
+      "sortOrder": 300,
+      "sourceId": "nizami",
+      "names": {"az": "Nizami", "ru": "Низами", "en": "Nizami"},
+      "aliases": []
+    },
+    {
+      "id": "11000000-0000-4000-8000-000000000021",
+      "parentId": "10000000-0000-4000-8000-000000000002",
+      "slug": "metro-jafar-jabbarli",
+      "kind": "metro",
+      "depth": 2,
+      "sortOrder": 310,
+      "sourceId": "jafar-jabbarli",
+      "names": {"az": "Cəfər Cabbarlı", "ru": "Джафар Джаббарлы", "en": "Jafar Jabbarli"},
+      "aliases": []
+    },
+    {
+      "id": "11000000-0000-4000-8000-000000000022",
+      "parentId": "10000000-0000-4000-8000-000000000002",
+      "slug": "metro-khatai",
+      "kind": "metro",
+      "depth": 2,
+      "sortOrder": 320,
+      "sourceId": "khatai",
+      "names": {"az": "Xətai", "ru": "Хатаи", "en": "Khatai"},
+      "aliases": []
+    },
+    {
+      "id": "11000000-0000-4000-8000-000000000023",
+      "parentId": "10000000-0000-4000-8000-000000000002",
+      "slug": "metro-avtovagzal",
+      "kind": "metro",
+      "depth": 2,
+      "sortOrder": 330,
+      "sourceId": "avtovagzal",
+      "names": {"az": "Avtovağzal", "ru": "Автовокзал", "en": "Avtovagzal"},
+      "aliases": []
+    },
+    {
+      "id": "11000000-0000-4000-8000-000000000024",
+      "parentId": "10000000-0000-4000-8000-000000000002",
+      "slug": "metro-8-november",
+      "kind": "metro",
+      "depth": 2,
+      "sortOrder": 340,
+      "sourceId": "8-november",
+      "names": {"az": "8 Noyabr", "ru": "8 Ноября", "en": "8 November"},
+      "aliases": []
+    },
+    {
+      "id": "11000000-0000-4000-8000-000000000025",
+      "parentId": "10000000-0000-4000-8000-000000000002",
+      "slug": "metro-khojasan",
+      "kind": "metro",
+      "depth": 2,
+      "sortOrder": 350,
+      "sourceId": "khojasan",
+      "names": {"az": "Xocəsən", "ru": "Ходжасан", "en": "Khojasan"},
+      "aliases": []
+    }
+  ]
+}

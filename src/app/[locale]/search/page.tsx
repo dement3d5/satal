@@ -12,6 +12,9 @@ import type {PublicListingCard} from '@/modules/listings/public-listing-service'
 import {MarketplaceListingCard} from '@/modules/listings/ui/marketplace-listing-card';
 import {parseSearchParams} from '@/modules/search/contracts';
 import {searchListings} from '@/modules/search/search-service';
+import {SearchBooleanFilter, SearchChoiceFilter} from '@/modules/search/ui/search-choice-filter';
+import {SearchFilterMenu} from '@/modules/search/ui/search-filter-menu';
+import {SearchLocationFilter} from '@/modules/search/ui/search-location-filter';
 import {getDatabase} from '@/server/db/client';
 
 const launchCategorySlugs = ['apartments-for-sale', 'passenger-cars'] as const;
@@ -37,6 +40,7 @@ export default async function SearchPage({
   const requestedCategoryId = url.get('categoryId');
   const activeCategory =
     searchModes.find((category) => category.id === requestedCategoryId) ?? searchModes[0];
+  const carMode = activeCategory?.slug === 'passenger-cars';
   if (activeCategory) {
     if (requestedCategoryId !== activeCategory.id) removeDynamicFilters(url);
     url.set('categoryId', activeCategory.id);
@@ -63,6 +67,30 @@ export default async function SearchPage({
   const moreAttributes = filterableAttributes.slice(3);
   const scopedLocations = baku
     ? locations.filter((location) => isLocationWithin(location, baku.id, locationById))
+    : [];
+  const locationGroups = baku
+    ? carMode
+      ? [
+          {
+            label: t('cityAndDistrict'),
+            options: scopedLocations.filter(
+              (location) => location.kind === 'city' || location.kind === 'district'
+            )
+          }
+        ]
+      : [
+          {label: t('cityScope'), options: [baku]},
+          {
+            label: t('districts'),
+            options: scopedLocations.filter(
+              (location) => location.kind === 'district' || location.kind === 'neighborhood'
+            )
+          },
+          {
+            label: t('metroStations'),
+            options: scopedLocations.filter((location) => location.kind === 'metro')
+          }
+        ]
     : [];
 
   return (
@@ -119,24 +147,21 @@ export default async function SearchPage({
           </div>
 
           <div className="search-filter-bar">
-            <FilterMenu
+            <SearchFilterMenu
               label={t('location')}
               summary={activeLocation?.name ?? baku?.name ?? t('baku')}
             >
-              <label className="search-filter-field">
-                <span>{t('bakuArea')}</span>
-                <select name="locationId" defaultValue={query.locationId ?? baku?.id ?? ''}>
-                  {scopedLocations.map((location) => (
-                    <option key={location.id} value={location.id}>
-                      {'— '.repeat(Math.max(0, location.depth - (baku?.depth ?? 1)))}
-                      {location.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </FilterMenu>
+              <SearchLocationFilter
+                emptyLabel={t('noOptions')}
+                groups={locationGroups.filter((group) => group.options.length > 0)}
+                searchPlaceholder={
+                  carMode ? t('carLocationSearchPlaceholder') : t('locationSearchPlaceholder')
+                }
+                selected={query.locationId ?? baku?.id ?? ''}
+              />
+            </SearchFilterMenu>
 
-            <FilterMenu label={t('priceRange')} summary={priceSummary(query, t('anyValue'))}>
+            <SearchFilterMenu label={t('priceRange')} summary={priceSummary(query, t('anyValue'))}>
               <RangeFields
                 maxName="priceMax"
                 maxValue={
@@ -148,10 +173,10 @@ export default async function SearchPage({
                 }
                 labels={{minimum: t('priceMin'), maximum: t('priceMax')}}
               />
-            </FilterMenu>
+            </SearchFilterMenu>
 
             {quickAttributes.map((attribute) => (
-              <FilterMenu
+              <SearchFilterMenu
                 key={attribute.id}
                 label={attribute.label}
                 summary={dynamicFilterSummary(attribute, url, {
@@ -169,22 +194,28 @@ export default async function SearchPage({
                     yes: t('yes'),
                     no: t('no'),
                     minimum: t('minimum'),
-                    maximum: t('maximum')
+                    maximum: t('maximum'),
+                    searchPlaceholder:
+                      attribute.key === 'brand'
+                        ? t('brandSearchPlaceholder')
+                        : t('optionSearchPlaceholder'),
+                    empty: t('noOptions')
                   }}
                 />
-              </FilterMenu>
+                {attribute.key === 'brand' && (
+                  <p className="search-filter-hint">{t('modelSearchHint')}</p>
+                )}
+              </SearchFilterMenu>
             ))}
 
             {moreAttributes.length > 0 && (
-              <details className="search-filter-menu search-more-filters">
-                <summary>
-                  <span>
-                    <small>{t('moreFilters')}</small>
-                    <strong>{t('moreFiltersHint', {count: moreAttributes.length})}</strong>
-                  </span>
-                  <ChevronIcon />
-                </summary>
-                <div className="search-filter-popover search-more-popover">
+              <SearchFilterMenu
+                className="search-more-filters"
+                label={t('moreFilters')}
+                popoverClassName="search-more-popover"
+                summary={t('moreFiltersHint', {count: moreAttributes.length})}
+              >
+                <div className="search-more-content">
                   <header>
                     <div>
                       <strong>{t('moreFilters')}</strong>
@@ -196,7 +227,10 @@ export default async function SearchPage({
                   </header>
                   <div className="search-more-grid">
                     {moreAttributes.map((attribute) => (
-                      <fieldset key={attribute.id} className="search-advanced-filter">
+                      <fieldset
+                        key={attribute.id}
+                        className={`search-advanced-filter${attribute.key === 'body_type' ? ' is-wide' : ''}`}
+                      >
                         <legend>{attribute.label}</legend>
                         <DynamicFilterFields
                           attribute={attribute}
@@ -206,7 +240,9 @@ export default async function SearchPage({
                             yes: t('yes'),
                             no: t('no'),
                             minimum: t('minimum'),
-                            maximum: t('maximum')
+                            maximum: t('maximum'),
+                            searchPlaceholder: t('optionSearchPlaceholder'),
+                            empty: t('noOptions')
                           }}
                         />
                       </fieldset>
@@ -216,7 +252,7 @@ export default async function SearchPage({
                     {t('showResults', {count: result.total})}
                   </button>
                 </div>
-              </details>
+              </SearchFilterMenu>
             )}
 
             <label className="search-sort-control">
@@ -297,29 +333,6 @@ export default async function SearchPage({
   );
 }
 
-function FilterMenu({
-  label,
-  summary,
-  children
-}: {
-  label: string;
-  summary: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <details className="search-filter-menu">
-      <summary>
-        <span>
-          <small>{label}</small>
-          <strong>{summary}</strong>
-        </span>
-        <ChevronIcon />
-      </summary>
-      <div className="search-filter-popover">{children}</div>
-    </details>
-  );
-}
-
 function DynamicFilterFields({
   attribute,
   params,
@@ -327,21 +340,27 @@ function DynamicFilterFields({
 }: {
   attribute: CategoryAttributeContract;
   params: URLSearchParams;
-  labels: {any: string; yes: string; no: string; minimum: string; maximum: string};
+  labels: {
+    any: string;
+    yes: string;
+    no: string;
+    minimum: string;
+    maximum: string;
+    searchPlaceholder: string;
+    empty: string;
+  };
 }) {
   if (attribute.valueType === 'single_select')
     return (
-      <label className="search-filter-field">
-        <span className="sr-only">{attribute.label}</span>
-        <select name={`f.${attribute.id}`} defaultValue={params.get(`f.${attribute.id}`) ?? ''}>
-          <option value="">{labels.any}</option>
-          {attribute.options.map((option) => (
-            <option key={option.id} value={option.id}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-      </label>
+      <SearchChoiceFilter
+        anyLabel={labels.any}
+        emptyLabel={labels.empty}
+        mode={attribute.key === 'brand' ? 'list' : attribute.key === 'body_type' ? 'body' : 'pills'}
+        name={`f.${attribute.id}`}
+        options={attribute.options}
+        searchPlaceholder={labels.searchPlaceholder}
+        selected={params.get(`f.${attribute.id}`)}
+      />
     );
   if (attribute.valueType === 'multi_select') {
     const selected = new Set(params.getAll(`f.${attribute.id}`));
@@ -363,14 +382,11 @@ function DynamicFilterFields({
   }
   if (attribute.valueType === 'boolean')
     return (
-      <label className="search-filter-field">
-        <span className="sr-only">{attribute.label}</span>
-        <select name={`b.${attribute.id}`} defaultValue={params.get(`b.${attribute.id}`) ?? ''}>
-          <option value="">{labels.any}</option>
-          <option value="true">{labels.yes}</option>
-          <option value="false">{labels.no}</option>
-        </select>
-      </label>
+      <SearchBooleanFilter
+        labels={{any: labels.any, yes: labels.yes, no: labels.no}}
+        name={`b.${attribute.id}`}
+        selected={params.get(`b.${attribute.id}`)}
+      />
     );
   if (['integer', 'decimal', 'measurement'].includes(attribute.valueType))
     return (
@@ -544,14 +560,6 @@ function SearchIcon() {
     <svg aria-hidden="true" viewBox="0 0 24 24">
       <circle cx="11" cy="11" r="6.5" />
       <path d="m16 16 4 4" />
-    </svg>
-  );
-}
-
-function ChevronIcon() {
-  return (
-    <svg aria-hidden="true" viewBox="0 0 24 24">
-      <path d="m8 10 4 4 4-4" />
     </svg>
   );
 }
