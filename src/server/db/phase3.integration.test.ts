@@ -33,6 +33,45 @@ integration('Phase 3 PostgreSQL model', () => {
     });
   });
 
+  it('seeds distinct filter schemas for launch apartments and cars', async () => {
+    const rows = await client!`
+      select category.slug, attribute_definition.key
+      from category_attribute
+      join category on category.id = category_attribute.category_id
+      join attribute_definition on attribute_definition.id = category_attribute.attribute_id
+      where category.slug in ('apartments-for-sale', 'passenger-cars')
+        and category_attribute.filterable = true
+      order by category.slug, category_attribute.sort_order
+    `;
+    const keys = (slug: string) =>
+      rows.filter((row) => row.slug === slug).map((row) => row.key as string);
+
+    expect(keys('apartments-for-sale')).toEqual(
+      expect.arrayContaining([
+        'property_type',
+        'bedrooms',
+        'area',
+        'floor',
+        'total_floors',
+        'repair_condition',
+        'deed_available',
+        'mortgage_available'
+      ])
+    );
+    expect(keys('passenger-cars')).toEqual(
+      expect.arrayContaining([
+        'brand',
+        'year',
+        'mileage',
+        'condition',
+        'engine_volume',
+        'fuel_type',
+        'transmission',
+        'body_type'
+      ])
+    );
+  });
+
   it('enforces category depth and draft ownership foreign keys', async () => {
     await expect(
       client!`insert into category (slug, depth) values (${`invalid-${randomUUID()}`}, 3)`

@@ -1,4 +1,4 @@
-import {and, desc, eq, inArray, lt, or} from 'drizzle-orm';
+import {and, asc, desc, eq, inArray, lt, ne, or, sql} from 'drizzle-orm';
 
 import type {AppLocale} from '@/i18n/routing';
 import type {DatabaseClient} from '@/server/db/client';
@@ -6,6 +6,8 @@ import {
   attributeDefinition,
   attributeOptionTranslation,
   attributeTranslation,
+  category,
+  categoryAttribute,
   categoryTranslation,
   listing,
   listingAttributeOptionValue,
@@ -14,6 +16,7 @@ import {
   locationTranslation,
   mediaAsset,
   mediaVariant,
+  location,
   shop,
   user
 } from '@/server/db/schema';
@@ -30,6 +33,23 @@ export interface PublicListingCard {
   locationName: string;
   publishedAt: string;
   mediaUrl: string | null;
+  facts: PublicListingFact[];
+}
+
+export interface PublicListingFact {
+  attributeId: string;
+  label: string;
+  value: string | number | boolean;
+  unit: string | null;
+}
+
+export interface HomepageListingCollection {
+  key: 'apartments' | 'cars';
+  categoryId: string;
+  categoryName: string;
+  locationId: string;
+  locationName: string;
+  items: PublicListingCard[];
 }
 
 export interface PublicListingAttribute {
@@ -41,6 +61,8 @@ export interface PublicListingAttribute {
 
 export interface PublicListingDetail extends PublicListingCard {
   description: string;
+  categoryId: string;
+  locationId: string;
   sellerId: string;
   sellerName: string;
   shopId: string | null;
@@ -49,6 +71,69 @@ export interface PublicListingDetail extends PublicListingCard {
   shopVerified: boolean;
   attributes: PublicListingAttribute[];
   mediaUrls: string[];
+}
+
+const homepageScopes = [
+  {key: 'apartments', categorySlug: 'apartments-for-sale'},
+  {key: 'cars', categorySlug: 'passenger-cars'}
+] as const;
+
+export async function listHomepageCollections(
+  db: DatabaseClient,
+  locale: AppLocale,
+  limit = 8
+): Promise<HomepageListingCollection[]> {
+  const [categories, cities] = await Promise.all([
+    db
+      .select({id: category.id, slug: category.slug, name: categoryTranslation.name})
+      .from(category)
+      .innerJoin(
+        categoryTranslation,
+        and(eq(categoryTranslation.categoryId, category.id), eq(categoryTranslation.locale, locale))
+      )
+      .where(
+        and(
+          eq(category.enabled, true),
+          inArray(
+            category.slug,
+            homepageScopes.map(({categorySlug}) => categorySlug)
+          )
+        )
+      ),
+    db
+      .select({id: location.id, name: locationTranslation.name})
+      .from(location)
+      .innerJoin(
+        locationTranslation,
+        and(eq(locationTranslation.locationId, location.id), eq(locationTranslation.locale, locale))
+      )
+      .where(and(eq(location.enabled, true), eq(location.slug, 'baku')))
+      .limit(1)
+  ]);
+  const city = cities[0];
+  if (!city) return [];
+  const categoryBySlug = new Map(categories.map((item) => [item.slug, item]));
+
+  return Promise.all(
+    homepageScopes.flatMap((scope) => {
+      const selectedCategory = categoryBySlug.get(scope.categorySlug);
+      if (!selectedCategory) return [];
+      return [
+        listPublicListings(db, locale, {
+          categoryId: selectedCategory.id,
+          locationId: city.id,
+          limit
+        }).then(({items}) => ({
+          key: scope.key,
+          categoryId: selectedCategory.id,
+          categoryName: selectedCategory.name,
+          locationId: city.id,
+          locationName: city.name,
+          items
+        }))
+      ];
+    })
+  );
 }
 
 export async function listPublicListings(
@@ -98,8 +183,26 @@ export async function listPublicListings(
     .where(
       and(
         eq(listing.status, 'active'),
-        query.categoryId ? eq(listing.categoryId, query.categoryId) : undefined,
-        query.locationId ? eq(listing.locationId, query.locationId) : undefined,
+        query.categoryId
+          ? sql`${listing.categoryId} in (
+              with recursive category_scope as (
+                select id from category where id = ${query.categoryId}
+                union all
+                select child.id from category child
+                join category_scope parent on child.parent_id = parent.id
+              ) select id from category_scope
+            )`
+          : undefined,
+        query.locationId
+          ? sql`${listing.locationId} in (
+              with recursive location_scope as (
+                select id from location where id = ${query.locationId}
+                union all
+                select child.id from location child
+                join location_scope parent on child.parent_id = parent.id
+              ) select id from location_scope
+            )`
+          : undefined,
         cursorCondition
       )
     )
@@ -108,12 +211,12 @@ export async function listPublicListings(
 
   const hasMore = rows.length > query.limit;
   const page = hasMore ? rows.slice(0, query.limit) : rows;
-  const covers = await loadCoverUrls(
-    db,
-    page.map((row) => row.id),
-    'card'
-  );
-  const items = page.map((row) => toCard(row, covers.get(row.id) ?? null));
+  const listingIds = page.map((row) => row.id);
+  const [covers, facts] = await Promise.all([
+    loadCoverUrls(db, listingIds, 'card'),
+    loadCardFacts(db, listingIds, locale)
+  ]);
+  const items = page.map((row) => toCard(row, covers.get(row.id) ?? null, facts.get(row.id) ?? []));
   return {items, nextCursor: hasMore ? (items.at(-1)?.id ?? null) : null};
 }
 
@@ -149,11 +252,39 @@ export async function getPublicListingCardsByIds(
       )
     )
     .where(and(eq(listing.status, 'active'), inArray(listing.id, listingIds)));
-  const covers = await loadCoverUrls(db, listingIds, 'card');
+  const [covers, facts] = await Promise.all([
+    loadCoverUrls(db, listingIds, 'card'),
+    loadCardFacts(db, listingIds, locale)
+  ]);
   const order = new Map(listingIds.map((id, position) => [id, position]));
   return rows
     .sort((left, right) => order.get(left.id)! - order.get(right.id)!)
-    .map((row) => toCard(row, covers.get(row.id) ?? null));
+    .map((row) => toCard(row, covers.get(row.id) ?? null, facts.get(row.id) ?? []));
+}
+
+export async function listSimilarPublicListings(
+  db: DatabaseClient,
+  locale: AppLocale,
+  input: {listingId: string; categoryId: string; locationId: string; limit?: number}
+): Promise<PublicListingCard[]> {
+  const rows = await db
+    .select({id: listing.id})
+    .from(listing)
+    .where(
+      and(
+        eq(listing.status, 'active'),
+        eq(listing.categoryId, input.categoryId),
+        eq(listing.locationId, input.locationId),
+        ne(listing.id, input.listingId)
+      )
+    )
+    .orderBy(desc(listing.publishedAt), desc(listing.id))
+    .limit(input.limit ?? 4);
+  return getPublicListingCardsByIds(
+    db,
+    locale,
+    rows.map(({id}) => id)
+  );
 }
 
 export async function getPublicListing(
@@ -168,7 +299,9 @@ export async function getPublicListing(
       description: listing.description,
       priceMinor: listing.priceMinor,
       currency: listing.currency,
+      categoryId: listing.categoryId,
       categoryName: categoryTranslation.name,
+      locationId: listing.locationId,
       locationName: locationTranslation.name,
       sellerId: user.id,
       sellerName: user.name,
@@ -262,8 +395,10 @@ export async function getPublicListing(
   }
 
   return {
-    ...toCard(row, mediaUrls[0] ?? null),
+    ...toCard(row, mediaUrls[0] ?? null, []),
     description: row.description,
+    categoryId: row.categoryId,
+    locationId: row.locationId,
     sellerId: row.sellerId,
     sellerName: row.sellerName,
     shopId: row.shopId,
@@ -286,6 +421,68 @@ export async function getPublicListing(
       }))
     ]
   };
+}
+
+async function loadCardFacts(
+  db: DatabaseClient,
+  listingIds: string[],
+  locale: AppLocale
+): Promise<Map<string, PublicListingFact[]>> {
+  if (!listingIds.length) return new Map();
+  const rows = await db
+    .select({
+      listingId: listingAttributeValue.listingId,
+      attributeId: listingAttributeValue.attributeId,
+      label: attributeTranslation.label,
+      unit: attributeDefinition.unit,
+      textValue: listingAttributeValue.textValue,
+      integerValue: listingAttributeValue.integerValue,
+      decimalValue: listingAttributeValue.decimalValue,
+      booleanValue: listingAttributeValue.booleanValue,
+      dateValue: listingAttributeValue.dateValue,
+      optionLabel: attributeOptionTranslation.label,
+      sortOrder: categoryAttribute.sortOrder
+    })
+    .from(listingAttributeValue)
+    .innerJoin(listing, eq(listing.id, listingAttributeValue.listingId))
+    .innerJoin(
+      categoryAttribute,
+      and(
+        eq(categoryAttribute.categoryId, listing.categoryId),
+        eq(categoryAttribute.attributeId, listingAttributeValue.attributeId)
+      )
+    )
+    .innerJoin(attributeDefinition, eq(attributeDefinition.id, listingAttributeValue.attributeId))
+    .innerJoin(
+      attributeTranslation,
+      and(
+        eq(attributeTranslation.attributeId, listingAttributeValue.attributeId),
+        eq(attributeTranslation.locale, locale)
+      )
+    )
+    .leftJoin(
+      attributeOptionTranslation,
+      and(
+        eq(attributeOptionTranslation.optionId, listingAttributeValue.optionId),
+        eq(attributeOptionTranslation.locale, locale)
+      )
+    )
+    .where(inArray(listingAttributeValue.listingId, listingIds))
+    .orderBy(asc(categoryAttribute.sortOrder));
+
+  const facts = new Map<string, PublicListingFact[]>();
+  for (const row of rows) {
+    const current = facts.get(row.listingId) ?? [];
+    if (current.length >= 3) continue;
+    current.push({
+      attributeId: row.attributeId,
+      label: row.label,
+      value: scalarPublicValue(row),
+      unit: row.unit
+    });
+    facts.set(row.listingId, current);
+  }
+  return facts;
 }
 
 async function loadListingMediaUrls(
@@ -343,10 +540,11 @@ function toCard(
     locationName: string;
     publishedAt: Date | null;
   },
-  mediaUrl: string | null
+  mediaUrl: string | null,
+  facts: PublicListingFact[]
 ): PublicListingCard {
   if (!row.publishedAt) throw new AppError('UNEXPECTED_ERROR', 'Active listing has no date', 500);
-  return {...row, mediaUrl, publishedAt: row.publishedAt.toISOString()};
+  return {...row, mediaUrl, facts, publishedAt: row.publishedAt.toISOString()};
 }
 
 function scalarPublicValue(row: {

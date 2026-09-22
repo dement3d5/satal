@@ -1,18 +1,53 @@
 import {and, asc, count, desc, eq, sql, type SQL} from 'drizzle-orm';
 
+import type {AppLocale} from '@/i18n/routing';
 import type {DatabaseClient} from '@/server/db/client';
 import {listing} from '@/server/db/schema';
 
 import type {SearchQuery} from './contracts';
 import type {SearchPage} from './gateway';
 
-export async function searchPostgres(db: DatabaseClient, query: SearchQuery): Promise<SearchPage> {
+export async function searchPostgres(
+  db: DatabaseClient,
+  locale: AppLocale,
+  query: SearchQuery
+): Promise<SearchPage> {
   const conditions: SQL[] = [eq(listing.status, 'active')];
   if (query.q) {
-    conditions.push(sql`
+    conditions.push(sql`(
       to_tsvector('simple', coalesce(${listing.title}, '') || ' ' || coalesce(${listing.description}, ''))
-      @@ websearch_to_tsquery('simple', ${query.q})
-    `);
+        @@ websearch_to_tsquery('simple', ${query.q})
+      or exists (
+        select 1
+        from listing_attribute_value value
+        join category_attribute rule
+          on rule.category_id = ${listing.categoryId}
+          and rule.attribute_id = value.attribute_id
+          and rule.searchable = true
+        left join attribute_option_translation option_translation
+          on option_translation.option_id = value.option_id
+          and option_translation.locale = ${locale}
+        where value.listing_id = ${listing.id}
+          and to_tsvector(
+            'simple',
+            coalesce(value.text_value, '') || ' ' || coalesce(option_translation.label, '')
+          ) @@ websearch_to_tsquery('simple', ${query.q})
+      )
+      or exists (
+        select 1
+        from listing_attribute_option_value value
+        join category_attribute rule
+          on rule.category_id = ${listing.categoryId}
+          and rule.attribute_id = value.attribute_id
+          and rule.searchable = true
+        join attribute_option_translation option_translation
+          on option_translation.option_id = value.option_id
+          and option_translation.locale = ${locale}
+        where value.listing_id = ${listing.id}
+          and to_tsvector('simple', option_translation.label)
+            @@ websearch_to_tsquery('simple', ${query.q})
+      )
+    )`);
   }
   if (query.categoryId) {
     conditions.push(sql`${listing.categoryId} in (

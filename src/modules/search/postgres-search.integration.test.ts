@@ -43,8 +43,16 @@ integration('PostgreSQL degraded search', () => {
         'Unique Camry integration', 'Searchable marketplace vehicle.', 2500000, now()
       )
     `;
+    await client!`
+      insert into listing_attribute_value (listing_id, attribute_id, text_value)
+      values (
+        ${listingId},
+        '30000000-0000-4000-8000-000000000002',
+        'SearchModelZX'
+      )
+    `;
 
-    const result = await searchPostgres(drizzle(client!, {schema}), {
+    const result = await searchPostgres(drizzle(client!, {schema}), 'en', {
       q: 'Camry',
       categoryId: '20000000-0000-4000-8000-000000000001',
       locationId: '10000000-0000-4000-8000-000000000001',
@@ -56,6 +64,17 @@ integration('PostgreSQL degraded search', () => {
       filters: []
     });
     expect(result.ids).toContain(listingId);
+
+    const attributeResult = await searchPostgres(drizzle(client!, {schema}), 'en', {
+      q: 'SearchModelZX',
+      categoryId: '20000000-0000-4000-8000-000000000003',
+      locationId: '10000000-0000-4000-8000-000000000002',
+      sort: 'relevance',
+      page: 1,
+      limit: 10,
+      filters: []
+    });
+    expect(attributeResult.ids).toContain(listingId);
 
     await client!`delete from listing where id = ${listingId}`;
     await client!`delete from listing_draft where id = ${draftId}`;

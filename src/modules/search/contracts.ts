@@ -3,12 +3,16 @@ import {z} from 'zod';
 import {AppError} from '@/server/errors/app-error';
 
 const uuid = z.uuid();
+const optionalPrice = z.preprocess(
+  (value) => (value === '' || value === undefined ? undefined : value),
+  z.coerce.number().finite().min(0).max(1_000_000_000).optional()
+);
 const baseSearchSchema = z.object({
   q: z.string().trim().max(120).default(''),
   categoryId: z.uuid().optional(),
   locationId: z.uuid().optional(),
-  priceMin: z.coerce.number().finite().min(0).max(1_000_000_000).optional(),
-  priceMax: z.coerce.number().finite().min(0).max(1_000_000_000).optional(),
+  priceMin: optionalPrice,
+  priceMax: optionalPrice,
   sort: z.enum(['relevance', 'newest', 'price_asc', 'price_desc']).default('relevance'),
   page: z.coerce.number().int().min(1).max(100).default(1),
   limit: z.coerce.number().int().min(1).max(48).default(24)
@@ -67,6 +71,7 @@ export function parseSearchParams(params: URLSearchParams): SearchQuery {
   const booleans = new Map<string, boolean>();
   for (const [key, value] of params.entries()) {
     const [prefix, rawAttributeId, bound] = key.split('.');
+    if (value === '' && (prefix === 'f' || prefix === 'n' || prefix === 'b')) continue;
     const attributeId = uuid.safeParse(rawAttributeId);
     if (!attributeId.success) continue;
     if (prefix === 'f') {

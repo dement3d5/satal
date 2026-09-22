@@ -49,7 +49,7 @@ export async function searchListings(
     }
   }
 
-  const page = await searchPostgres(db, query);
+  const page = await searchPostgres(db, locale, query);
   return {
     items: await getPublicListingCardsByIds(db, locale, page.ids),
     total: page.total,

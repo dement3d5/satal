@@ -32,6 +32,22 @@ describe('search contracts', () => {
     expect(parseSearchParams(new URLSearchParams()).sort).toBe('newest');
   });
 
+  it('ignores empty controls submitted by the filter form', () => {
+    const params = new URLSearchParams({
+      priceMin: '',
+      priceMax: '',
+      [`f.${attributeId}`]: '',
+      [`b.${attributeId}`]: '',
+      [`n.${attributeId}.min`]: '',
+      [`n.${attributeId}.max`]: ''
+    });
+
+    const result = parseSearchParams(params);
+    expect(result.filters).toEqual([]);
+    expect(result).not.toHaveProperty('priceMinMinor');
+    expect(result).not.toHaveProperty('priceMaxMinor');
+  });
+
   it('rejects inverted prices', () => {
     expect(() => parseSearchParams(new URLSearchParams({priceMin: '20', priceMax: '10'}))).toThrow(
       AppError

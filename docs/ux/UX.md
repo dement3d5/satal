@@ -10,7 +10,9 @@ Light neutral surfaces, near-black text, one calm accent, moderate radii, restra
 
 ## Responsive behavior
 
-Desktop search uses a prominent query bar, a quiet sticky sidebar for taxonomy/location/price/schema-driven filters and a separate results surface with compact marketplace cards. Query submissions preserve active filters, while applying filters preserves the query in URL state. Mobile stacks the same clear regions with touch-sized controls and compact two-column cards; a dedicated filter sheet remains an enhancement once the filter set outgrows the launch schema. Other mobile journeys use a dedicated category view and sticky listing contact actions where appropriate. Do not merely shrink desktop CSS.
+The launch home is a Baku-first discovery surface rather than a promotional hero. A compact search and two database-resolved entry points lead into separate apartment and passenger-car collections. Each collection uses horizontally browsable marketplace cards on small screens and a calm grid on larger screens. The wider Azerbaijan geography and taxonomy remain intact; this is launch curation, not a hardcoded frontend category model.
+
+Launch search starts with two explicit modes: Baku apartments and passenger cars. Switching the mode replaces the filter schema rather than carrying incompatible values across categories. Location, price and the three most useful schema-driven attributes stay visible as compact disclosure controls; less frequent attributes live in one complete category-specific disclosure. There is no persistent left sidebar. Exact minimum/maximum fields are preferred over price sliders because marketplace price and area ranges are broad and users often know a meaningful threshold. Query submissions preserve active filters in URL state. Mobile stacks the same touch-sized controls and keeps the full-filter apply action next to the expanded fields. Other mobile journeys use a dedicated category view and sticky listing contact actions where appropriate. Do not merely shrink desktop CSS.
 
 The global header keeps discovery actions clear without exposing irrelevant private destinations. Guests see language selection, sign-in and the primary listing action; messages, saved items, notifications and the profile menu render only after the session is confirmed. The language menu preserves the current localized route, while compact icon labels and account actions remain keyboard accessible across breakpoints.
 
@@ -25,6 +27,8 @@ Design and test loading, empty, upload failure/processing, offline/network error
 ## Accessibility/SEO
 
 Semantic landmarks and controls, keyboard navigation, labels, contrast, reduced motion and correct dialogs are baseline. Public listings/categories use SSR, clean canonical localized URLs, structured metadata, Open Graph and controlled indexing of filter combinations.
+
+The public listing page prioritizes a complete photo overview, typed characteristics, seller context and an approximate location. The desktop gallery shows one dominant image with supporting images; mobile keeps the same information in a compact collage and opens a keyboard-accessible full gallery. Exact private-seller addresses are never inferred or displayed.
 
 ## Listing creation UI foundation
 
