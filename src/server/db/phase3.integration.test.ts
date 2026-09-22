@@ -49,10 +49,11 @@ integration('Phase 3 PostgreSQL model', () => {
           where attribute_id = '30000000-0000-4000-8000-000000000001'
             and enabled = true
         ) as vehicle_makes,
-        (
-          select enabled
+        exists (
+          select 1
           from attribute_option
           where id = '40000000-0000-4000-8000-000000000001'
+            and enabled = true
         ) as other_make_enabled
     `;
 
