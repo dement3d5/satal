@@ -14,6 +14,7 @@ import * as schema from '@/server/db/schema';
 
 import {
   blockConversationUser,
+  countUnreadConversationMessages,
   listConversationMessages,
   listConversations,
   markConversationRead,
@@ -104,7 +105,13 @@ integration('listing conversations, blocks and notifications', () => {
           otherParticipant: expect.objectContaining({id: buyerId})
         })
       ]);
+      await expect(countUnreadConversationMessages(db, sellerId)).resolves.toEqual({
+        unreadCount: 1
+      });
       await markConversationRead(db, sellerId, started.conversationId);
+      await expect(countUnreadConversationMessages(db, sellerId)).resolves.toEqual({
+        unreadCount: 0
+      });
       const sellerNotifications = await listNotifications(db, sellerId, {
         limit: 50,
         unreadOnly: false
@@ -122,6 +129,9 @@ integration('listing conversations, blocks and notifications', () => {
         unreadOnly: true
       });
       expect(buyerNotifications).toMatchObject({unreadCount: 1});
+      await expect(countUnreadConversationMessages(db, buyerId)).resolves.toEqual({
+        unreadCount: 1
+      });
       expect(buyerNotifications.items[0]).toMatchObject({conversationId: started.conversationId});
       await expect(
         markNotificationRead(db, intruderId, buyerNotifications.items[0]!.id)

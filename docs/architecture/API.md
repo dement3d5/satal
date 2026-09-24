@@ -89,6 +89,8 @@ Better Auth owns `/api/auth/*`, credential hashing, database sessions, HttpOnly 
 
 `GET|POST /api/v1/conversations/{conversationId}/messages` exposes bounded sequence pagination or appends a message only to a recorded participant. `POST /api/v1/conversations/{conversationId}/read` advances only that participant's read cursor and marks matching in-app notifications read. Existing history remains available when a listing becomes inactive, but new messages require an open conversation, an active/sold listing and no block in either direction.
 
+`GET /api/v1/conversations/unread-count` returns only the authenticated participant's aggregate unread message count from PostgreSQL read cursors. The global header polls this private, uncached projection to render a compact badge and may produce an in-browser sound or system notification after the user has enabled the corresponding browser capability. It is not a promise of delivery while the browser is closed.
+
 `GET|POST /api/v1/conversations/{conversationId}/messages/{messageId}/reports` reads or idempotently creates the current actor's report on a concrete message from the other participant. The route verifies both path relationships, never accepts a reporter ID, limits new reports per actor and returns `NOT_FOUND` across the participant boundary.
 
 `GET /api/v1/moderation/message-reports` returns only the minimum reported-message context to live staff who did not participate in the conversation. `POST /api/v1/moderation/message-reports/{reportId}/decision` dismisses one report or atomically closes the conversation and resolves every open report attached to its messages. The decision does not ban an account. Responses are private and `no-store`.

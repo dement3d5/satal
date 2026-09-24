@@ -20,10 +20,14 @@ export default async function MessagesPage({
         sellLabel={t('sellAction')}
         accountLabel={t('accountLink')}
       />
-      <header className="search-page-heading">
-        <p className="eyebrow">SATAL</p>
-        <h1>{t('title')}</h1>
-        <p>{t('description')}</p>
+      <header className="chat-page-heading">
+        <span className="chat-page-icon" aria-hidden="true">
+          <MessageIcon />
+        </span>
+        <div>
+          <h1>{t('title')}</h1>
+          <p>{t('description')}</p>
+        </div>
       </header>
       <ChatInbox
         locale={locale}
@@ -34,6 +38,29 @@ export default async function MessagesPage({
           authText: t('authText'),
           error: t('error'),
           empty: t('empty'),
+          inboxTitle: t('inboxTitle'),
+          conversationCount: t('conversationCount'),
+          searchPlaceholder: t('searchPlaceholder'),
+          allConversations: t('allConversations'),
+          unreadOnly: t('unreadOnly'),
+          noSearchResults: t('noSearchResults'),
+          notificationSettings: t('notificationSettings'),
+          sound: t('sound'),
+          soundOn: t('soundOn'),
+          soundOff: t('soundOff'),
+          browserNotifications: t('browserNotifications'),
+          enableBrowserNotifications: t('enableBrowserNotifications'),
+          notificationsEnabled: t('notificationsEnabled'),
+          notificationsDenied: t('notificationsDenied'),
+          notificationsUnsupported: t('notificationsUnsupported'),
+          backToConversations: t('backToConversations'),
+          conversationActions: t('conversationActions'),
+          openConversation: t('openConversation'),
+          closedConversation: t('closedConversation'),
+          buyer: t('buyer'),
+          seller: t('seller'),
+          characters: t('characters'),
+          sendHint: t('sendHint'),
           listing: t('listing'),
           unread: t('unread'),
           me: t('me'),
@@ -88,5 +115,19 @@ export default async function MessagesPage({
         }}
       />
     </main>
+  );
+}
+
+function MessageIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="24" height="24">
+      <path
+        d="M5 5.5h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H9l-4.5 3v-3H5a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2Z"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinejoin="round"
+      />
+    </svg>
   );
 }

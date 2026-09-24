@@ -40,7 +40,10 @@ export async function SiteHeader({
             saved: savedLabel ?? navigation('saved'),
             account: accountLabel,
             signIn: navigation('signIn'),
-            personalNavigation: navigation('personalNavigation')
+            personalNavigation: navigation('personalNavigation'),
+            unreadMessages: navigation('unreadMessages'),
+            newMessageTitle: navigation('newMessageTitle'),
+            newMessageBody: navigation('newMessageBody')
           }}
         />
         <LanguageSwitcher locale={locale} label={languageLabel} />

@@ -282,6 +282,23 @@ export async function listConversations(
   });
 }
 
+export async function countUnreadConversationMessages(db: DatabaseClient, actorId: string) {
+  const [result] = await db
+    .select({
+      unreadCount: sql<number>`coalesce(sum(
+        case
+          when ${conversation.buyerId} = ${actorId}
+            then greatest(${conversation.lastMessageSequence} - ${conversation.buyerReadSequence}, 0)
+          else greatest(${conversation.lastMessageSequence} - ${conversation.sellerReadSequence}, 0)
+        end
+      ), 0)::int`
+    })
+    .from(conversation)
+    .where(or(eq(conversation.buyerId, actorId), eq(conversation.sellerId, actorId)));
+
+  return {unreadCount: result?.unreadCount ?? 0};
+}
+
 export async function listConversationMessages(
   db: DatabaseClient,
   actorId: string,
