@@ -27,7 +27,7 @@ Rate limits are endpoint- and actor-specific. Login/OTP/recovery, uploads, searc
 
 The initial marketplace API slice exposes PostgreSQL-backed category trees, localized attribute schemas and geography under `/api/v1/catalog` and `/api/v1/locations`. Category schema responses include validation constraints, options and filter/search/sort capabilities so clients never hardcode category-specific forms.
 
-Authenticated draft routes under `/api/v1/listing-drafts` support creation, owner-only reads, autosave and safe category changes. Draft updates require the last observed `version`; stale autosaves receive a conflict response instead of overwriting newer work. Category-change responses report removed attribute IDs so the UI can explain recalculation without duplicating catalog rules. Draft responses are private and use `no-store`; public catalog and geography reads have short shared-cache policies.
+Authenticated draft routes under `/api/v1/listing-drafts` support creation, owner-only reads, autosave and safe category changes. Autosave accepts an optional all-or-nothing public latitude/longitude pair and bounded public landmark label; these are not an exact-address requirement and are cleared together when the seller disables the map. Draft updates require the last observed `version`; stale autosaves receive a conflict response instead of overwriting newer work. Category-change responses report removed attribute IDs so the UI can explain recalculation without duplicating catalog rules. Draft responses are private and use `no-store`; public catalog and geography reads have short shared-cache policies.
 
 `POST /api/v1/listing-drafts/{draftId}/publish` is owner-only, version-checked and idempotent through the unique source-draft relationship. It reruns server-side completeness and category-schema validation before creating a `pending_review` PostgreSQL snapshot and moderation case.
 
@@ -81,7 +81,7 @@ Better Auth owns `/api/auth/*`, credential hashing, database sessions, HttpOnly 
 
 `GET|POST /api/v1/listings/{listingId}/appeals` is seller-owner only. An appeal must target the latest concrete rejection, accepts a bounded seller statement and is idempotent for that rejection. A cross-owner listing returns `NOT_FOUND`; a listing outside the rejected lifecycle returns a conflict.
 
-`GET /api/v1/moderation/reports` and `GET /api/v1/moderation/appeals` return minimal localized staff queues. `POST /api/v1/moderation/reports/{reportId}/decision` dismisses a report or removes the still-active listing. `POST /api/v1/moderation/appeals/{appealId}/decision` rejects with a required public response or accepts by returning the listing to `pending_review`. Every endpoint rechecks a live staff grant, lifecycle and self-review rule inside the transaction. All responses are private and `no-store`.
+`GET /api/v1/moderation/reports` and `GET /api/v1/moderation/appeals` return minimal localized staff queues plus `meta.excludedConflictCount`. The platform owner can view conflict-linked items through `conflicts:view` for complete operational oversight; no email is embedded in authorization. `POST /api/v1/moderation/reports/{reportId}/decision` dismisses a report or removes the still-active listing. `POST /api/v1/moderation/appeals/{appealId}/decision` rejects with a required public response or accepts by returning the listing to `pending_review`. Every endpoint rechecks a live staff grant, lifecycle and decision-conflict rule inside the transaction. All responses are private and `no-store`.
 
 ## Conversations, blocks and notifications
 

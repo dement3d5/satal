@@ -71,6 +71,9 @@ export interface PublicListingDetail extends PublicListingCard {
   shopVerified: boolean;
   attributes: PublicListingAttribute[];
   mediaUrls: string[];
+  mapLatitude: number | null;
+  mapLongitude: number | null;
+  publicLocationLabel: string | null;
 }
 
 const homepageScopes = [
@@ -303,6 +306,9 @@ export async function getPublicListing(
       categoryName: categoryTranslation.name,
       locationId: listing.locationId,
       locationName: locationTranslation.name,
+      mapLatitude: listing.mapLatitude,
+      mapLongitude: listing.mapLongitude,
+      publicLocationLabel: listing.publicLocationLabel,
       sellerId: user.id,
       sellerName: user.name,
       shopId: shop.id,
@@ -399,6 +405,9 @@ export async function getPublicListing(
     description: row.description,
     categoryId: row.categoryId,
     locationId: row.locationId,
+    mapLatitude: row.mapLatitude,
+    mapLongitude: row.mapLongitude,
+    publicLocationLabel: row.publicLocationLabel,
     sellerId: row.sellerId,
     sellerName: row.sellerName,
     shopId: row.shopId,

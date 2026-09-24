@@ -10,13 +10,35 @@ describe('listing draft API contracts', () => {
       autosaveDraftSchema.parse({
         version: 2,
         priceMinor: 125_000,
-        publicLocationPrecision: 'district'
+        publicLocationPrecision: 'district',
+        mapLatitude: 40.4093,
+        mapLongitude: 49.8671,
+        publicLocationLabel: 'Near Nizami metro'
       })
-    ).toMatchObject({version: 2, priceMinor: 125_000, publicLocationPrecision: 'district'});
+    ).toMatchObject({
+      version: 2,
+      priceMinor: 125_000,
+      publicLocationPrecision: 'district',
+      mapLatitude: 40.4093,
+      mapLongitude: 49.8671,
+      publicLocationLabel: 'Near Nizami metro'
+    });
   });
 
   it('requires at least one autosave change', () => {
     expect(() => autosaveDraftSchema.parse({version: 2})).toThrow(/at least one change/i);
+  });
+
+  it('requires a complete, bounded map coordinate pair', () => {
+    expect(() => autosaveDraftSchema.parse({version: 2, mapLatitude: 40.4})).toThrow(
+      /provided together/i
+    );
+    expect(() =>
+      autosaveDraftSchema.parse({version: 2, mapLatitude: 91, mapLongitude: 49.8})
+    ).toThrow();
+    expect(
+      autosaveDraftSchema.parse({version: 2, mapLatitude: null, mapLongitude: null})
+    ).toMatchObject({mapLatitude: null, mapLongitude: null});
   });
 
   it('rejects unsafe integers, duplicate transport shapes and invalid dates at the boundary', () => {

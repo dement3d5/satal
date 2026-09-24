@@ -72,4 +72,13 @@ describe('listing publication rules', () => {
     expect(selectPublicLocationId(ancestry, 'district')).toBe('district');
     expect(selectPublicLocationId(ancestry, 'city')).toBe('city');
   });
+
+  it('keeps a selected metro for neighborhood-level publication', () => {
+    const ancestry = [
+      {id: 'metro', kind: 'metro' as const},
+      {id: 'city', kind: 'city' as const},
+      {id: 'country', kind: 'country' as const}
+    ];
+    expect(selectPublicLocationId(ancestry, 'neighborhood')).toBe('metro');
+  });
 });

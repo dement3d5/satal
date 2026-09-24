@@ -28,6 +28,8 @@ export default async function ModerationPage({params}: {params: Promise<{locale:
           forbidden: t('forbidden'),
           error: t('error'),
           empty: t('empty'),
+          conflictHidden: t('conflictHidden', {count: '__COUNT__'}),
+          conflictViewOnly: t('conflictViewOnly'),
           queueNavigation: t('queueNavigation'),
           queueDescriptions: {
             listings: t('queueDescriptions.listings'),

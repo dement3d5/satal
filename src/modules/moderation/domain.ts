@@ -15,6 +15,7 @@ export type ModerationCapability =
   | 'message-reports:decide'
   | 'review-reports:read'
   | 'review-reports:decide'
+  | 'conflicts:view'
   | 'operations:read';
 
 const capabilities: Record<StaffRole, ReadonlySet<ModerationCapability>> = {
@@ -60,6 +61,7 @@ const capabilities: Record<StaffRole, ReadonlySet<ModerationCapability>> = {
     'message-reports:decide',
     'review-reports:read',
     'review-reports:decide',
+    'conflicts:view',
     'operations:read'
   ])
 };

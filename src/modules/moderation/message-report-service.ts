@@ -1,4 +1,4 @@
-import {and, asc, count, eq, gte, inArray, ne, or} from 'drizzle-orm';
+import {and, asc, count, eq, gte, inArray, ne, or, sql} from 'drizzle-orm';
 
 import type {DatabaseClient} from '@/server/db/client';
 import {
@@ -21,6 +21,7 @@ import {
   assertOpenMessageReport,
   assertReportableMessage
 } from './message-report-domain';
+import {hasModerationCapability} from './domain';
 import {requireModerationCapability} from './service';
 import type {TrustQueueQuery} from './trust-contracts';
 
@@ -149,7 +150,8 @@ export async function listModerationMessageReports(
   actorId: string,
   query: TrustQueueQuery
 ) {
-  await requireModerationCapability(db, actorId, 'message-reports:read');
+  const roles = await requireModerationCapability(db, actorId, 'message-reports:read');
+  const canViewConflicts = hasModerationCapability(roles, 'conflicts:view');
   const rows = await db
     .select({
       reportId: messageReport.id,
@@ -161,7 +163,12 @@ export async function listModerationMessageReports(
       senderName: user.name,
       reason: messageReport.reason,
       details: messageReport.details,
-      createdAt: messageReport.createdAt
+      createdAt: messageReport.createdAt,
+      hasDecisionConflict: sql<boolean>`
+        ${messageReport.reporterId} = ${actorId}
+        or ${conversation.buyerId} = ${actorId}
+        or ${conversation.sellerId} = ${actorId}
+      `
     })
     .from(messageReport)
     .innerJoin(conversationMessage, eq(conversationMessage.id, messageReport.messageId))
@@ -172,13 +179,30 @@ export async function listModerationMessageReports(
       and(
         eq(messageReport.status, 'open'),
         eq(conversation.status, 'open'),
-        ne(conversation.buyerId, actorId),
-        ne(conversation.sellerId, actorId)
+        canViewConflicts ? undefined : ne(conversation.buyerId, actorId),
+        canViewConflicts ? undefined : ne(conversation.sellerId, actorId)
       )
     )
     .orderBy(asc(messageReport.createdAt), asc(messageReport.id))
     .limit(query.limit);
-  return rows.map((row) => ({...row, createdAt: row.createdAt.toISOString()}));
+  const [conflicts] = canViewConflicts
+    ? [{value: 0}]
+    : await db
+        .select({value: count()})
+        .from(messageReport)
+        .innerJoin(conversationMessage, eq(conversationMessage.id, messageReport.messageId))
+        .innerJoin(conversation, eq(conversation.id, conversationMessage.conversationId))
+        .where(
+          and(
+            eq(messageReport.status, 'open'),
+            eq(conversation.status, 'open'),
+            or(eq(conversation.buyerId, actorId), eq(conversation.sellerId, actorId))
+          )
+        );
+  return {
+    items: rows.map((row) => ({...row, createdAt: row.createdAt.toISOString()})),
+    excludedConflictCount: Number(conflicts?.value ?? 0)
+  };
 }
 
 export async function decideMessageReport(

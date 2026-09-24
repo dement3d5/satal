@@ -12,8 +12,10 @@ export async function GET(request: Request) {
   try {
     const actorId = await requireActorId(request.headers);
     const query = parseQuery(request, trustQueueQuerySchema);
+    const queue = await listModerationMessageReports(getDatabase(), actorId, query);
     const response = NextResponse.json({
-      data: await listModerationMessageReports(getDatabase(), actorId, query)
+      data: queue.items,
+      meta: {excludedConflictCount: queue.excludedConflictCount}
     });
     response.headers.set('cache-control', 'private, no-store');
     return response;

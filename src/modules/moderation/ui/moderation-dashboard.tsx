@@ -5,6 +5,7 @@ import Link from 'next/link';
 import {useEffect, useRef, useState, type FormEvent} from 'react';
 
 import {ImageGallery} from '@/components/image-gallery';
+import {LocationMap} from '@/components/location-map';
 import type {AppLocale} from '@/i18n/routing';
 import {formatPrice} from '@/modules/listings/ui/format';
 
@@ -31,6 +32,9 @@ interface QueueItem {
   sellerName: string;
   categoryName: string;
   locationName: string;
+  mapLatitude: number | null;
+  mapLongitude: number | null;
+  publicLocationLabel: string | null;
   canOverrideAssignment: boolean;
   mediaUrls: string[];
   attributes: Array<{
@@ -106,6 +110,7 @@ interface ReportQueueItem {
   sellerName: string;
   categoryName: string;
   locationName: string;
+  hasDecisionConflict: boolean;
 }
 
 interface AppealQueueItem {
@@ -118,6 +123,7 @@ interface AppealQueueItem {
   sellerName: string;
   categoryName: string;
   locationName: string;
+  hasDecisionConflict: boolean;
 }
 
 interface MessageReportQueueItem {
@@ -131,6 +137,7 @@ interface MessageReportQueueItem {
   reason: string;
   details: string | null;
   createdAt: string;
+  hasDecisionConflict: boolean;
 }
 
 interface ReviewReportQueueItem {
@@ -143,6 +150,7 @@ interface ReviewReportQueueItem {
   reason: string;
   details: string | null;
   createdAt: string;
+  hasDecisionConflict: boolean;
 }
 
 type ModerationQueueId =
@@ -161,6 +169,8 @@ interface ModerationLabels {
   forbidden: string;
   error: string;
   empty: string;
+  conflictHidden: string;
+  conflictViewOnly: string;
   queueNavigation: string;
   queueDescriptions: Record<ModerationQueueId, string>;
   preview: string;
@@ -278,6 +288,12 @@ export function ModerationDashboard({
   const [messageReports, setMessageReports] = useState<MessageReportQueueItem[]>([]);
   const [reviewReports, setReviewReports] = useState<ReviewReportQueueItem[]>([]);
   const [appeals, setAppeals] = useState<AppealQueueItem[]>([]);
+  const [excludedConflicts, setExcludedConflicts] = useState({
+    reports: 0,
+    messageReports: 0,
+    reviewReports: 0,
+    appeals: 0
+  });
   const [operations, setOperations] = useState<ModerationOperations | null>(null);
   const [operationsState, setOperationsState] = useState<'loading' | 'hidden' | 'ready' | 'error'>(
     'loading'
@@ -337,16 +353,22 @@ export function ModerationDashboard({
         const [caseBody, reportBody, messageReportBody, reviewReportBody, appealBody] =
           (await Promise.all(queueResponses.map((response) => response.json()))) as [
             {data: QueueItem[]},
-            {data: ReportQueueItem[]},
-            {data: MessageReportQueueItem[]},
-            {data: ReviewReportQueueItem[]},
-            {data: AppealQueueItem[]}
+            {data: ReportQueueItem[]; meta?: {excludedConflictCount?: number}},
+            {data: MessageReportQueueItem[]; meta?: {excludedConflictCount?: number}},
+            {data: ReviewReportQueueItem[]; meta?: {excludedConflictCount?: number}},
+            {data: AppealQueueItem[]; meta?: {excludedConflictCount?: number}}
           ];
         setItems(caseBody.data);
         setReports(reportBody.data);
         setMessageReports(messageReportBody.data);
         setReviewReports(reviewReportBody.data);
         setAppeals(appealBody.data);
+        setExcludedConflicts({
+          reports: reportBody.meta?.excludedConflictCount ?? 0,
+          messageReports: messageReportBody.meta?.excludedConflictCount ?? 0,
+          reviewReports: reviewReportBody.meta?.excludedConflictCount ?? 0,
+          appeals: appealBody.meta?.excludedConflictCount ?? 0
+        });
         if (operationsResponse?.ok) {
           const operationsBody = (await operationsResponse.json()) as {data: ModerationOperations};
           setOperations(operationsBody.data);
@@ -698,6 +720,11 @@ export function ModerationDashboard({
             title={labels.reportsTitle}
             description={labels.queueDescriptions.reports}
             empty={labels.reportsEmpty}
+            conflictNotice={
+              excludedConflicts.reports
+                ? labels.conflictHidden.replace('__COUNT__', String(excludedConflicts.reports))
+                : undefined
+            }
           >
             {reports.map((report) => {
               const pending = pendingAction === `report:${report.reportId}`;
@@ -722,10 +749,13 @@ export function ModerationDashboard({
                   <small>
                     {labels.seller}: {report.sellerName}
                   </small>
+                  {report.hasDecisionConflict && (
+                    <p className="notice notice-warm">{labels.conflictViewOnly}</p>
+                  )}
                   <div className="moderation-actions">
                     <button
                       className="button"
-                      disabled={pending}
+                      disabled={pending || report.hasDecisionConflict}
                       onClick={() =>
                         requestConfirmation(
                           labels.reportDismiss,
@@ -740,7 +770,7 @@ export function ModerationDashboard({
                       <summary>{labels.reportRemoveTitle}</summary>
                       <button
                         className="button button-danger"
-                        disabled={pending}
+                        disabled={pending || report.hasDecisionConflict}
                         onClick={() =>
                           requestConfirmation(
                             labels.reportRemove,
@@ -766,6 +796,14 @@ export function ModerationDashboard({
             title={labels.messageReportsTitle}
             description={labels.queueDescriptions.messageReports}
             empty={labels.messageReportsEmpty}
+            conflictNotice={
+              excludedConflicts.messageReports
+                ? labels.conflictHidden.replace(
+                    '__COUNT__',
+                    String(excludedConflicts.messageReports)
+                  )
+                : undefined
+            }
           >
             {messageReports.map((report) => {
               const pending = pendingAction === `message-report:${report.reportId}`;
@@ -789,10 +827,13 @@ export function ModerationDashboard({
                       <strong>{labels.messageReportDetails}:</strong> {report.details}
                     </p>
                   )}
+                  {report.hasDecisionConflict && (
+                    <p className="notice notice-warm">{labels.conflictViewOnly}</p>
+                  )}
                   <div className="moderation-actions">
                     <button
                       className="button"
-                      disabled={pending}
+                      disabled={pending || report.hasDecisionConflict}
                       onClick={() =>
                         requestConfirmation(
                           labels.messageReportDismiss,
@@ -807,7 +848,7 @@ export function ModerationDashboard({
                       <summary>{labels.messageReportCloseTitle}</summary>
                       <button
                         className="button button-danger"
-                        disabled={pending}
+                        disabled={pending || report.hasDecisionConflict}
                         onClick={() =>
                           requestConfirmation(
                             labels.messageReportClose,
@@ -832,6 +873,14 @@ export function ModerationDashboard({
             title={labels.reviewReportsTitle}
             description={labels.queueDescriptions.reviewReports}
             empty={labels.reviewReportsEmpty}
+            conflictNotice={
+              excludedConflicts.reviewReports
+                ? labels.conflictHidden.replace(
+                    '__COUNT__',
+                    String(excludedConflicts.reviewReports)
+                  )
+                : undefined
+            }
           >
             {reviewReports.map((report) => {
               const pending = pendingAction === `review-report:${report.reportId}`;
@@ -861,10 +910,13 @@ export function ModerationDashboard({
                       <strong>{labels.reviewReportDetails}:</strong> {report.details}
                     </p>
                   )}
+                  {report.hasDecisionConflict && (
+                    <p className="notice notice-warm">{labels.conflictViewOnly}</p>
+                  )}
                   <div className="moderation-actions">
                     <button
                       className="button"
-                      disabled={pending}
+                      disabled={pending || report.hasDecisionConflict}
                       onClick={() =>
                         requestConfirmation(
                           labels.reviewReportDismiss,
@@ -879,7 +931,7 @@ export function ModerationDashboard({
                       <summary>{labels.reviewReportHideTitle}</summary>
                       <button
                         className="button button-danger"
-                        disabled={pending}
+                        disabled={pending || report.hasDecisionConflict}
                         onClick={() =>
                           requestConfirmation(
                             labels.reviewReportHide,
@@ -904,6 +956,11 @@ export function ModerationDashboard({
             title={labels.appealsTitle}
             description={labels.queueDescriptions.appeals}
             empty={labels.appealsEmpty}
+            conflictNotice={
+              excludedConflicts.appeals
+                ? labels.conflictHidden.replace('__COUNT__', String(excludedConflicts.appeals))
+                : undefined
+            }
           >
             {appeals.map((appeal) => {
               const pending = pendingAction === `appeal:${appeal.appealId}`;
@@ -928,10 +985,13 @@ export function ModerationDashboard({
                   <small>
                     {labels.seller}: {appeal.sellerName}
                   </small>
+                  {appeal.hasDecisionConflict && (
+                    <p className="notice notice-warm">{labels.conflictViewOnly}</p>
+                  )}
                   <div className="moderation-actions">
                     <button
                       className="button button-primary"
-                      disabled={pending}
+                      disabled={pending || appeal.hasDecisionConflict}
                       onClick={() =>
                         requestConfirmation(
                           labels.appealAccept,
@@ -955,7 +1015,11 @@ export function ModerationDashboard({
                             placeholder={labels.appealResponseHint}
                           />
                         </label>
-                        <button className="button" disabled={pending} type="submit">
+                        <button
+                          className="button"
+                          disabled={pending || appeal.hasDecisionConflict}
+                          type="submit"
+                        >
                           {labels.appealReject}
                         </button>
                       </form>
@@ -1060,6 +1124,16 @@ function ListingModerationQueue({
               <h4>{labels.listingDetails}</h4>
               <p>{item.description}</p>
             </section>
+            {item.mapLatitude !== null && item.mapLongitude !== null && (
+              <section className="moderation-preview-location">
+                <h4>{item.locationName}</h4>
+                {item.publicLocationLabel && <p>{item.publicLocationLabel}</p>}
+                <LocationMap
+                  label={item.locationName}
+                  point={{latitude: item.mapLatitude, longitude: item.mapLongitude}}
+                />
+              </section>
+            )}
             <section className="moderation-preview-attributes">
               <h4>{labels.attributesTitle}</h4>
               {item.attributes.length === 0 ? (
@@ -1455,11 +1529,13 @@ function QueueSection({
   title,
   description,
   empty,
+  conflictNotice,
   children
 }: {
   title: string;
   description: string;
   empty: string;
+  conflictNotice?: string | undefined;
   children: React.ReactNode;
 }) {
   const count = Array.isArray(children) ? children.length : 1;
@@ -1471,6 +1547,7 @@ function QueueSection({
           <p>{description}</p>
         </div>
       </header>
+      {conflictNotice && <p className="notice notice-warm">{conflictNotice}</p>}
       {count === 0 ? <p>{empty}</p> : children}
     </section>
   );

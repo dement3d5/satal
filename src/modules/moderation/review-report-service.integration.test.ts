@@ -52,7 +52,7 @@ integration('review report persistence and permissions', () => {
       await client!`
         insert into user_role (user_id, role, granted_by)
         values
-          (${sellerId}, 'moderator', ${moderatorId}),
+          (${sellerId}, 'owner', ${moderatorId}),
           (${firstReporterId}, 'moderator', ${moderatorId}),
           (${moderatorId}, 'moderator', ${moderatorId})
       `;
@@ -112,18 +112,30 @@ integration('review report persistence and permissions', () => {
 
       await expect(
         listModerationReviewReports(db, sellerId, {locale: 'en', limit: 30})
-      ).resolves.not.toEqual(expect.arrayContaining([expect.objectContaining({reviewId})]));
-      await expect(
-        listModerationReviewReports(db, firstReporterId, {locale: 'en', limit: 30})
-      ).resolves.not.toEqual(expect.arrayContaining([expect.objectContaining({reviewId})]));
-      await expect(
-        listModerationReviewReports(db, moderatorId, {locale: 'en', limit: 30})
-      ).resolves.toEqual(
-        expect.arrayContaining([
+      ).resolves.toMatchObject({
+        items: expect.arrayContaining([
           expect.objectContaining({reportId: firstReport.id, reviewId}),
           expect.objectContaining({reportId: secondReport.id, reviewId})
-        ])
+        ]),
+        excludedConflictCount: 0
+      });
+      const conflictedReporterQueue = await listModerationReviewReports(db, firstReporterId, {
+        locale: 'en',
+        limit: 30
+      });
+      expect(conflictedReporterQueue.excludedConflictCount).toBe(2);
+      expect(conflictedReporterQueue.items).not.toEqual(
+        expect.arrayContaining([expect.objectContaining({reviewId})])
       );
+      await expect(
+        listModerationReviewReports(db, moderatorId, {locale: 'en', limit: 30})
+      ).resolves.toMatchObject({
+        items: expect.arrayContaining([
+          expect.objectContaining({reportId: firstReport.id, reviewId}),
+          expect.objectContaining({reportId: secondReport.id, reviewId})
+        ]),
+        excludedConflictCount: 0
+      });
       await expect(
         decideReviewReport(db, firstReporterId, secondReport.id, {action: 'hide_review'})
       ).rejects.toMatchObject({code: 'FORBIDDEN'});

@@ -5,6 +5,7 @@ import {notFound} from 'next/navigation';
 
 import {routing} from '@/i18n/routing';
 
+import 'leaflet/dist/leaflet.css';
 import '../styles.css';
 
 export const metadata: Metadata = {

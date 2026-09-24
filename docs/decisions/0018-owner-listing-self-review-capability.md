@@ -8,7 +8,7 @@ The launch configuration can have one platform operator who is also a marketplac
 
 ## Decision
 
-Add the explicit `listings:self-review` moderation capability only to the platform `owner` role. An owner may see its own pending listing in the listing queue, inspect its processed moderation media, claim the case and approve or reject it. Moderator and admin roles remain unable to review their own listings. The exception applies only to initial listing moderation; report, appeal, message-report and review-report independence rules do not change.
+Add the explicit `listings:self-review` moderation capability only to the platform `owner` role. An owner may see its own pending listing in the listing queue, inspect its processed moderation media, claim the case and approve or reject it. Moderator and admin roles remain unable to review their own listings. The decision exception applies only to initial listing moderation; report, appeal, message-report and review-report decision independence rules do not change. ADR 0020 later grants the owner read-only conflict-queue visibility without weakening those decision rules.
 
 Owner self-review follows the same server-side transaction and audit path as every other listing decision. The owner must claim the case first, the UI still requires deliberate confirmation, the current lifecycle is locked and rechecked, and the decision, status history and outbox event remain append-only and attributable to the owner account.
 

@@ -3,6 +3,7 @@
 import {useLocale, useTranslations} from 'next-intl';
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 
+import {LocationMap, type MapPoint} from '@/components/location-map';
 import type {
   CategoryAttributeContract,
   CategoryNodeContract,
@@ -70,6 +71,12 @@ export function ListingCreation() {
   const [locationOptions, setLocationOptions] = useState<LocationContract[]>([]);
   const [loadingLocations, setLoadingLocations] = useState(false);
   const [locationId, setLocationId] = useState<string | null>(null);
+  const [publicLocationPrecision, setPublicLocationPrecision] = useState<
+    'city' | 'district' | 'neighborhood'
+  >('city');
+  const [mapEnabled, setMapEnabled] = useState(false);
+  const [mapPoint, setMapPoint] = useState<MapPoint | null>(null);
+  const [publicLocationLabel, setPublicLocationLabel] = useState('');
   const [saveState, setSaveState] = useState<SaveState>('local');
   const [saveError, setSaveError] = useState<string | null>(null);
   const [publishing, setPublishing] = useState(false);
@@ -223,7 +230,11 @@ export function ListingCreation() {
           description,
           priceMinor: price === '' ? null : Math.round(Number(price) * 100),
           locationId,
-          publicLocationPrecision: precisionFor(locationTrail.at(-1)),
+          publicLocationPrecision,
+          mapLatitude: mapEnabled ? (mapPoint?.latitude ?? null) : null,
+          mapLongitude: mapEnabled ? (mapPoint?.longitude ?? null) : null,
+          publicLocationLabel:
+            mapEnabled && publicLocationLabel.trim() ? publicLocationLabel.trim() : null,
           attributes: collectAttributeValues(attributes)
         })
       });
@@ -238,13 +249,37 @@ export function ListingCreation() {
     } finally {
       saving.current = false;
     }
-  }, [attributes, description, draft, locationId, locationTrail, price, t, title]);
+  }, [
+    attributes,
+    description,
+    draft,
+    locationId,
+    mapEnabled,
+    mapPoint,
+    price,
+    publicLocationLabel,
+    publicLocationPrecision,
+    t,
+    title
+  ]);
 
   useEffect(() => {
     if (!draft || dirtyRevision.current === savedRevision.current) return;
     const timer = window.setTimeout(() => void saveDraft(), 850);
     return () => window.clearTimeout(timer);
-  }, [draft, saveDraft, title, description, price, attributes, locationId]);
+  }, [
+    draft,
+    saveDraft,
+    title,
+    description,
+    price,
+    attributes,
+    locationId,
+    mapEnabled,
+    mapPoint,
+    publicLocationLabel,
+    publicLocationPrecision
+  ]);
 
   async function publishDraft() {
     if (!draft || saveState !== 'saved') return;
@@ -321,6 +356,7 @@ export function ListingCreation() {
     const nextTrail = [...locationTrail, location];
     if (isPublicLocation(location)) {
       setLocationId(location.id);
+      setPublicLocationPrecision(precisionFor(location));
       markDirty();
     }
     await loadLocations(location.id, nextTrail);
@@ -520,6 +556,8 @@ export function ListingCreation() {
           <LocationStep
             loading={loadingLocations}
             locationId={locationId}
+            mapEnabled={mapEnabled}
+            mapPoint={mapPoint}
             options={locationOptions}
             onBack={() => setStep('details')}
             onChoose={(location) => void chooseLocation(location)}
@@ -528,6 +566,23 @@ export function ListingCreation() {
               void loadLocations(parent, locationTrail.slice(0, index + 1));
             }}
             onNext={() => setStep('review')}
+            onMapEnabled={(enabled) => {
+              setMapEnabled(enabled);
+              if (!enabled) {
+                setMapPoint(null);
+                setPublicLocationLabel('');
+              }
+              markDirty();
+            }}
+            onMapPoint={(point) => {
+              setMapPoint(point);
+              markDirty();
+            }}
+            onPublicLocationLabel={(value) => {
+              setPublicLocationLabel(value);
+              markDirty();
+            }}
+            publicLocationLabel={publicLocationLabel}
             t={t}
             trail={locationTrail}
           />
@@ -543,6 +598,8 @@ export function ListingCreation() {
             }
             category={schema.category.name}
             location={locationTrail.at(-1)?.name ?? t('notSelected')}
+            mapPoint={mapEnabled ? mapPoint : null}
+            publicLocationLabel={mapEnabled ? publicLocationLabel : ''}
             missing={requiredMissing.map((item) => item.label)}
             onBack={() => setStep('location')}
             onEdit={() => setStep('details')}
@@ -987,11 +1044,17 @@ function DynamicField({
 function LocationStep(props: {
   loading: boolean;
   locationId: string | null;
+  mapEnabled: boolean;
+  mapPoint: MapPoint | null;
   options: LocationContract[];
   onBack: () => void;
   onChoose: (location: LocationContract) => void;
   onTrailBack: (index: number) => void;
   onNext: () => void;
+  onMapEnabled: (enabled: boolean) => void;
+  onMapPoint: (point: MapPoint) => void;
+  onPublicLocationLabel: (value: string) => void;
+  publicLocationLabel: string;
   t: Translator;
   trail: LocationContract[];
 }) {
@@ -1042,6 +1105,44 @@ function LocationStep(props: {
           <p>{t('locationLeafText')}</p>
         </div>
       )}
+      {props.locationId && (
+        <section className="public-map-picker" aria-labelledby="public-map-title">
+          <label className="public-map-toggle">
+            <input
+              checked={props.mapEnabled}
+              onChange={(event) => props.onMapEnabled(event.target.checked)}
+              type="checkbox"
+            />
+            <span>
+              <strong id="public-map-title">{t('publicMapTitle')}</strong>
+              <small>{t('publicMapText')}</small>
+            </span>
+          </label>
+          {props.mapEnabled && (
+            <div className="public-map-fields">
+              <LocationMap
+                interactive
+                label={t('publicMapLabel')}
+                onChange={props.onMapPoint}
+                point={props.mapPoint}
+              />
+              <p className="map-picker-hint">
+                {props.mapPoint ? t('publicMapPointSelected') : t('publicMapPointHint')}
+              </p>
+              <label className="field">
+                {t('publicLocationLabel')}
+                <input
+                  maxLength={200}
+                  onChange={(event) => props.onPublicLocationLabel(event.target.value)}
+                  placeholder={t('publicLocationPlaceholder')}
+                  value={props.publicLocationLabel}
+                />
+                <small>{t('publicLocationHelp')}</small>
+              </label>
+            </div>
+          )}
+        </section>
+      )}
       <div className="form-actions">
         <button className="button button-ghost" onClick={props.onBack} type="button">
           {t('back')}
@@ -1063,6 +1164,8 @@ function ReviewStep(props: {
   canPublish: boolean;
   category: string;
   location: string;
+  mapPoint: MapPoint | null;
+  publicLocationLabel: string;
   missing: string[];
   onBack: () => void;
   onEdit: () => void;
@@ -1107,8 +1210,14 @@ function ReviewStep(props: {
             <LocationIcon />
             {props.location}
           </p>
+          {props.publicLocationLabel && <small>{props.publicLocationLabel}</small>}
         </div>
       </div>
+      {props.mapPoint && (
+        <div className="listing-review-map">
+          <LocationMap label={t('publicMapLabel')} point={props.mapPoint} />
+        </div>
+      )}
       <div className="notice">
         <SparkIcon />
         <div>
@@ -1196,12 +1305,12 @@ function CategoryGlyph({slug}: {slug: string}) {
 function stepIndex(step: Step) {
   return ['category', 'details', 'location', 'review'].indexOf(step);
 }
-function isPublicLocation(location: LocationContract) {
-  return ['city', 'district', 'settlement', 'neighborhood'].includes(location.kind);
+export function isPublicLocation(location: LocationContract) {
+  return ['city', 'district', 'settlement', 'neighborhood', 'metro'].includes(location.kind);
 }
-function precisionFor(location?: LocationContract): 'city' | 'district' | 'neighborhood' {
+export function precisionFor(location?: LocationContract): 'city' | 'district' | 'neighborhood' {
   if (!location || location.kind === 'city') return 'city';
-  if (location.kind === 'neighborhood') return 'neighborhood';
+  if (location.kind === 'neighborhood' || location.kind === 'metro') return 'neighborhood';
   return 'district';
 }
 

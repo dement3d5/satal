@@ -26,6 +26,10 @@ integration('listing submission moderation boundary', () => {
     const db = drizzle(client!, {schema});
     let listingId: string | undefined;
     try {
+      const [metroLocation] = await client!`
+        select id from location where slug = 'metro-memar-ajami' limit 1
+      `;
+      expect(metroLocation?.id).toBeTruthy();
       await client!`
         insert into "user" (id, name, email, email_verified)
         values (${sellerId}, 'Submission seller', ${`${sellerId}@example.test`}, true)
@@ -33,10 +37,12 @@ integration('listing submission moderation boundary', () => {
       await client!`
         insert into listing_draft (
           id, owner_id, category_id, category_schema_version, location_id,
-          public_location_precision, title, description, status
+          public_location_precision, map_latitude, map_longitude, public_location_label,
+          title, description, status
         ) values (
           ${draftId}, ${sellerId}, '20000000-0000-4000-8000-000000000006', 1,
-          '10000000-0000-4000-8000-000000000002', 'city',
+          ${metroLocation!.id}, 'neighborhood', 40.4093, 49.8671,
+          'Near the city center',
           'Apartment submission test',
           'A complete apartment description for the moderation submission boundary.',
           'ready_for_review'
@@ -59,7 +65,9 @@ integration('listing submission moderation boundary', () => {
       );
 
       const [persisted] = await client!`
-        select l.status, l.published_at, mc.id as case_id, mc.status as case_status,
+        select l.status, l.published_at, l.location_id, l.map_latitude::float8 as map_latitude,
+               l.map_longitude::float8 as map_longitude, l.public_location_label,
+               mc.id as case_id, mc.status as case_status,
                mc.policy_version, mc.risk_band, mc.priority
         from listing l
         join moderation_case mc on mc.listing_id = l.id
@@ -68,10 +76,14 @@ integration('listing submission moderation boundary', () => {
       expect(persisted).toMatchObject({
         status: 'pending_review',
         published_at: null,
+        location_id: metroLocation!.id,
         case_status: 'open',
         policy_version: 'listing-risk-v1',
         risk_band: 'medium',
-        priority: 30
+        priority: 30,
+        map_latitude: 40.4093,
+        map_longitude: 49.8671,
+        public_location_label: 'Near the city center'
       });
       const signals = await client!`
         select code, weight, policy_version

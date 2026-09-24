@@ -59,7 +59,7 @@ integration('reports and appeals persistence and permissions', () => {
       `;
       await client!`
         insert into user_role (user_id, role, granted_by)
-        values (${reviewerId}, 'moderator', ${reviewerId}), (${sellerId}, 'moderator', ${reviewerId})
+        values (${reviewerId}, 'moderator', ${reviewerId}), (${sellerId}, 'owner', ${reviewerId})
       `;
       await client!`
         insert into listing_draft (id, owner_id, category_id, category_schema_version, status)
@@ -122,12 +122,16 @@ integration('reports and appeals persistence and permissions', () => {
       ).rejects.toMatchObject({code: 'FORBIDDEN'});
       await expect(
         listModerationReports(db, sellerId, {locale: 'en', limit: 30})
-      ).resolves.not.toEqual(
-        expect.arrayContaining([expect.objectContaining({reportId: first.id})])
-      );
+      ).resolves.toMatchObject({
+        items: expect.arrayContaining([expect.objectContaining({reportId: first.id})]),
+        excludedConflictCount: 0
+      });
       await expect(
         listModerationReports(db, reviewerId, {locale: 'en', limit: 30})
-      ).resolves.toEqual(expect.arrayContaining([expect.objectContaining({reportId: first.id})]));
+      ).resolves.toMatchObject({
+        items: expect.arrayContaining([expect.objectContaining({reportId: first.id})]),
+        excludedConflictCount: 0
+      });
       await expect(
         decideListingReport(db, sellerId, first.id, {action: 'remove_listing'})
       ).rejects.toMatchObject({code: 'FORBIDDEN'});
@@ -199,7 +203,7 @@ integration('reports and appeals persistence and permissions', () => {
       `;
       await client!`
         insert into user_role (user_id, role, granted_by)
-        values (${reviewerId}, 'moderator', ${reviewerId}), (${sellerId}, 'moderator', ${reviewerId})
+        values (${reviewerId}, 'moderator', ${reviewerId}), (${sellerId}, 'owner', ${reviewerId})
       `;
       await client!`
         insert into listing_draft (id, owner_id, category_id, category_schema_version, status)
@@ -269,14 +273,16 @@ integration('reports and appeals persistence and permissions', () => {
       ).rejects.toMatchObject({code: 'FORBIDDEN'});
       await expect(
         listModerationAppeals(db, sellerId, {locale: 'en', limit: 30})
-      ).resolves.not.toEqual(
-        expect.arrayContaining([expect.objectContaining({appealId: acceptedAppeal.id})])
-      );
+      ).resolves.toMatchObject({
+        items: expect.arrayContaining([expect.objectContaining({appealId: acceptedAppeal.id})]),
+        excludedConflictCount: 0
+      });
       await expect(
         listModerationAppeals(db, reviewerId, {locale: 'en', limit: 30})
-      ).resolves.toEqual(
-        expect.arrayContaining([expect.objectContaining({appealId: acceptedAppeal.id})])
-      );
+      ).resolves.toMatchObject({
+        items: expect.arrayContaining([expect.objectContaining({appealId: acceptedAppeal.id})]),
+        excludedConflictCount: 0
+      });
       await expect(
         decideListingAppeal(db, sellerId, acceptedAppeal.id, {action: 'accept'})
       ).rejects.toMatchObject({code: 'FORBIDDEN'});

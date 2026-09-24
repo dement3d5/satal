@@ -66,7 +66,10 @@ export async function listModerationQueue(
       currency: listing.currency,
       sellerName: user.name,
       categoryName: categoryTranslation.name,
-      locationName: locationTranslation.name
+      locationName: locationTranslation.name,
+      mapLatitude: listing.mapLatitude,
+      mapLongitude: listing.mapLongitude,
+      publicLocationLabel: listing.publicLocationLabel
     })
     .from(moderationCase)
     .innerJoin(listing, eq(listing.id, moderationCase.listingId))

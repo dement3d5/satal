@@ -552,6 +552,9 @@ export const listingDraft = pgTable(
     publicLocationPrecision: publicLocationPrecision('public_location_precision')
       .default('district')
       .notNull(),
+    mapLatitude: numeric('map_latitude', {precision: 8, scale: 5, mode: 'number'}),
+    mapLongitude: numeric('map_longitude', {precision: 8, scale: 5, mode: 'number'}),
+    publicLocationLabel: varchar('public_location_label', {length: 200}),
     status: listingDraftStatus('status').default('draft').notNull(),
     title: varchar('title', {length: 180}).default('').notNull(),
     description: text('description').default('').notNull(),
@@ -575,6 +578,18 @@ export const listingDraft = pgTable(
     check(
       'listing_draft_price_non_negative',
       sql`${table.priceMinor} is null or ${table.priceMinor} >= 0`
+    ),
+    check(
+      'listing_draft_map_coordinates_pair',
+      sql`(${table.mapLatitude} is null) = (${table.mapLongitude} is null)`
+    ),
+    check(
+      'listing_draft_map_coordinates_range',
+      sql`(${table.mapLatitude} is null and ${table.mapLongitude} is null) or (${table.mapLatitude} between -90 and 90 and ${table.mapLongitude} between -180 and 180)`
+    ),
+    check(
+      'listing_draft_public_location_label_valid',
+      sql`${table.publicLocationLabel} is null or length(btrim(${table.publicLocationLabel})) between 2 and 200`
     )
   ]
 );
@@ -682,6 +697,9 @@ export const listing = pgTable(
       .notNull()
       .references(() => location.id, {onDelete: 'restrict'}),
     publicLocationPrecision: publicLocationPrecision('public_location_precision').notNull(),
+    mapLatitude: numeric('map_latitude', {precision: 8, scale: 5, mode: 'number'}),
+    mapLongitude: numeric('map_longitude', {precision: 8, scale: 5, mode: 'number'}),
+    publicLocationLabel: varchar('public_location_label', {length: 200}),
     status: listingStatus('status').default('pending_review').notNull(),
     title: varchar('title', {length: 180}).notNull(),
     description: text('description').notNull(),
@@ -733,6 +751,18 @@ export const listing = pgTable(
     check(
       'listing_active_has_published_at',
       sql`${table.status} <> 'active' or ${table.publishedAt} is not null`
+    ),
+    check(
+      'listing_map_coordinates_pair',
+      sql`(${table.mapLatitude} is null) = (${table.mapLongitude} is null)`
+    ),
+    check(
+      'listing_map_coordinates_range',
+      sql`(${table.mapLatitude} is null and ${table.mapLongitude} is null) or (${table.mapLatitude} between -90 and 90 and ${table.mapLongitude} between -180 and 180)`
+    ),
+    check(
+      'listing_public_location_label_valid',
+      sql`${table.publicLocationLabel} is null or length(btrim(${table.publicLocationLabel})) between 2 and 200`
     )
   ]
 );

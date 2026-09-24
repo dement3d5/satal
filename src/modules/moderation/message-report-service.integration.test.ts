@@ -51,6 +51,7 @@ integration('message reports persistence and permissions', () => {
         insert into user_role (user_id, role, granted_by)
         values
           (${buyerId}, 'moderator', ${reviewerId}),
+          (${sellerId}, 'owner', ${reviewerId}),
           (${reviewerId}, 'moderator', ${reviewerId})
       `;
       await client!`
@@ -129,21 +130,34 @@ integration('message reports persistence and permissions', () => {
       await expect(
         listModerationMessageReports(db, intruderId, {locale: 'en', limit: 30})
       ).rejects.toMatchObject({code: 'FORBIDDEN'});
-      await expect(
-        listModerationMessageReports(db, buyerId, {locale: 'en', limit: 30})
-      ).resolves.not.toEqual(
+      const conflictedBuyerQueue = await listModerationMessageReports(db, buyerId, {
+        locale: 'en',
+        limit: 30
+      });
+      expect(conflictedBuyerQueue.excludedConflictCount).toBe(2);
+      expect(conflictedBuyerQueue.items).not.toEqual(
         expect.arrayContaining([
           expect.objectContaining({conversationId: firstConversation.conversationId})
         ])
       );
       await expect(
         listModerationMessageReports(db, reviewerId, {locale: 'en', limit: 30})
-      ).resolves.toEqual(
-        expect.arrayContaining([
+      ).resolves.toMatchObject({
+        items: expect.arrayContaining([
           expect.objectContaining({reportId: buyerReport.id}),
           expect.objectContaining({reportId: sellerReport.id})
-        ])
-      );
+        ]),
+        excludedConflictCount: 0
+      });
+      await expect(
+        listModerationMessageReports(db, sellerId, {locale: 'en', limit: 30})
+      ).resolves.toMatchObject({
+        items: expect.arrayContaining([
+          expect.objectContaining({reportId: buyerReport.id}),
+          expect.objectContaining({reportId: sellerReport.id})
+        ]),
+        excludedConflictCount: 0
+      });
       await expect(
         decideMessageReport(db, buyerId, buyerReport.id, {action: 'close_conversation'})
       ).rejects.toMatchObject({code: 'FORBIDDEN'});

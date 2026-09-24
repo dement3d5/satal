@@ -1,4 +1,4 @@
-import {and, asc, count, eq, gte, inArray, ne, notExists} from 'drizzle-orm';
+import {and, asc, count, eq, gte, inArray, ne, notExists, sql} from 'drizzle-orm';
 import {alias} from 'drizzle-orm/pg-core';
 
 import {publicReviewVisibility} from '@/modules/reputation/visibility';
@@ -7,6 +7,7 @@ import {outboxEvent, reviewReport, reviewReportAction, user, userReview} from '@
 import {AppError} from '@/server/errors/app-error';
 
 import type {CreateReviewReportInput, ReviewReportDecisionInput} from './review-report-contracts';
+import {hasModerationCapability} from './domain';
 import {assertOpenReviewReport, assertReportableReview} from './review-report-domain';
 import {requireModerationCapability} from './service';
 import type {TrustQueueQuery} from './trust-contracts';
@@ -115,7 +116,8 @@ export async function listModerationReviewReports(
   actorId: string,
   query: TrustQueueQuery
 ) {
-  await requireModerationCapability(db, actorId, 'review-reports:read');
+  const roles = await requireModerationCapability(db, actorId, 'review-reports:read');
+  const canViewConflicts = hasModerationCapability(roles, 'conflicts:view');
   const author = alias(user, 'review_report_author');
   const subject = alias(user, 'review_report_subject');
   const ownReport = alias(reviewReport, 'review_report_own');
@@ -129,12 +131,59 @@ export async function listModerationReviewReports(
       subjectName: subject.name,
       reason: reviewReport.reason,
       details: reviewReport.details,
-      createdAt: reviewReport.createdAt
+      createdAt: reviewReport.createdAt,
+      hasDecisionConflict: sql<boolean>`
+        ${reviewReport.reporterId} = ${actorId}
+        or ${userReview.authorId} = ${actorId}
+        or ${userReview.subjectId} = ${actorId}
+        or exists (
+          select 1 from review_report conflict_report
+          where conflict_report.review_id = ${userReview.id}
+            and conflict_report.reporter_id = ${actorId}
+        )
+      `
     })
     .from(reviewReport)
     .innerJoin(userReview, eq(userReview.id, reviewReport.reviewId))
     .innerJoin(author, eq(author.id, userReview.authorId))
     .innerJoin(subject, eq(subject.id, userReview.subjectId))
+    .where(
+      and(
+        eq(reviewReport.status, 'open'),
+        eq(userReview.status, 'active'),
+        canViewConflicts ? undefined : ne(reviewReport.reporterId, actorId),
+        canViewConflicts ? undefined : ne(userReview.authorId, actorId),
+        canViewConflicts ? undefined : ne(userReview.subjectId, actorId),
+        canViewConflicts
+          ? undefined
+          : notExists(
+              db
+                .select({id: ownReport.id})
+                .from(ownReport)
+                .where(
+                  and(eq(ownReport.reviewId, userReview.id), eq(ownReport.reporterId, actorId))
+                )
+            )
+      )
+    )
+    .orderBy(asc(reviewReport.createdAt), asc(reviewReport.id))
+    .limit(query.limit);
+
+  if (canViewConflicts) {
+    return {
+      items: rows.map((row) => ({...row, createdAt: row.createdAt.toISOString()})),
+      excludedConflictCount: 0
+    };
+  }
+  const [total] = await db
+    .select({value: count()})
+    .from(reviewReport)
+    .innerJoin(userReview, eq(userReview.id, reviewReport.reviewId))
+    .where(and(eq(reviewReport.status, 'open'), eq(userReview.status, 'active')));
+  const [visible] = await db
+    .select({value: count()})
+    .from(reviewReport)
+    .innerJoin(userReview, eq(userReview.id, reviewReport.reviewId))
     .where(
       and(
         eq(reviewReport.status, 'open'),
@@ -149,11 +198,11 @@ export async function listModerationReviewReports(
             .where(and(eq(ownReport.reviewId, userReview.id), eq(ownReport.reporterId, actorId)))
         )
       )
-    )
-    .orderBy(asc(reviewReport.createdAt), asc(reviewReport.id))
-    .limit(query.limit);
-
-  return rows.map((row) => ({...row, createdAt: row.createdAt.toISOString()}));
+    );
+  return {
+    items: rows.map((row) => ({...row, createdAt: row.createdAt.toISOString()})),
+    excludedConflictCount: Math.max(0, Number(total?.value ?? 0) - Number(visible?.value ?? 0))
+  };
 }
 
 export async function decideReviewReport(

@@ -14,7 +14,9 @@ Kinds cover country, economic region, city, district, settlement, neighborhood, 
 
 The committed `data/geography/dev.az.json` remains illustrative and explicitly unverified. A separate `data/geography/baku-metro.official.az.json` import records the 26 unique public station names listed across the current Red, Green and Purple lines by the official Baku Metro source (`metro.gov.az/{locale}/about-lines`, reviewed 2026-09-23). The official line totals count the same-name Memar Ajami interchange on two lines; search intentionally presents one canonical place choice. A reviewed authoritative dataset for every other Azerbaijan city, district, settlement and street, including its license and import-verification record, remains a launch prerequisite.
 
-Listing drafts reference a canonical location and a public precision (`city`, `district` or `neighborhood`). A private seller's exact address is neither required nor stored as a public listing field. Business address and private delivery/contact details require separate later privacy-reviewed models.
+Listing drafts reference a canonical location and a public precision (`city`, `district` or `neighborhood`). Metro stations are valid neighborhood-level public locations, so a selected Baku station remains the published location instead of being silently coarsened to the city. A private seller's exact address is never required.
+
+`listing_draft` and the immutable `listing` snapshot may also contain an optional public map coordinate pair and a bounded public landmark label. Latitude/longitude are constrained as an all-or-nothing pair with geographic ranges; a label is null or 2вЂ“200 trimmed characters. The creation UI stores these fields only after the seller explicitly enables the public map and clicks a point. Apartment number, entrance, door code and private delivery/contact details do not belong in this model.
 
 ### Taxonomy
 
@@ -39,7 +41,7 @@ This is a typed EAV hybrid, not an uncontrolled JSON document. Structural metada
 
 ### Listing drafts
 
-- `listing_draft`: owner, category/schema version, location/privacy precision, editable fields, status, optimistic version and autosave timestamp;
+- `listing_draft`: owner, category/schema version, location/privacy precision, optional public map point/landmark, editable fields, status, optimistic version and autosave timestamp;
 - `listing_draft_attribute_value` and `listing_draft_attribute_option_value`: typed values;
 - `listing_draft_status_history`: actor-attributed lifecycle audit.
 
@@ -76,7 +78,7 @@ Verification is `unverified → pending → verified|rejected`. A partial unique
 
 ### Published listings
 
-- `listing`: immutable publication snapshot identity plus seller, category/schema version, privacy-coarsened location, lifecycle, price and publication/expiry timestamps;
+- `listing`: immutable publication snapshot identity plus seller, category/schema version, privacy-coarsened location, optional explicitly public map point/landmark, lifecycle, price and publication/expiry timestamps;
 - `listing_attribute_value` and `listing_attribute_option_value`: normalized typed attribute snapshot copied from the validated draft;
 - `listing_status_history`: actor-attributed public lifecycle audit;
 - `outbox_event`: transactional, versioned integration events with availability, expiring worker lease, attempts and safe last-error metadata for search/media/notification workers.
@@ -94,7 +96,7 @@ The public lifecycle supports `pending_review`, `active`, `sold`, `expired`, `re
 - `moderation_case_assignment_event`: append-only claim/release transitions with actor and previous/next assignee;
 - `moderation_workspace_access`: daily actor/surface access aggregates with first/last access and count, without viewed content or network identifiers.
 
-The application checks live role grants inside every queue read, assignment and decision transaction. A case has at most one assignee and assignment identity/timestamp are constrained to change together. Claim/release and decision transactions lock the case, and a decision is valid only when the acting staff member is the explicit current assignee. Moderators can release their own work, while admin/owner may recover an abandoned assignment by releasing it and then claiming it themselves; both effective transitions are audited. Moderator and admin reviewers cannot act on their own listings. A platform owner may do so only through the explicit `listings:self-review` capability; resolved cases still cannot be decided twice. Signals and derived 18/24-hour SLA states can prioritize manual review but never approve, reject, ban or reassign by themselves. Appeal acceptance preserves the original assessment while elevating queue priority and clearing assignment. Listing, case, signal, assignment/action history, lifecycle history and outbox updates remain atomic. Production staff bootstrap is an owner-controlled operation; privileged users are never created by seed data.
+The application checks live role grants inside every queue read, assignment and decision transaction. A case has at most one assignee and assignment identity/timestamp are constrained to change together. Claim/release and decision transactions lock the case, and a decision is valid only when the acting staff member is the explicit current assignee. Moderators can release their own work, while admin/owner may recover an abandoned assignment by releasing it and then claiming it themselves; both effective transitions are audited. Moderator and admin reviewers cannot act on their own listings. A platform owner may do so only through the explicit `listings:self-review` capability; resolved cases still cannot be decided twice. The owner-only `conflicts:view` capability makes every report and appeal visible for operational oversight without hardcoding an account identifier; the existing report/appeal decision conflict checks remain authoritative. Other staff receive only a hidden-conflict count, not the protected content. Signals and derived 18/24-hour SLA states can prioritize manual review but never approve, reject, ban or reassign by themselves. Appeal acceptance preserves the original assessment while elevating queue priority and clearing assignment. Listing, case, signal, assignment/action history, lifecycle history and outbox updates remain atomic. Production staff bootstrap is an owner-controlled operation; privileged users are never created by seed data.
 
 Active listings have a partial GIN full-text index over title and description for degraded PostgreSQL search. Typesense documents are derived projections only: IDs, localized searchable text, ancestor scopes and typed facet values can always be rebuilt from these relational tables. Public search results are rehydrated through the active-listing query before exposure.
 

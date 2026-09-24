@@ -1379,6 +1379,63 @@ h1 {
 .location-list button.is-selected svg {
   stroke: var(--color-accent);
 }
+.public-map-picker {
+  display: grid;
+  margin-top: 1rem;
+  padding: 1rem;
+  gap: 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: #fcfdfc;
+}
+.public-map-toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  cursor: pointer;
+}
+.public-map-toggle input {
+  width: 1.1rem;
+  height: 1.1rem;
+  margin-top: 0.15rem;
+  accent-color: var(--color-accent);
+}
+.public-map-toggle span {
+  display: grid;
+  gap: 0.25rem;
+}
+.public-map-toggle small,
+.map-picker-hint,
+.public-map-fields .field small {
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+.public-map-fields {
+  display: grid;
+  gap: 0.75rem;
+}
+.map-picker-hint {
+  margin: 0;
+}
+.location-map {
+  z-index: 0;
+  width: 100%;
+  min-height: 18rem;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: 0.95rem;
+  background: var(--color-surface-soft);
+}
+.location-map .leaflet-control-attribution {
+  font-size: 0.65rem;
+}
+.listing-review-map {
+  margin-bottom: 1.25rem;
+}
+.listing-review-map .location-map {
+  min-height: 14rem;
+}
 .empty-state {
   display: grid;
   min-height: 12rem;
@@ -5940,6 +5997,35 @@ h1 {
   color: var(--color-muted);
   font-size: 0.78rem;
   line-height: 1.55;
+}
+
+.listing-location-card .location-map {
+  min-height: 20rem;
+}
+
+.listing-location-map-empty {
+  display: grid;
+  min-height: 12rem;
+  place-content: center;
+  justify-items: center;
+  gap: 0.65rem;
+  color: var(--color-muted);
+  border: 1px dashed var(--color-border);
+  border-radius: 0.95rem;
+  background: var(--color-surface-soft);
+}
+
+.listing-location-map-empty svg {
+  width: 2rem;
+  fill: none;
+  stroke: var(--color-accent);
+  stroke-width: 1.8;
+}
+
+.listing-location-label {
+  color: var(--color-text) !important;
+  font-size: 0.9rem !important;
+  font-weight: 720;
 }
 
 .listing-location-map {

@@ -17,6 +17,7 @@ import {
 } from '@/server/db/schema';
 import {AppError} from '@/server/errors/app-error';
 
+import {hasModerationCapability} from './domain';
 import {requireModerationCapability} from './service';
 import type {
   CreateListingAppealInput,
@@ -133,7 +134,8 @@ export async function listModerationReports(
   actorId: string,
   query: TrustQueueQuery
 ) {
-  await requireModerationCapability(db, actorId, 'reports:read');
+  const roles = await requireModerationCapability(db, actorId, 'reports:read');
+  const canViewConflicts = hasModerationCapability(roles, 'conflicts:view');
   const rows = await db
     .select({
       reportId: listingReport.id,
@@ -144,7 +146,8 @@ export async function listModerationReports(
       title: listing.title,
       sellerName: user.name,
       categoryName: categoryTranslation.name,
-      locationName: locationTranslation.name
+      locationName: locationTranslation.name,
+      hasDecisionConflict: sql<boolean>`${listing.sellerId} = ${actorId}`
     })
     .from(listingReport)
     .innerJoin(listing, eq(listing.id, listingReport.listingId))
@@ -167,12 +170,28 @@ export async function listModerationReports(
       and(
         eq(listingReport.status, 'open'),
         eq(listing.status, 'active'),
-        ne(listing.sellerId, actorId)
+        canViewConflicts ? undefined : ne(listing.sellerId, actorId)
       )
     )
     .orderBy(asc(listingReport.createdAt), asc(listingReport.id))
     .limit(query.limit);
-  return rows.map((row) => ({...row, createdAt: row.createdAt.toISOString()}));
+  const [conflicts] = canViewConflicts
+    ? [{value: 0}]
+    : await db
+        .select({value: count()})
+        .from(listingReport)
+        .innerJoin(listing, eq(listing.id, listingReport.listingId))
+        .where(
+          and(
+            eq(listingReport.status, 'open'),
+            eq(listing.status, 'active'),
+            eq(listing.sellerId, actorId)
+          )
+        );
+  return {
+    items: rows.map((row) => ({...row, createdAt: row.createdAt.toISOString()})),
+    excludedConflictCount: Number(conflicts?.value ?? 0)
+  };
 }
 
 export async function decideListingReport(
@@ -385,7 +404,8 @@ export async function listModerationAppeals(
   actorId: string,
   query: TrustQueueQuery
 ) {
-  await requireModerationCapability(db, actorId, 'appeals:read');
+  const roles = await requireModerationCapability(db, actorId, 'appeals:read');
+  const canViewConflicts = hasModerationCapability(roles, 'conflicts:view');
   const rows = await db
     .select({
       appealId: listingAppeal.id,
@@ -396,7 +416,8 @@ export async function listModerationAppeals(
       title: listing.title,
       sellerName: user.name,
       categoryName: categoryTranslation.name,
-      locationName: locationTranslation.name
+      locationName: locationTranslation.name,
+      hasDecisionConflict: sql<boolean>`${listing.sellerId} = ${actorId}`
     })
     .from(listingAppeal)
     .innerJoin(listing, eq(listing.id, listingAppeal.listingId))
@@ -420,12 +441,28 @@ export async function listModerationAppeals(
       and(
         eq(listingAppeal.status, 'open'),
         eq(listing.status, 'rejected'),
-        ne(listing.sellerId, actorId)
+        canViewConflicts ? undefined : ne(listing.sellerId, actorId)
       )
     )
     .orderBy(asc(listingAppeal.createdAt), asc(listingAppeal.id))
     .limit(query.limit);
-  return rows.map((row) => ({...row, createdAt: row.createdAt.toISOString()}));
+  const [conflicts] = canViewConflicts
+    ? [{value: 0}]
+    : await db
+        .select({value: count()})
+        .from(listingAppeal)
+        .innerJoin(listing, eq(listing.id, listingAppeal.listingId))
+        .where(
+          and(
+            eq(listingAppeal.status, 'open'),
+            eq(listing.status, 'rejected'),
+            eq(listing.sellerId, actorId)
+          )
+        );
+  return {
+    items: rows.map((row) => ({...row, createdAt: row.createdAt.toISOString()})),
+    excludedConflictCount: Number(conflicts?.value ?? 0)
+  };
 }
 
 export async function decideListingAppeal(

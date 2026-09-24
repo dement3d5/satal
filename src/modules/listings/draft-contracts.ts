@@ -33,7 +33,34 @@ export const autosaveDraftSchema = z
     priceMinor: z.int().safe().nonnegative().nullable().optional(),
     locationId: uuid.nullable().optional(),
     publicLocationPrecision: z.enum(['city', 'district', 'neighborhood']).optional(),
+    mapLatitude: z.number().finite().min(-90).max(90).nullable().optional(),
+    mapLongitude: z.number().finite().min(-180).max(180).nullable().optional(),
+    publicLocationLabel: z.string().trim().min(2).max(200).nullable().optional(),
     attributes: z.array(draftAttributeValueSchema).max(100).optional()
+  })
+  .superRefine((value, context) => {
+    if (
+      (value.mapLatitude === null &&
+        value.mapLongitude !== null &&
+        value.mapLongitude !== undefined) ||
+      (value.mapLongitude === null && value.mapLatitude !== null && value.mapLatitude !== undefined)
+    ) {
+      context.addIssue({
+        code: 'custom',
+        path: ['mapLatitude'],
+        message: 'Map latitude and longitude must be cleared together'
+      });
+    }
+    if (
+      (typeof value.mapLatitude === 'number' && typeof value.mapLongitude !== 'number') ||
+      (typeof value.mapLongitude === 'number' && typeof value.mapLatitude !== 'number')
+    ) {
+      context.addIssue({
+        code: 'custom',
+        path: ['mapLongitude'],
+        message: 'Map latitude and longitude must be provided together'
+      });
+    }
   })
   .refine(
     (value) =>
@@ -42,6 +69,9 @@ export const autosaveDraftSchema = z
       value.priceMinor !== undefined ||
       value.locationId !== undefined ||
       value.publicLocationPrecision !== undefined ||
+      value.mapLatitude !== undefined ||
+      value.mapLongitude !== undefined ||
+      value.publicLocationLabel !== undefined ||
       value.attributes !== undefined,
     {message: 'Autosave must contain at least one change'}
   );

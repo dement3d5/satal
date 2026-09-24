@@ -4,6 +4,7 @@ import {notFound} from 'next/navigation';
 import {getTranslations} from 'next-intl/server';
 
 import {ImageGallery} from '@/components/image-gallery';
+import {LocationMap} from '@/components/location-map';
 import {SiteHeader} from '@/components/site-header';
 import type {AppLocale} from '@/i18n/routing';
 import {StartConversation} from '@/modules/chat/ui/start-conversation';
@@ -174,11 +175,20 @@ export default async function ListingPage({params}: PageProps) {
                   <h2 id="listing-location-title">{item.locationName}</h2>
                 </div>
               </div>
-              <div className="listing-location-map" aria-hidden="true">
-                <span className="listing-location-pin">
+              {item.mapLatitude !== null && item.mapLongitude !== null ? (
+                <LocationMap
+                  label={t('mapLabel')}
+                  point={{latitude: item.mapLatitude, longitude: item.mapLongitude}}
+                />
+              ) : (
+                <div className="listing-location-map-empty">
                   <LocationIcon />
-                </span>
-              </div>
+                  <span>{t('mapUnavailable')}</span>
+                </div>
+              )}
+              {item.publicLocationLabel && (
+                <p className="listing-location-label">{item.publicLocationLabel}</p>
+              )}
               <p>{t('locationPrivacy')}</p>
             </section>
           </div>

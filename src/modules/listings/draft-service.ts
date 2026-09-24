@@ -49,6 +49,9 @@ export interface ListingDraftContract {
   categorySchemaVersion: number;
   locationId: string | null;
   publicLocationPrecision: 'city' | 'district' | 'neighborhood';
+  mapLatitude: number | null;
+  mapLongitude: number | null;
+  publicLocationLabel: string | null;
   status: DraftStatus;
   title: string;
   description: string;
@@ -135,6 +138,11 @@ export async function autosaveListingDraft(
         ...(input.locationId !== undefined ? {locationId: input.locationId} : {}),
         ...(input.publicLocationPrecision !== undefined
           ? {publicLocationPrecision: input.publicLocationPrecision}
+          : {}),
+        ...(input.mapLatitude !== undefined ? {mapLatitude: input.mapLatitude} : {}),
+        ...(input.mapLongitude !== undefined ? {mapLongitude: input.mapLongitude} : {}),
+        ...(input.publicLocationLabel !== undefined
+          ? {publicLocationLabel: input.publicLocationLabel?.trim() || null}
           : {}),
         version: draft.version + 1,
         lastAutosavedAt: new Date(),
@@ -443,6 +451,9 @@ function toContract(
     categorySchemaVersion: draft.categorySchemaVersion,
     locationId: draft.locationId,
     publicLocationPrecision: draft.publicLocationPrecision,
+    mapLatitude: draft.mapLatitude,
+    mapLongitude: draft.mapLongitude,
+    publicLocationLabel: draft.publicLocationLabel,
     status: draft.status,
     title: draft.title,
     description: draft.description,
