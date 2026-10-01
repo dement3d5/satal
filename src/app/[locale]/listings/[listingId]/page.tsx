@@ -40,7 +40,7 @@ export async function generateMetadata({params}: PageProps): Promise<Metadata> {
 
 export default async function ListingPage({params}: PageProps) {
   const {locale, listingId: rawListingId} = await params;
-  const t = await getTranslations('listing');
+  const [t, tShop] = await Promise.all([getTranslations('listing'), getTranslations('shop')]);
   const database = getDatabase();
   let item;
   try {
@@ -207,7 +207,13 @@ export default async function ListingPage({params}: PageProps) {
                   {item.sellerName.slice(0, 1).toLocaleUpperCase(locale)}
                 </span>
                 <div>
-                  <small>{item.shopId ? t('shopLabel') : t('sellerLabel')}</small>
+                  <small>
+                    {item.shopId && item.shopProfileType && item.shopProfileType !== 'unspecified'
+                      ? tShop(`profileTypes.${item.shopProfileType}`)
+                      : item.shopId
+                        ? t('professionalProfileLabel')
+                        : t('sellerLabel')}
+                  </small>
                   {item.shopId && item.shopSlug && item.shopName ? (
                     <Link href={`/${locale}/shops/${item.shopSlug}`}>
                       <strong>

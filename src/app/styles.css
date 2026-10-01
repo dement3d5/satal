@@ -7378,6 +7378,17 @@ button.chat-setting-row {
   font-weight: 500;
 }
 
+.shop-owner-unavailable {
+  margin: 0;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-soft);
+  color: var(--color-muted);
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
 .listing-shop-link {
   display: grid;
   gap: 0.25rem;
@@ -7533,6 +7544,20 @@ button.chat-setting-row {
   color: var(--color-accent-strong);
 }
 
+.shop-profile-type,
+.storefront-profile-type {
+  display: inline-flex;
+  width: fit-content;
+  margin-left: 0.35rem;
+  padding: 0.3rem 0.6rem;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: white;
+  color: var(--color-text);
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
 .shop-form-grid {
   display: grid;
 }
@@ -7567,6 +7592,88 @@ button.chat-setting-row {
   max-width: 54rem;
   color: var(--color-muted);
   line-height: 1.5;
+}
+
+.professional-type-picker {
+  display: grid;
+  gap: 0.35rem;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.professional-type-picker legend {
+  padding: 0;
+  font-size: 0.9rem;
+  font-weight: 850;
+}
+
+.professional-type-picker > p {
+  margin: 0 0 0.45rem;
+  color: var(--color-muted);
+  font-size: 0.84rem;
+}
+
+.professional-type-picker > div {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.7rem;
+}
+
+.shop-form-grid .professional-type-picker label {
+  position: relative;
+  display: grid;
+  min-width: 0;
+  min-height: 9rem;
+  align-content: start;
+  gap: 0.45rem;
+  padding: 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: 1rem;
+  background: white;
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+.shop-form-grid .professional-type-picker label:hover,
+.shop-form-grid .professional-type-picker label:focus-within {
+  border-color: var(--color-accent);
+  box-shadow: 0 10px 28px rgb(18 58 40 / 10%);
+  transform: translateY(-1px);
+}
+
+.shop-form-grid .professional-type-picker label.is-selected {
+  border-color: var(--color-accent);
+  background: var(--color-accent-soft);
+  box-shadow: inset 0 0 0 1px var(--color-accent);
+}
+
+.shop-form-grid .professional-type-picker input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  min-height: 0;
+  padding: 0;
+  opacity: 0;
+}
+
+.professional-type-picker label > span {
+  font-size: 1.7rem;
+}
+
+.professional-type-picker label > strong {
+  font-size: 0.94rem;
+}
+
+.professional-type-picker label > small {
+  color: var(--color-muted);
+  font-size: 0.78rem;
+  font-weight: 500;
+  line-height: 1.35;
 }
 
 .shop-card label,
@@ -7800,6 +7907,11 @@ button.chat-setting-row {
   margin-right: auto;
 }
 
+.storefront-profile-type {
+  margin: 0 0 0.4rem;
+  background: var(--color-surface-muted);
+}
+
 .storefront-title > div {
   display: flex;
   flex-wrap: wrap;
@@ -7868,6 +7980,10 @@ button.chat-setting-row {
 }
 
 @media (max-width: 52rem) {
+  .professional-type-picker > div {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .shop-manager,
   .storefront-about-grid {
     grid-template-columns: 1fr;
@@ -7889,6 +8005,10 @@ button.chat-setting-row {
 }
 
 @media (max-width: 38rem) {
+  .professional-type-picker > div {
+    grid-template-columns: 1fr;
+  }
+
   .shop-manager-identity,
   .storefront-header {
     align-items: flex-start;

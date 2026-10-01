@@ -17,6 +17,7 @@ interface ManagedShop {
   id: string;
   slug: string;
   name: string;
+  profileType: ProfessionalProfileType;
   description: string;
   locationId: string | null;
   publicAddress: string | null;
@@ -41,6 +42,7 @@ interface VerificationItem {
   id: string;
   shopName: string;
   shopSlug: string;
+  profileType: ProfessionalProfileType;
   legalName: string;
   registryNumber: string | null;
   statement: string;
@@ -48,6 +50,16 @@ interface VerificationItem {
 }
 
 type LoadState = 'loading' | 'ready' | 'auth' | 'error';
+type ProfessionalProfileType =
+  'unspecified' | 'auto_dealer' | 'realtor' | 'real_estate_agency' | 'property_developer';
+type SelectableProfessionalProfileType = Exclude<ProfessionalProfileType, 'unspecified'>;
+
+const professionalProfileTypes: SelectableProfessionalProfileType[] = [
+  'auto_dealer',
+  'realtor',
+  'real_estate_agency',
+  'property_developer'
+];
 
 export function ShopManager() {
   const t = useTranslations('shop');
@@ -60,6 +72,7 @@ export function ShopManager() {
   const [pending, setPending] = useState(false);
   const [locationId, setLocationId] = useState<string | null>(null);
   const [hours, setHours] = useState<BusinessHour[]>(defaultHours());
+  const [profileType, setProfileType] = useState<SelectableProfessionalProfileType | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -69,6 +82,9 @@ export function ShopManager() {
       const body = (await response.json()) as {data: ManagedShop[]};
       const current = body.data[0] ?? null;
       setShop(current);
+      setProfileType(
+        current?.profileType === 'unspecified' ? null : (current?.profileType ?? null)
+      );
       setLocationId(current?.locationId ?? null);
       setHours(current?.businessHours.length ? current.businessHours : defaultHours());
       setState('ready');
@@ -98,10 +114,15 @@ export function ShopManager() {
 
   async function saveShop(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!profileType) {
+      setMessage(t('profileTypeRequired'));
+      return;
+    }
     setPending(true);
     setMessage('');
     const form = new FormData(event.currentTarget);
     const input = {
+      profileType,
       name: String(form.get('name') ?? ''),
       description: String(form.get('description') ?? ''),
       publicAddress: optionalString(form.get('publicAddress')),
@@ -127,6 +148,7 @@ export function ShopManager() {
       const body = (await response.json()) as {data?: ManagedShop; error?: {message?: string}};
       if (!response.ok || !body.data) throw new Error(body.error?.message || t('saveError'));
       setShop(body.data);
+      setProfileType(body.data.profileType === 'unspecified' ? null : body.data.profileType);
       setMessage(t('saved'));
     } catch (error) {
       setMessage(error instanceof Error ? error.message : t('saveError'));
@@ -298,6 +320,7 @@ export function ShopManager() {
               <span className={`shop-verification shop-verification-${shop.verificationStatus}`}>
                 {t(`verificationStatuses.${shop.verificationStatus}`)}
               </span>
+              <span className="shop-profile-type">{t(`profileTypes.${shop.profileType}`)}</span>
               <h2>{shop.name}</h2>
               <p>{t(`roles.${shop.role}`)}</p>
             </div>
@@ -316,6 +339,27 @@ export function ShopManager() {
               <h2>{shop ? t('profileTitle') : t('createTitle')}</h2>
               <p>{shop ? t('profileText') : t('createText')}</p>
             </div>
+            <fieldset className="professional-type-picker">
+              <legend>{t('profileTypeTitle')}</legend>
+              <p>{t('profileTypeText')}</p>
+              <div>
+                {professionalProfileTypes.map((type) => (
+                  <label className={profileType === type ? 'is-selected' : undefined} key={type}>
+                    <input
+                      checked={profileType === type}
+                      disabled={Boolean(shop && shop.role !== 'owner')}
+                      name="profileType"
+                      onChange={() => setProfileType(type)}
+                      type="radio"
+                      value={type}
+                    />
+                    <span aria-hidden="true">{profileTypeIcon(type)}</span>
+                    <strong>{t(`profileTypes.${type}`)}</strong>
+                    <small>{t(`profileTypeDescriptions.${type}`)}</small>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
             <label>
               {t('name')}
               <input
@@ -389,7 +433,7 @@ export function ShopManager() {
         </section>
       )}
 
-      {shop?.role === 'owner' && (
+      {shop?.role === 'owner' && shop.profileType !== 'realtor' && (
         <section className="shop-card">
           <div className="shop-card-heading">
             <span>{t('teamKicker')}</span>
@@ -476,6 +520,7 @@ export function ShopManager() {
             <article key={item.id}>
               <div>
                 <strong>{item.shopName}</strong>
+                <span>{t(`profileTypes.${item.profileType}`)}</span>
                 <span>{item.legalName}</span>
                 <small>{item.registryNumber || t('registryMissing')}</small>
               </div>
@@ -652,4 +697,13 @@ function timeToMinute(value: string): number {
 function optionalString(value: FormDataEntryValue | null): string | null {
   const text = String(value ?? '').trim();
   return text || null;
+}
+
+function profileTypeIcon(type: SelectableProfessionalProfileType): string {
+  return {
+    auto_dealer: '🚗',
+    realtor: '🏠',
+    real_estate_agency: '🏢',
+    property_developer: '🏗️'
+  }[type];
 }

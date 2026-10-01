@@ -60,10 +60,11 @@ export default async function StorefrontPage({params}: Props) {
             )}
           </div>
           <div className="storefront-title">
+            <span className="storefront-profile-type">{t(`profileTypes.${shop.profileType}`)}</span>
             <div>
               <h1>{shop.name}</h1>
               {shop.verificationStatus === 'verified' && (
-                <span className="storefront-verified">✓ {t('verifiedShop')}</span>
+                <span className="storefront-verified">✓ {t('verifiedProfile')}</span>
               )}
             </div>
             <p>
@@ -73,13 +74,13 @@ export default async function StorefrontPage({params}: Props) {
           </div>
           {shop.publicPhone && (
             <a className="button button-primary" href={`tel:${shop.publicPhone}`}>
-              {t('callShop')}
+              {t('callProfile')}
             </a>
           )}
         </header>
         <div className="storefront-about-grid">
           <section>
-            <span>{t('aboutShop')}</span>
+            <span>{t('aboutProfile')}</span>
             <p>{shop.description || t('descriptionMissing')}</p>
           </section>
           <aside>

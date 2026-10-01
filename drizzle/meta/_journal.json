@@ -127,6 +127,13 @@
       "when": 1790174145255,
       "tag": "0017_lethal_tyrannus",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1790265820389,
+      "tag": "0018_bitter_warhawk",
+      "breakpoints": true
     }
   ]
 }

@@ -384,6 +384,13 @@ export const categoryAttribute = pgTable(
 );
 
 export const shopStatus = pgEnum('shop_status', ['active', 'suspended', 'closed']);
+export const professionalProfileType = pgEnum('professional_profile_type', [
+  'unspecified',
+  'auto_dealer',
+  'realtor',
+  'real_estate_agency',
+  'property_developer'
+]);
 export const shopVerificationStatus = pgEnum('shop_verification_status', [
   'unverified',
   'pending',
@@ -407,6 +414,7 @@ export const shop = pgTable(
       .references(() => user.id, {onDelete: 'restrict'}),
     slug: varchar('slug', {length: 80}).notNull(),
     name: varchar('name', {length: 120}).notNull(),
+    profileType: professionalProfileType('profile_type').default('unspecified').notNull(),
     description: text('description').default('').notNull(),
     locationId: uuid('location_id').references(() => location.id, {onDelete: 'restrict'}),
     publicAddress: varchar('public_address', {length: 300}),
@@ -426,6 +434,12 @@ export const shop = pgTable(
     uniqueIndex('shop_slug_unique').on(table.slug),
     uniqueIndex('shop_owner_unique').on(table.ownerId),
     index('shop_public_directory_idx').on(table.status, table.verificationStatus, table.createdAt),
+    index('shop_profile_type_directory_idx').on(
+      table.profileType,
+      table.status,
+      table.verificationStatus,
+      table.createdAt
+    ),
     index('shop_location_idx').on(table.locationId),
     check('shop_slug_format', sql`${table.slug} ~ '^[a-z0-9]+(?:-[a-z0-9]+)*$'`),
     check('shop_name_not_blank', sql`length(btrim(${table.name})) >= 2`),

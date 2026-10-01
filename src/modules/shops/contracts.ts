@@ -1,5 +1,7 @@
 import {z} from 'zod';
 
+import {selectableProfessionalProfileTypes} from './domain';
+
 const nullableText = (max: number) => z.string().trim().max(max).nullable();
 
 export const businessHourSchema = z.discriminatedUnion('isClosed', [
@@ -17,6 +19,7 @@ export const businessHourSchema = z.discriminatedUnion('isClosed', [
 ]);
 
 export const createShopSchema = z.object({
+  profileType: z.enum(selectableProfessionalProfileTypes),
   name: z.string().trim().min(2).max(120),
   description: z.string().trim().max(3000).default(''),
   locationId: z.uuid().nullable().optional(),
@@ -28,6 +31,7 @@ export const createShopSchema = z.object({
 export const updateShopSchema = z
   .object({
     version: z.int().positive(),
+    profileType: z.enum(selectableProfessionalProfileTypes).optional(),
     name: z.string().trim().min(2).max(120).optional(),
     description: z.string().trim().max(3000).optional(),
     locationId: z.uuid().nullable().optional(),
@@ -38,6 +42,7 @@ export const updateShopSchema = z
   .refine(
     (value) =>
       value.name !== undefined ||
+      value.profileType !== undefined ||
       value.description !== undefined ||
       value.locationId !== undefined ||
       value.publicAddress !== undefined ||

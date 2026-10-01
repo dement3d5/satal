@@ -49,15 +49,17 @@ Draft lifecycle is `draft → ready_for_review → submitted`, with explicit aba
 
 Changing category is allowed only before submission. The application transaction loads the new `category_attribute` schema, retains values that are still applicable and valid, deletes incompatible scalar/multi-select rows, updates category/schema version, resets `ready_for_review` to `draft`, increments the draft version and records the change. Required-field completeness is evaluated against the captured category schema version before transition to review.
 
-### Shops
+### Professional profiles and organizations
 
-- `shop`: one owner-controlled public business profile with stable slug, optional canonical location/public address/phone, independent operational and verification states, and optimistic version;
+- `shop`: the retained internal aggregate for one owner-controlled professional profile with stable slug, required `profile_type`, optional canonical location/public address/phone, independent operational and verification states, and optimistic version;
 - `shop_member`: normalized owner/manager/listing-manager membership used for every protected action;
 - `shop_business_hour`: at most one structured opening interval per weekday, stored as bounded local minutes rather than free-form JSON;
 - `shop_verification_request`: append-preserving application lifecycle with submitter, independent reviewer, bounded public business identity fields and an internal reviewer note;
 - `shop_media`: one logo and one cover attachment backed by the existing quarantined `media_asset` pipeline.
 
-The MVP limits an account to one owned shop but permits membership in multiple shops. Ownership is explicit in both `shop.owner_id` and its required owner membership created in the same transaction; the duplicate field keeps ownership queries and future transfer validation unambiguous. Managers may edit the profile, media and shop listings, while listing managers can only create/publish shop listings. Only the owner can change membership. Platform `admin`/`owner` roles, not shop roles, resolve verification requests.
+The user-facing model distinguishes `auto_dealer`, `realtor`, `real_estate_agency` and `property_developer`. Existing rows migrate to `unspecified` so the application never guesses a business identity; the owner must select a type before creating another organization listing. Autodealers are limited to the transport taxonomy root, while the three property professions are limited to real estate. The same policy is checked when a draft is created, its category changes, the profile type changes and the draft is published.
+
+The MVP limits an account to one owned professional profile but permits membership in multiple organizations. Ownership is explicit in both `shop.owner_id` and its required owner membership created in the same transaction; the duplicate field keeps ownership queries and future transfer validation unambiguous. Managers may edit the profile, media and organization listings, while listing managers can only create/publish listings. An independent realtor profile cannot have non-owner members; this is enforced in the service layer and reflected by the absence of team controls. Only the owner can change profile type or organization membership. Platform `admin`/`owner` roles, not organization roles, resolve verification requests.
 
 `listing_draft.shop_id` and `listing.shop_id` are optional. Personal listings remain unchanged. A shop draft records both the shop and the concrete member who authored it; creation and publication recheck live `listings:manage` membership and active shop state. Publication copies the shop reference into the immutable listing snapshot, so an active shop listing can be rebuilt into search and rendered on the storefront without trusting client identity. Removing a member does not erase authored audit history.
 
@@ -72,7 +74,7 @@ Verification is `unverified → pending → verified|rejected`. A partial unique
 - category/status and location indexes for later operational/publication workflows;
 - category attribute render/projection indexes and typed option projection indexes;
 - localized location name/alias indexes for future geography lookup.
-- shop slug/owner uniqueness, public directory and member lookup indexes;
+- professional profile slug/owner uniqueness, type-aware public directory and member lookup indexes;
 - one pending verification request per shop and a status/creation queue index;
 - shop/status/publication indexes on drafts and listings for management and storefront reads.
 

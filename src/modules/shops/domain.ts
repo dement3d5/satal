@@ -1,6 +1,14 @@
 import {AppError} from '@/server/errors/app-error';
 
 export type ShopMemberRole = 'owner' | 'manager' | 'listing_manager';
+export const selectableProfessionalProfileTypes = [
+  'auto_dealer',
+  'realtor',
+  'real_estate_agency',
+  'property_developer'
+] as const;
+export type SelectableProfessionalProfileType = (typeof selectableProfessionalProfileTypes)[number];
+export type ProfessionalProfileType = 'unspecified' | SelectableProfessionalProfileType;
 export type ShopCapability =
   'profile:manage' | 'media:manage' | 'listings:manage' | 'members:manage' | 'verification:submit';
 
@@ -23,6 +31,36 @@ export function hasShopCapability(role: ShopMemberRole, capability: ShopCapabili
 export function assertShopCapability(role: ShopMemberRole, capability: ShopCapability): void {
   if (!hasShopCapability(role, capability)) {
     throw new AppError('FORBIDDEN', 'Your shop role does not allow this action', 403);
+  }
+}
+
+const supportedRootCategory: Record<
+  SelectableProfessionalProfileType,
+  'transport' | 'real-estate'
+> = {
+  auto_dealer: 'transport',
+  realtor: 'real-estate',
+  real_estate_agency: 'real-estate',
+  property_developer: 'real-estate'
+};
+
+export function assertProfessionalProfileCategory(
+  profileType: ProfessionalProfileType,
+  rootCategorySlug: string
+): void {
+  if (profileType === 'unspecified') {
+    throw new AppError(
+      'CONFLICT',
+      'Choose the professional profile type before creating listings',
+      409
+    );
+  }
+  if (supportedRootCategory[profileType] !== rootCategorySlug) {
+    throw new AppError(
+      'BAD_REQUEST',
+      'This listing category is not available for the selected professional profile type',
+      400
+    );
   }
 }
 

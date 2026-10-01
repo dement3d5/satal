@@ -68,6 +68,8 @@ export interface PublicListingDetail extends PublicListingCard {
   shopId: string | null;
   shopName: string | null;
   shopSlug: string | null;
+  shopProfileType:
+    'unspecified' | 'auto_dealer' | 'realtor' | 'real_estate_agency' | 'property_developer' | null;
   shopVerified: boolean;
   attributes: PublicListingAttribute[];
   mediaUrls: string[];
@@ -314,6 +316,7 @@ export async function getPublicListing(
       shopId: shop.id,
       shopName: shop.name,
       shopSlug: shop.slug,
+      shopProfileType: shop.profileType,
       shopVerificationStatus: shop.verificationStatus,
       publishedAt: listing.publishedAt
     })
@@ -413,6 +416,7 @@ export async function getPublicListing(
     shopId: row.shopId,
     shopName: row.shopName,
     shopSlug: row.shopSlug,
+    shopProfileType: row.shopProfileType,
     shopVerified: row.shopVerificationStatus === 'verified',
     mediaUrls,
     attributes: [

@@ -35,8 +35,10 @@ integration('shop ownership, permissions and verification lifecycle', () => {
     const managerId = randomUUID();
     const outsiderId = randomUUID();
     const adminId = randomUUID();
+    const realtorId = randomUUID();
     const draftIds: string[] = [];
     let shopId: string | undefined;
+    let realtorShopId: string | undefined;
     const db = drizzle(client!, {schema});
     try {
       await client!`
@@ -45,7 +47,8 @@ integration('shop ownership, permissions and verification lifecycle', () => {
           (${ownerId}, 'Shop owner', ${`${ownerId}@example.test`}, true),
           (${managerId}, 'Shop manager', ${`${managerId}@example.test`}, true),
           (${outsiderId}, 'Shop outsider', ${`${outsiderId}@example.test`}, true),
-          (${adminId}, 'Shop admin', ${`${adminId}@example.test`}, true)
+          (${adminId}, 'Shop admin', ${`${adminId}@example.test`}, true),
+          (${realtorId}, 'Independent realtor', ${`${realtorId}@example.test`}, true)
       `;
       await client!`
         insert into user_role (user_id, role, granted_by)
@@ -53,6 +56,7 @@ integration('shop ownership, permissions and verification lifecycle', () => {
       `;
 
       const created = await createShop(db, ownerId, {
+        profileType: 'auto_dealer',
         name: 'Integration Market',
         description: 'A public test storefront.',
         locationId: '10000000-0000-4000-8000-000000000002',
@@ -64,7 +68,11 @@ integration('shop ownership, permissions and verification lifecycle', () => {
         ]
       });
       shopId = created.id;
-      expect(created).toMatchObject({role: 'owner', verificationStatus: 'unverified'});
+      expect(created).toMatchObject({
+        role: 'owner',
+        profileType: 'auto_dealer',
+        verificationStatus: 'unverified'
+      });
 
       await addShopMember(db, ownerId, created.id, {
         email: `${managerId}@example.test`,
@@ -75,6 +83,12 @@ integration('shop ownership, permissions and verification lifecycle', () => {
         description: 'Updated safely by a delegated manager.'
       });
       expect(updated.description).toContain('delegated manager');
+      await expect(
+        updateShop(db, managerId, created.id, {
+          version: updated.version,
+          profileType: 'real_estate_agency'
+        })
+      ).rejects.toMatchObject({code: 'FORBIDDEN'});
       await expect(
         updateShop(db, outsiderId, created.id, {version: updated.version, name: 'Taken over'})
       ).rejects.toMatchObject({code: 'FORBIDDEN'});
@@ -88,8 +102,51 @@ integration('shop ownership, permissions and verification lifecycle', () => {
       draftIds.push(shopDraft.id);
       expect(shopDraft.shopId).toBe(created.id);
       await expect(
+        createListingDraft(db, managerId, '20000000-0000-4000-8000-000000000006', created.id)
+      ).rejects.toMatchObject({code: 'BAD_REQUEST'});
+      await expect(
         createListingDraft(db, outsiderId, '20000000-0000-4000-8000-000000000003', created.id)
       ).rejects.toMatchObject({code: 'FORBIDDEN'});
+      await expect(
+        updateShop(db, ownerId, created.id, {
+          version: updated.version,
+          profileType: 'property_developer'
+        })
+      ).rejects.toMatchObject({code: 'BAD_REQUEST'});
+      await expect(
+        updateShop(db, ownerId, created.id, {
+          version: updated.version,
+          profileType: 'realtor'
+        })
+      ).rejects.toMatchObject({code: 'CONFLICT'});
+
+      const realtorProfile = await createShop(db, realtorId, {
+        profileType: 'realtor',
+        name: 'Integration Realtor',
+        description: 'A test professional property profile.',
+        locationId: '10000000-0000-4000-8000-000000000002',
+        publicAddress: null,
+        publicPhone: '+994501112244',
+        businessHours: []
+      });
+      realtorShopId = realtorProfile.id;
+      await expect(
+        addShopMember(db, realtorId, realtorProfile.id, {
+          email: `${outsiderId}@example.test`,
+          role: 'manager'
+        })
+      ).rejects.toMatchObject({code: 'CONFLICT'});
+      const propertyDraft = await createListingDraft(
+        db,
+        realtorId,
+        '20000000-0000-4000-8000-000000000006',
+        realtorProfile.id
+      );
+      draftIds.push(propertyDraft.id);
+      expect(propertyDraft.shopId).toBe(realtorProfile.id);
+      await expect(
+        createListingDraft(db, realtorId, '20000000-0000-4000-8000-000000000003', realtorProfile.id)
+      ).rejects.toMatchObject({code: 'BAD_REQUEST'});
 
       const request = await submitShopVerification(db, ownerId, created.id, {
         legalName: 'Integration Market LLC',
@@ -119,23 +176,35 @@ integration('shop ownership, permissions and verification lifecycle', () => {
       const storefront = await getPublicShop(db, 'en', created.slug);
       expect(storefront).toMatchObject({
         name: 'Integration Market',
+        profileType: 'auto_dealer',
         verificationStatus: 'verified'
       });
-      const renamed = await updateShop(db, ownerId, created.id, {
+      const profileCopyUpdated = await updateShop(db, managerId, created.id, {
         version: updated.version,
+        profileType: 'auto_dealer',
+        name: 'Integration Market',
+        locationId: '10000000-0000-4000-8000-000000000002',
+        publicAddress: 'Test business address',
+        publicPhone: '+994501112233',
+        description: 'Copy changed without changing the professional identity.'
+      });
+      expect(profileCopyUpdated.verificationStatus).toBe('verified');
+      const renamed = await updateShop(db, ownerId, created.id, {
+        version: profileCopyUpdated.version,
         name: 'Integration Market Updated'
       });
       expect(renamed.verificationStatus).toBe('unverified');
     } finally {
+      if (draftIds.length) {
+        await client!`delete from listing_draft where id in ${client!(draftIds)}`;
+      }
       if (shopId) {
-        if (draftIds.length) {
-          await client!`delete from listing_draft where id in ${client!(draftIds)}`;
-        }
         await client!`delete from shop_verification_request where shop_id = ${shopId}`;
         await client!`delete from shop where id = ${shopId}`;
       }
+      if (realtorShopId) await client!`delete from shop where id = ${realtorShopId}`;
       await client!`delete from user_role where user_id = ${adminId}`;
-      await client!`delete from "user" where id in (${ownerId}, ${managerId}, ${outsiderId}, ${adminId})`;
+      await client!`delete from "user" where id in (${ownerId}, ${managerId}, ${outsiderId}, ${adminId}, ${realtorId})`;
     }
   });
 });

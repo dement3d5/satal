@@ -1,6 +1,7 @@
 import {and, eq} from 'drizzle-orm';
 
 import {evaluateListingRisk} from '@/modules/moderation/risk-policy';
+import {assertProfileTypeSupportsCategory} from '@/modules/shops/category-policy';
 import {requireShopCapability} from '@/modules/shops/service';
 import type {DatabaseClient} from '@/server/db/client';
 import {
@@ -50,6 +51,7 @@ export async function publishListingDraft(
       if (membership.status !== 'active') {
         throw new AppError('CONFLICT', 'Listings cannot be published for an inactive shop', 409);
       }
+      await assertProfileTypeSupportsCategory(tx, membership.profileType, draft.categoryId);
     }
 
     const [alreadyPublished] = await tx

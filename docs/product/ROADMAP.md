@@ -58,11 +58,11 @@ The moderation-workload milestone adds atomic case claim/release, parallel-decis
 
 Remaining: production realtime delivery, legally reviewed bans/restrictions and appeals, detailed evidence-view audit, moderator staffing/escalation policy, supervised production media-worker deployment and live R2 verification.
 
-## Phase 5 — shops
+## Phase 5 — professional sellers and organizations
 
-In progress. Milestone 5A implements one owner-created shop per account, normalized owner/manager/listing-manager permissions, structured public profile and hours, safe logo/cover uploads, an auditable verification-request lifecycle, optional shop-owned listing drafts and a localized public storefront containing only active PostgreSQL listings. Admin/owner can review verification applications from the management workspace; verification never bypasses listing moderation.
+In progress. Milestone 5A implements one owner-created professional profile per account, normalized owner/manager/listing-manager permissions, structured public profile and hours, safe logo/cover uploads, an auditable verification-request lifecycle, optional organization-owned listing drafts and a localized public storefront containing only active PostgreSQL listings. Milestone 5B adds explicit autodealer, realtor, real-estate agency and property-developer identities on the shared aggregate, localized presentation and server-enforced automotive/property category boundaries without guessing legacy profile types. Admin/owner can review verification applications from the management workspace; verification never bypasses listing moderation.
 
-Remaining: ownership-transfer and invitation acceptance/revocation workflows, shop suspension/closure operations with appeal policy, production business-document handling policy, directory search/ranking, shop-specific reputation aggregation, richer storefront filters and full journey E2E/accessibility review.
+Remaining: ownership-transfer and invitation acceptance/revocation workflows, organization suspension/closure operations with appeal policy, production business-document handling policy, professional directory search/ranking, organization-specific reputation aggregation, developer project/complex modeling, richer storefront filters and full journey E2E/accessibility review.
 
 ## Phase 6 — monetization
 

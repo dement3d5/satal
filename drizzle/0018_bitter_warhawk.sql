@@ -1,0 +1,3 @@
+CREATE TYPE "public"."professional_profile_type" AS ENUM('unspecified', 'auto_dealer', 'realtor', 'real_estate_agency', 'property_developer');--> statement-breakpoint
+ALTER TABLE "shop" ADD COLUMN "profile_type" "professional_profile_type" DEFAULT 'unspecified' NOT NULL;--> statement-breakpoint
+CREATE INDEX "shop_profile_type_directory_idx" ON "shop" USING btree ("profile_type","status","verification_status","created_at");

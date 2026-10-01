@@ -1,12 +1,13 @@
 import {randomUUID} from 'node:crypto';
 
-import {and, asc, desc, eq, gt, inArray, isNull, or, sql} from 'drizzle-orm';
+import {and, asc, desc, eq, gt, inArray, isNull, ne, or, sql} from 'drizzle-orm';
 
 import type {AppLocale} from '@/i18n/routing';
 import {getPublicListingCardsByIds} from '@/modules/listings/public-listing-service';
 import type {DatabaseClient} from '@/server/db/client';
 import {
   listing,
+  listingDraft,
   location,
   locationTranslation,
   mediaAsset,
@@ -26,12 +27,14 @@ import type {
   SubmitShopVerificationInput,
   UpdateShopInput
 } from './contracts';
+import {assertProfileTypeSupportsCategory} from './category-policy';
 import {
   assertBusinessHours,
   assertShopCapability,
   slugifyShopName,
   type ShopCapability,
-  type ShopMemberRole
+  type ShopMemberRole,
+  type ProfessionalProfileType
 } from './domain';
 
 type QueryExecutor = Pick<DatabaseClient, 'select'>;
@@ -40,6 +43,7 @@ export interface ShopContract {
   id: string;
   slug: string;
   name: string;
+  profileType: ProfessionalProfileType;
   description: string;
   locationId: string | null;
   publicAddress: string | null;
@@ -91,6 +95,7 @@ export async function createShop(
         ownerId: actorId,
         slug,
         name: input.name,
+        profileType: input.profileType,
         description: input.description,
         locationId: input.locationId ?? null,
         publicAddress: emptyToNull(input.publicAddress),
@@ -125,6 +130,7 @@ export async function getManagedShop(
       id: shop.id,
       slug: shop.slug,
       name: shop.name,
+      profileType: shop.profileType,
       description: shop.description,
       locationId: shop.locationId,
       publicAddress: shop.publicAddress,
@@ -171,11 +177,42 @@ export async function updateShop(
       throw new AppError('CONFLICT', 'Shop was changed by another session', 409);
     }
     await assertLocationAvailable(tx, input.locationId);
+    const profileTypeChanged =
+      input.profileType !== undefined && input.profileType !== membership.profileType;
+    if (profileTypeChanged && membership.role !== 'owner') {
+      throw new AppError(
+        'FORBIDDEN',
+        'Only the professional profile owner can change its type',
+        403
+      );
+    }
+    if (profileTypeChanged && input.profileType === 'realtor') {
+      const [teamMember] = await tx
+        .select({userId: shopMember.userId})
+        .from(shopMember)
+        .where(and(eq(shopMember.shopId, shopId), ne(shopMember.role, 'owner')))
+        .limit(1);
+      if (teamMember) {
+        throw new AppError(
+          'CONFLICT',
+          'Remove team members before changing this profile to an independent realtor',
+          409
+        );
+      }
+    }
+    const nextPublicAddress =
+      input.publicAddress !== undefined ? emptyToNull(input.publicAddress) : undefined;
+    const nextPublicPhone =
+      input.publicPhone !== undefined ? emptyToNull(input.publicPhone) : undefined;
     const identityChanged =
-      input.name !== undefined ||
-      input.locationId !== undefined ||
-      input.publicAddress !== undefined ||
-      input.publicPhone !== undefined;
+      (input.name !== undefined && input.name !== membership.name) ||
+      profileTypeChanged ||
+      (input.locationId !== undefined && input.locationId !== membership.locationId) ||
+      (nextPublicAddress !== undefined && nextPublicAddress !== membership.publicAddress) ||
+      (nextPublicPhone !== undefined && nextPublicPhone !== membership.publicPhone);
+    if (profileTypeChanged && input.profileType !== undefined) {
+      await assertExistingShopCategoriesSupported(tx, shopId, input.profileType);
+    }
     const resetVerification =
       identityChanged &&
       (membership.verificationStatus === 'verified' || membership.verificationStatus === 'pending');
@@ -194,12 +231,11 @@ export async function updateShop(
       .update(shop)
       .set({
         ...(input.name !== undefined ? {name: input.name} : {}),
+        ...(input.profileType !== undefined ? {profileType: input.profileType} : {}),
         ...(input.description !== undefined ? {description: input.description} : {}),
         ...(input.locationId !== undefined ? {locationId: input.locationId} : {}),
-        ...(input.publicAddress !== undefined
-          ? {publicAddress: emptyToNull(input.publicAddress)}
-          : {}),
-        ...(input.publicPhone !== undefined ? {publicPhone: emptyToNull(input.publicPhone)} : {}),
+        ...(input.publicAddress !== undefined ? {publicAddress: nextPublicAddress} : {}),
+        ...(input.publicPhone !== undefined ? {publicPhone: nextPublicPhone} : {}),
         ...(resetVerification
           ? {
               verificationStatus: 'unverified' as const,
@@ -243,11 +279,14 @@ export async function addShopMember(
     .limit(1);
   if (!memberUser) throw new AppError('NOT_FOUND', 'No account uses this email address', 404);
   const [targetShop] = await db
-    .select({ownerId: shop.ownerId})
+    .select({ownerId: shop.ownerId, profileType: shop.profileType})
     .from(shop)
     .where(eq(shop.id, shopId))
     .limit(1);
   if (!targetShop) throw new AppError('NOT_FOUND', 'Shop was not found', 404);
+  if (targetShop.profileType === 'realtor') {
+    throw new AppError('CONFLICT', 'An independent realtor profile cannot have team members', 409);
+  }
   if (memberUser.id === targetShop.ownerId) {
     throw new AppError('CONFLICT', 'The shop owner role cannot be changed', 409);
   }
@@ -290,6 +329,13 @@ export async function submitShopVerification(
 ) {
   return db.transaction(async (tx) => {
     const membership = await requireShopCapability(tx, actorId, shopId, 'verification:submit');
+    if (membership.profileType === 'unspecified') {
+      throw new AppError(
+        'BAD_REQUEST',
+        'Choose a professional profile type before requesting verification',
+        400
+      );
+    }
     if (membership.status !== 'active') {
       throw new AppError('CONFLICT', 'Only active shops can request verification', 409);
     }
@@ -331,6 +377,7 @@ export async function listVerificationQueue(db: DatabaseClient, actorId: string)
       shopId: shop.id,
       shopName: shop.name,
       shopSlug: shop.slug,
+      profileType: shop.profileType,
       legalName: shopVerificationRequest.legalName,
       registryNumber: shopVerificationRequest.registryNumber,
       statement: shopVerificationRequest.statement,
@@ -397,6 +444,7 @@ export async function getPublicShop(db: DatabaseClient, locale: AppLocale, slug:
       id: shop.id,
       slug: shop.slug,
       name: shop.name,
+      profileType: shop.profileType,
       description: shop.description,
       locationName: locationTranslation.name,
       publicAddress: shop.publicAddress,
@@ -451,11 +499,13 @@ export async function requireShopCapability(
   const [row] = await executor
     .select({
       role: shopMember.role,
+      name: shop.name,
       status: shop.status,
       verificationStatus: shop.verificationStatus,
       locationId: shop.locationId,
       publicAddress: shop.publicAddress,
       publicPhone: shop.publicPhone,
+      profileType: shop.profileType,
       version: shop.version
     })
     .from(shopMember)
@@ -465,6 +515,27 @@ export async function requireShopCapability(
   if (!row) throw new AppError('FORBIDDEN', 'Shop membership is required', 403);
   assertShopCapability(row.role, capability);
   return row;
+}
+
+async function assertExistingShopCategoriesSupported(
+  executor: QueryExecutor,
+  shopId: string,
+  profileType: ProfessionalProfileType
+): Promise<void> {
+  const [published, drafts] = await Promise.all([
+    executor
+      .select({categoryId: listing.categoryId})
+      .from(listing)
+      .where(eq(listing.shopId, shopId)),
+    executor
+      .select({categoryId: listingDraft.categoryId})
+      .from(listingDraft)
+      .where(eq(listingDraft.shopId, shopId))
+  ]);
+  const categoryIds = new Set([...published, ...drafts].map((item) => item.categoryId));
+  for (const categoryId of categoryIds) {
+    await assertProfileTypeSupportsCategory(executor, profileType, categoryId);
+  }
 }
 
 async function requireVerificationReviewer(

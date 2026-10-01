@@ -33,6 +33,8 @@ interface DraftSnapshot {
 interface ShopOption {
   id: string;
   name: string;
+  profileType:
+    'unspecified' | 'auto_dealer' | 'realtor' | 'real_estate_agency' | 'property_developer';
   status: 'active' | 'suspended' | 'closed';
 }
 
@@ -153,7 +155,18 @@ export function ListingCreation() {
     }
 
     const path = findCategoryPath(categories, category.id);
-    setCategoryPath(path.length ? path : [...categoryPath, category]);
+    const nextPath = path.length ? path : [...categoryPath, category];
+    setCategoryPath(nextPath);
+    if (
+      !draft &&
+      selectedShopId &&
+      !shopSupportsRoot(
+        shops.find((item) => item.id === selectedShopId)?.profileType,
+        nextPath[0]?.slug
+      )
+    ) {
+      setSelectedShopId('');
+    }
     if (draft && draft.categoryId !== category.id) {
       try {
         const response = await fetch(`/api/v1/listing-drafts/${draft.id}/category`, {
@@ -635,6 +648,10 @@ function CategoryStep(props: {
   t: Translator;
 }) {
   const {t} = props;
+  const rootSlug = props.categoryPath[0]?.slug;
+  const compatibleShops = props.shops.filter((shop) =>
+    shopSupportsRoot(shop.profileType, rootSlug)
+  );
   return (
     <>
       <StepHeader number="01" title={t('categoryTitle')} text={t('categoryText')} />
@@ -659,7 +676,7 @@ function CategoryStep(props: {
               <span>{t('categorySelected')}</span>
             </div>
           </div>
-          {props.shops.length > 0 && (
+          {compatibleShops.length > 0 && (
             <label className="shop-listing-owner">
               <span>{t('shopOwnerLabel')}</span>
               <select
@@ -667,7 +684,7 @@ function CategoryStep(props: {
                 value={props.selectedShopId}
               >
                 <option value="">{t('personalListing')}</option>
-                {props.shops.map((shop) => (
+                {compatibleShops.map((shop) => (
                   <option key={shop.id} value={shop.id}>
                     {shop.name}
                   </option>
@@ -675,6 +692,9 @@ function CategoryStep(props: {
               </select>
               <small>{t('shopOwnerHint')}</small>
             </label>
+          )}
+          {props.shops.length > 0 && compatibleShops.length === 0 && (
+            <p className="shop-owner-unavailable">{t('professionalCategoryMismatch')}</p>
           )}
         </div>
       ) : (
@@ -720,6 +740,12 @@ function CategoryStep(props: {
       </div>
     </>
   );
+}
+
+function shopSupportsRoot(profileType: ShopOption['profileType'] | undefined, rootSlug?: string) {
+  if (!profileType || profileType === 'unspecified' || !rootSlug) return false;
+  if (profileType === 'auto_dealer') return rootSlug === 'transport';
+  return rootSlug === 'real-estate';
 }
 
 function DetailsStep(props: {

@@ -2,7 +2,12 @@ import {describe, expect, it} from 'vitest';
 
 import {AppError} from '@/server/errors/app-error';
 
-import {assertBusinessHours, assertShopCapability, slugifyShopName} from './domain';
+import {
+  assertBusinessHours,
+  assertProfessionalProfileCategory,
+  assertShopCapability,
+  slugifyShopName
+} from './domain';
 
 describe('shop domain', () => {
   it('keeps membership capabilities least-privileged', () => {
@@ -19,6 +24,15 @@ describe('shop domain', () => {
         {weekday: 1, isClosed: false, opensAtMinute: 540, closesAtMinute: 1080}
       ])
     ).toThrow(AppError);
+  });
+
+  it('keeps professional listing categories within their marketplace vertical', () => {
+    expect(() => assertProfessionalProfileCategory('auto_dealer', 'transport')).not.toThrow();
+    expect(() => assertProfessionalProfileCategory('realtor', 'real-estate')).not.toThrow();
+    expect(() => assertProfessionalProfileCategory('real_estate_agency', 'transport')).toThrow(
+      AppError
+    );
+    expect(() => assertProfessionalProfileCategory('unspecified', 'real-estate')).toThrow(AppError);
   });
 
   it('creates stable URL-safe slugs for supported scripts', () => {

@@ -2,6 +2,7 @@ import {and, eq, inArray, sql} from 'drizzle-orm';
 
 import type {AttributeRules, AttributeValue, AttributeValueType} from '@/modules/catalog/domain';
 import {validateAttributeValue} from '@/modules/catalog/domain';
+import {assertProfileTypeSupportsCategory} from '@/modules/shops/category-policy';
 import {requireShopCapability} from '@/modules/shops/service';
 import type {DatabaseClient} from '@/server/db/client';
 import {
@@ -75,6 +76,7 @@ export async function createListingDraft(
       if (membership.status !== 'active') {
         throw new AppError('CONFLICT', 'Listings cannot be created for an inactive shop', 409);
       }
+      await assertProfileTypeSupportsCategory(tx, membership.profileType, categoryId);
     }
     const [created] = await tx
       .insert(listingDraft)
@@ -166,6 +168,10 @@ export async function changeListingDraftCategory(
     await lockDraft(tx, draftId);
     const draft = await requireDraft(tx, draftId);
     const nextCategory = await requireLeafCategory(tx, input.categoryId);
+    if (draft.shopId) {
+      const membership = await requireShopCapability(tx, actorId, draft.shopId, 'listings:manage');
+      await assertProfileTypeSupportsCategory(tx, membership.profileType, input.categoryId);
+    }
     const currentValues = await loadStoredAttributes(tx, draftId);
     const nextRules = await loadAttributeRules(tx, input.categoryId);
     const plan = planCategoryChange({
